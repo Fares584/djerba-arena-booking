@@ -34,6 +34,13 @@ const Hero = () => {
               Nous contacter
             </Link>
           </div>
+          
+          {/* New: Reservation system promo */}
+          <div className="mt-12 bg-black/30 backdrop-blur-sm p-4 rounded-lg inline-block">
+            <p className="text-white text-sm md:text-base">
+              🆕 Notre système de réservation en ligne est maintenant disponible !
+            </p>
+          </div>
         </div>
       </div>
     </div>

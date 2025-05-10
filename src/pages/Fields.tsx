@@ -2,84 +2,22 @@
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import FieldCard, { Field, FieldType } from '@/components/FieldCard';
-
-// Simulated fields data
-const allFields: Field[] = [
-  {
-    id: 1,
-    name: 'Foot à 7 - Terrain A',
-    type: 'foot',
-    capacity: 14,
-    price: 60,
-    imageUrl: 'https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&q=80',
-    status: 'available',
-  },
-  {
-    id: 2,
-    name: 'Foot à 6 - Terrain B',
-    type: 'foot',
-    capacity: 12,
-    price: 60,
-    imageUrl: 'https://images.unsplash.com/photo-1466721591366-2d5fba72006d?auto=format&fit=crop&q=80',
-    status: 'available',
-  },
-  {
-    id: 3,
-    name: 'Foot à 8 - Terrain C',
-    type: 'foot',
-    capacity: 16,
-    price: 60,
-    imageUrl: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&q=80',
-    status: 'reserved',
-  },
-  {
-    id: 4,
-    name: 'Tennis - Court 1',
-    type: 'tennis',
-    capacity: 4,
-    price: 30,
-    imageUrl: 'https://images.unsplash.com/photo-1500673922987-e212871fec22?auto=format&fit=crop&q=80',
-    status: 'available',
-  },
-  {
-    id: 5,
-    name: 'Tennis - Court 2',
-    type: 'tennis',
-    capacity: 4,
-    price: 30,
-    imageUrl: 'https://images.unsplash.com/photo-1615729947596-a598e5de0ab3?auto=format&fit=crop&q=80',
-    status: 'reserved',
-  },
-  {
-    id: 6,
-    name: 'Padel - Court 1',
-    type: 'padel',
-    capacity: 4,
-    price: 40,
-    imageUrl: 'https://images.unsplash.com/photo-1487252665478-49b61b47f302?auto=format&fit=crop&q=80',
-    status: 'available',
-  },
-  {
-    id: 7,
-    name: 'Padel - Court 2',
-    type: 'padel',
-    capacity: 4,
-    price: 40,
-    imageUrl: 'https://images.unsplash.com/photo-1615729947596-a598e5de0ab3?auto=format&fit=crop&q=80',
-    status: 'available',
-  },
-];
+import FieldCard from '@/components/FieldCard';
+import { useTerrains } from '@/hooks/useTerrains';
 
 const Fields = () => {
-  const [selectedType, setSelectedType] = useState<FieldType | 'all'>('all');
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'available' | 'reserved'>('all');
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<boolean | 'all'>('all');
 
-  const filteredFields = allFields.filter((field) => {
+  // Fetch terrains from Supabase
+  const { data: terrains, isLoading, error } = useTerrains();
+
+  // Apply client-side filters
+  const filteredFields = terrains?.filter((field) => {
     const matchesType = selectedType === 'all' || field.type === selectedType;
-    const matchesStatus = selectedStatus === 'all' || field.status === selectedStatus;
+    const matchesStatus = selectedStatus === 'all' || field.actif === selectedStatus;
     return matchesType && matchesStatus;
-  });
+  }) || [];
 
   return (
     <>
@@ -108,7 +46,7 @@ const Fields = () => {
                 <select 
                   className="w-full md:w-48 border rounded-md p-2"
                   value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value as FieldType | 'all')}
+                  onChange={(e) => setSelectedType(e.target.value)}
                 >
                   <option value="all">Tous les types</option>
                   <option value="foot">Football</option>
@@ -121,26 +59,61 @@ const Fields = () => {
                 <label className="block text-sm font-medium text-gray-600 mb-2">Statut</label>
                 <select 
                   className="w-full md:w-48 border rounded-md p-2"
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value as 'all' | 'available' | 'reserved')}
+                  value={String(selectedStatus)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSelectedStatus(value === 'all' ? 'all' : value === 'true');
+                  }}
                 >
                   <option value="all">Tous les statuts</option>
-                  <option value="available">Disponible</option>
-                  <option value="reserved">Réservé</option>
+                  <option value="true">Disponible</option>
+                  <option value="false">Non disponible</option>
                 </select>
               </div>
             </div>
           </div>
           
+          {/* Loading State */}
+          {isLoading && (
+            <div className="text-center py-12">
+              <div className="animate-pulse text-xl font-medium">
+                Chargement des terrains...
+              </div>
+            </div>
+          )}
+          
+          {/* Error State */}
+          {error && (
+            <div className="text-center py-12">
+              <h3 className="text-xl font-bold mb-2 text-red-600">Erreur de chargement</h3>
+              <p className="text-gray-600">
+                Impossible de charger les terrains. Veuillez réessayer plus tard.
+              </p>
+            </div>
+          )}
+          
           {/* Fields Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredFields.map((field) => (
-              <FieldCard key={field.id} field={field} />
-            ))}
-          </div>
+          {!isLoading && !error && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredFields.map((field) => (
+                <FieldCard 
+                  key={field.id} 
+                  field={{
+                    id: field.id,
+                    name: field.nom,
+                    type: field.type,
+                    capacity: field.capacite,
+                    price: field.prix,
+                    imageUrl: field.image_url,
+                    status: field.actif ? 'available' : 'reserved'
+                  }} 
+                />
+              ))}
+            </div>
+          )}
           
           {/* No Results Message */}
-          {filteredFields.length === 0 && (
+          {!isLoading && !error && filteredFields.length === 0 && (
             <div className="text-center py-8">
               <h3 className="text-xl font-bold mb-2">Aucun terrain trouvé</h3>
               <p className="text-gray-600">

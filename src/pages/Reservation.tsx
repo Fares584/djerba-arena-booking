@@ -4,77 +4,12 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
-import { Field, FieldType } from '@/components/FieldCard';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-
-// Simulated fields data
-const allFields: Field[] = [
-  {
-    id: 1,
-    name: 'Foot à 7 - Terrain A',
-    type: 'foot',
-    capacity: 14,
-    price: 60,
-    imageUrl: 'https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&q=80',
-    status: 'available',
-  },
-  {
-    id: 2,
-    name: 'Foot à 6 - Terrain B',
-    type: 'foot',
-    capacity: 12,
-    price: 60,
-    imageUrl: 'https://images.unsplash.com/photo-1466721591366-2d5fba72006d?auto=format&fit=crop&q=80',
-    status: 'available',
-  },
-  {
-    id: 3,
-    name: 'Foot à 8 - Terrain C',
-    type: 'foot',
-    capacity: 16,
-    price: 60,
-    imageUrl: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&q=80',
-    status: 'reserved',
-  },
-  {
-    id: 4,
-    name: 'Tennis - Court 1',
-    type: 'tennis',
-    capacity: 4,
-    price: 30,
-    imageUrl: 'https://images.unsplash.com/photo-1500673922987-e212871fec22?auto=format&fit=crop&q=80',
-    status: 'available',
-  },
-  {
-    id: 5,
-    name: 'Tennis - Court 2',
-    type: 'tennis',
-    capacity: 4,
-    price: 30,
-    imageUrl: 'https://images.unsplash.com/photo-1615729947596-a598e5de0ab3?auto=format&fit=crop&q=80',
-    status: 'reserved',
-  },
-  {
-    id: 6,
-    name: 'Padel - Court 1',
-    type: 'padel',
-    capacity: 4,
-    price: 40,
-    imageUrl: 'https://images.unsplash.com/photo-1487252665478-49b61b47f302?auto=format&fit=crop&q=80',
-    status: 'available',
-  },
-  {
-    id: 7,
-    name: 'Padel - Court 2',
-    type: 'padel',
-    capacity: 4,
-    price: 40,
-    imageUrl: 'https://images.unsplash.com/photo-1615729947596-a598e5de0ab3?auto=format&fit=crop&q=80',
-    status: 'available',
-  },
-];
+import { useTerrains, useTerrain } from '@/hooks/useTerrains';
+import { useCreateReservation } from '@/hooks/useReservations';
+import { Terrain } from '@/lib/supabase';
 
 // Available time slots
 const timeSlots = [
@@ -93,10 +28,10 @@ const durationOptions = [
 const Reservation = () => {
   const [searchParams] = useSearchParams();
   const fieldIdParam = searchParams.get('fieldId');
-  const typeParam = searchParams.get('type') as FieldType | null;
+  const typeParam = searchParams.get('type') as 'foot' | 'tennis' | 'padel' | null;
   
-  const [selectedField, setSelectedField] = useState<Field | null>(null);
-  const [selectedType, setSelectedType] = useState<FieldType | ''>('');
+  const [selectedField, setSelectedField] = useState<Terrain | null>(null);
+  const [selectedType, setSelectedType] = useState<'foot' | 'tennis' | 'padel' | ''>('');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [selectedDuration, setSelectedDuration] = useState<string>('1');
@@ -105,23 +40,31 @@ const Reservation = () => {
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   
+  // Fetch all terrains
+  const { data: terrains, isLoading: terrainsLoading, error: terrainsError } = useTerrains({
+    actif: true
+  });
+  
+  // Fetch single terrain if ID provided
+  const { data: terrain } = useTerrain(fieldIdParam ? parseInt(fieldIdParam) : undefined);
+  
+  // Mutation to create a reservation
+  const createReservation = useCreateReservation();
+  
   // Available fields based on type selection
-  const filteredFields = allFields.filter(
+  const filteredFields = terrains?.filter(
     field => !selectedType || field.type === selectedType
-  );
+  ) || [];
 
-  // Initialize from URL parameters
+  // Initialize from URL parameters and fetched data
   useEffect(() => {
-    if (fieldIdParam) {
-      const field = allFields.find(f => f.id === parseInt(fieldIdParam));
-      if (field) {
-        setSelectedField(field);
-        setSelectedType(field.type);
-      }
+    if (terrain) {
+      setSelectedField(terrain);
+      setSelectedType(terrain.type);
     } else if (typeParam) {
       setSelectedType(typeParam);
     }
-  }, [fieldIdParam, typeParam]);
+  }, [terrain, typeParam]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,22 +75,37 @@ const Reservation = () => {
       return;
     }
     
-    // Simulate reservation submission
-    toast.success('Réservation envoyée avec succès! Nous vous contacterons pour confirmer.');
+    // Format date as ISO string (YYYY-MM-DD)
+    const formattedDate = format(selectedDate, 'yyyy-MM-dd');
     
-    // In a real app, we would send this data to Supabase
-    console.log({
-      fieldId: selectedField.id,
-      fieldName: selectedField.name,
-      date: format(selectedDate, 'yyyy-MM-dd'),
-      time: selectedTime,
-      duration: selectedDuration,
-      name,
-      email,
-      phone,
-      message,
+    // Create reservation in Supabase
+    createReservation.mutate({
+      nom_client: name,
+      tel: phone,
+      email: email,
+      terrain_id: selectedField.id,
+      date: formattedDate,
+      heure: selectedTime,
+      duree: parseFloat(selectedDuration),
+      statut: 'en_attente',
+      remarque: message || undefined
     });
   };
+
+  if (terrainsError) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-[50vh] flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Erreur de chargement</h2>
+            <p>Impossible de charger les terrains. Veuillez réessayer plus tard.</p>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>
@@ -182,7 +140,7 @@ const Reservation = () => {
                       className="w-full border rounded-md p-3"
                       value={selectedType}
                       onChange={(e) => {
-                        setSelectedType(e.target.value as FieldType | '');
+                        setSelectedType(e.target.value as 'foot' | 'tennis' | 'padel' | '');
                         setSelectedField(null); // Reset selected field when type changes
                       }}
                       required
@@ -203,17 +161,21 @@ const Reservation = () => {
                       className="w-full border rounded-md p-3"
                       value={selectedField?.id || ''}
                       onChange={(e) => {
-                        const fieldId = parseInt(e.target.value);
-                        const field = allFields.find(f => f.id === fieldId) || null;
-                        setSelectedField(field);
+                        if (e.target.value) {
+                          const fieldId = parseInt(e.target.value);
+                          const field = filteredFields.find(f => f.id === fieldId) || null;
+                          setSelectedField(field);
+                        } else {
+                          setSelectedField(null);
+                        }
                       }}
                       required
-                      disabled={!selectedType}
+                      disabled={!selectedType || terrainsLoading}
                     >
                       <option value="">Sélectionnez un terrain</option>
                       {filteredFields.map((field) => (
                         <option key={field.id} value={field.id}>
-                          {field.name} - {field.price} DT/h
+                          {field.nom} - {field.prix} DT/h
                         </option>
                       ))}
                     </select>
@@ -347,11 +309,11 @@ const Reservation = () => {
                       <h3 className="font-bold text-lg mb-2">Résumé de la réservation</h3>
                       <div className="flex justify-between mb-2">
                         <span>Terrain:</span>
-                        <span className="font-medium">{selectedField.name}</span>
+                        <span className="font-medium">{selectedField.nom}</span>
                       </div>
                       <div className="flex justify-between mb-2">
                         <span>Prix par heure:</span>
-                        <span className="font-medium">{selectedField.price} DT</span>
+                        <span className="font-medium">{selectedField.prix} DT</span>
                       </div>
                       <div className="flex justify-between mb-2">
                         <span>Durée:</span>
@@ -360,7 +322,7 @@ const Reservation = () => {
                       <div className="border-t border-gray-300 my-2 pt-2 flex justify-between">
                         <span className="font-bold">Total:</span>
                         <span className="font-bold text-sport-green">
-                          {selectedField.price * parseFloat(selectedDuration)} DT
+                          {selectedField.prix * parseFloat(selectedDuration)} DT
                         </span>
                       </div>
                     </div>
@@ -373,8 +335,9 @@ const Reservation = () => {
                 <button 
                   type="submit" 
                   className="btn-primary text-lg px-10 py-3"
+                  disabled={createReservation.isPending}
                 >
-                  Confirmer la réservation
+                  {createReservation.isPending ? 'Traitement en cours...' : 'Confirmer la réservation'}
                 </button>
               </div>
               
