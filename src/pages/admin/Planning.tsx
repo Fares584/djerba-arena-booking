@@ -1,0 +1,191 @@
+
+import { useState, useEffect } from 'react';
+import { useReservations } from '@/hooks/useReservations';
+import { useTerrains } from '@/hooks/useTerrains';
+import { format, addDays, startOfWeek } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChevronLeft, ChevronRight, Loader2, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Reservation, Terrain } from '@/lib/supabase';
+
+// Time slots for the planning
+const timeSlots = [
+  '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
+  '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
+];
+
+const Planning = () => {
+  const [selectedTerrain, setSelectedTerrain] = useState<number | null>(null);
+  const [startDate, setStartDate] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 })); // Start with current week, Monday
+  const [weekDays, setWeekDays] = useState<Date[]>([]);
+  
+  const { data: terrains, isLoading: terrainsLoading } = useTerrains();
+  const { data: reservations, isLoading: reservationsLoading } = useReservations({
+    terrain_id: selectedTerrain || undefined
+  });
+
+  // Generate array of dates for the week
+  useEffect(() => {
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      days.push(addDays(startDate, i));
+    }
+    setWeekDays(days);
+  }, [startDate]);
+
+  const goToPreviousWeek = () => {
+    setStartDate(addDays(startDate, -7));
+  };
+
+  const goToNextWeek = () => {
+    setStartDate(addDays(startDate, 7));
+  };
+
+  const goToCurrentWeek = () => {
+    setStartDate(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  };
+
+  const getReservationsForSlot = (terrain: Terrain, day: Date, timeSlot: string) => {
+    if (!reservations) return [];
+    
+    const formattedDate = format(day, 'yyyy-MM-dd');
+    
+    return reservations.filter(res => 
+      res.terrain_id === terrain.id && 
+      res.date === formattedDate && 
+      res.heure === timeSlot
+    );
+  };
+
+  const getCellClassName = (reservation?: Reservation) => {
+    if (!reservation) return 'bg-white hover:bg-gray-50 border border-gray-200';
+    
+    switch (reservation.statut) {
+      case 'confirmee':
+        return 'bg-green-100 text-green-800 border border-green-300 hover:bg-green-200';
+      case 'en_attente':
+        return 'bg-yellow-100 text-yellow-800 border border-yellow-300 hover:bg-yellow-200';
+      case 'annulee':
+        return 'bg-red-100 text-red-800 border border-red-300 hover:bg-red-200';
+      default:
+        return 'bg-white hover:bg-gray-50 border border-gray-200';
+    }
+  };
+
+  if (terrainsLoading || reservationsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-sport-green" />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Planning des Terrains</h1>
+      </div>
+      
+      <div className="bg-white p-6 rounded-lg shadow mb-8">
+        <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
+          <div className="w-full md:w-64">
+            <Select 
+              value={selectedTerrain?.toString() || ''}
+              onValueChange={(value) => setSelectedTerrain(value ? parseInt(value) : null)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Tous les terrains" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Tous les terrains</SelectItem>
+                {terrains?.map((terrain) => (
+                  <SelectItem key={terrain.id} value={terrain.id.toString()}>
+                    {terrain.nom}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={goToPreviousWeek}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={goToCurrentWeek}>
+              Cette semaine
+            </Button>
+            <Button variant="outline" size="sm" onClick={goToNextWeek}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        
+        <div className="text-center mb-4">
+          <h2 className="text-xl font-medium">
+            Semaine du {format(startDate, 'dd MMMM', { locale: fr })} au {format(weekDays[6], 'dd MMMM yyyy', { locale: fr })}
+          </h2>
+        </div>
+        
+        {terrains && terrains.length > 0 ? (
+          (selectedTerrain ? terrains.filter(t => t.id === selectedTerrain) : terrains).map(terrain => (
+            <Card key={terrain.id} className="mb-8">
+              <CardHeader className="bg-sport-dark text-white py-3">
+                <CardTitle className="text-lg">{terrain.nom} - {terrain.type === 'foot' ? 'Football' : terrain.type === 'tennis' ? 'Tennis' : 'Padel'}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 overflow-x-auto">
+                <div className="min-w-[800px]">
+                  <div className="grid grid-cols-8 bg-gray-100">
+                    <div className="p-2 border-b border-r border-gray-200 font-medium">Heure</div>
+                    {weekDays.map((day, index) => (
+                      <div key={index} className="p-2 border-b border-r border-gray-200 text-center font-medium">
+                        <div>{format(day, 'EEE', { locale: fr })}</div>
+                        <div>{format(day, 'dd/MM')}</div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {timeSlots.map((timeSlot) => (
+                    <div key={timeSlot} className="grid grid-cols-8">
+                      <div className="p-2 border-b border-r border-gray-200 font-medium">
+                        {timeSlot}
+                      </div>
+                      
+                      {weekDays.map((day, dayIndex) => {
+                        const reservationsForSlot = getReservationsForSlot(terrain, day, timeSlot);
+                        const reservation = reservationsForSlot[0]; // Just take the first one if multiple
+                        
+                        return (
+                          <div 
+                            key={dayIndex}
+                            className={`p-2 border-b border-r ${getCellClassName(reservation)}`}
+                          >
+                            {reservation ? (
+                              <div className="text-xs">
+                                <div className="font-medium">{reservation.nom_client}</div>
+                                <div>{reservation.duree}h</div>
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <div className="text-center py-10">
+            <Calendar className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-xl font-medium text-gray-900">Aucun terrain</h3>
+            <p className="mt-1 text-gray-500">Il n'y a pas encore de terrains à afficher.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Planning;

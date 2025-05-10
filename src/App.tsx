@@ -12,6 +12,14 @@ import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
+// Admin pages
+import AdminLayout from "./pages/admin/AdminLayout";
+import Dashboard from "./pages/admin/Dashboard";
+import Reservations from "./pages/admin/Reservations";
+import Terrains from "./pages/admin/Terrains";
+import Planning from "./pages/admin/Planning";
+import Stats from "./pages/admin/Stats";
+
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +43,16 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
+          
+          {/* Admin routes */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="reservations" element={<Reservations />} />
+            <Route path="terrains" element={<Terrains />} />
+            <Route path="planning" element={<Planning />} />
+            <Route path="stats" element={<Stats />} />
+          </Route>
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
