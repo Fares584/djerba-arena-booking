@@ -1,20 +1,5 @@
 
-import { createClient } from '@supabase/supabase-js';
-
-// Get Supabase URL and anon key from environment variables
-// Default values for development - replace with your actual Supabase URL and anon key when testing
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-supabase-project-url.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-supabase-anon-key';
-
-// Check if we're using the default values in a production environment
-if (import.meta.env.PROD && 
-    (supabaseUrl === 'https://your-supabase-project-url.supabase.co' || 
-     supabaseAnonKey === 'your-supabase-anon-key')) {
-  console.error('WARNING: Using default Supabase credentials in production. Please set proper environment variables.');
-}
-
-// Create the Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { supabase } from '@/integrations/supabase/client';
 
 // Define types for our database
 export type Terrain = {
@@ -46,3 +31,6 @@ export type AdminUser = {
   email: string;
   // Note: password_hash is handled by Supabase Auth and not directly accessible
 };
+
+// Re-export the supabase client for backward compatibility
+export { supabase };

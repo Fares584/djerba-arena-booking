@@ -1,28 +1,42 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { toast } from '@/components/ui/sonner';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { signIn } = useAuth();
+  const navigate = useNavigate();
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Basic validation
     if (!email || !password) {
       toast.error('Veuillez remplir tous les champs.');
       return;
     }
     
-    // Simulate login attempt
-    // In a real app, we would connect to Supabase for authentication
-    toast.info('Cette fonctionnalité nécessite une intégration avec Supabase.');
+    setIsLoading(true);
     
-    console.log({ email, password });
+    try {
+      await signIn(email, password);
+      toast.success('Connexion réussie');
+      navigate('/admin');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast.error(error.message || 'Échec de la connexion. Vérifiez vos identifiants.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -47,14 +61,14 @@ const Login = () => {
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Adresse email
               </label>
-              <input 
+              <Input 
                 id="email"
                 type="email"
-                className="w-full border rounded-md p-3"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@example.com"
                 required
+                disabled={isLoading}
               />
             </div>
             
@@ -62,14 +76,14 @@ const Login = () => {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Mot de passe
               </label>
-              <input 
+              <Input 
                 id="password"
                 type="password"
-                className="w-full border rounded-md p-3"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
+                disabled={isLoading}
               />
             </div>
             
@@ -94,12 +108,20 @@ const Login = () => {
             </div>
             
             <div>
-              <button 
+              <Button 
                 type="submit" 
                 className="btn-primary text-center w-full"
+                disabled={isLoading}
               >
-                Se connecter
-              </button>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Connexion en cours...
+                  </>
+                ) : (
+                  'Se connecter'
+                )}
+              </Button>
             </div>
           </form>
           
