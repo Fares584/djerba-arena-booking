@@ -2,17 +2,19 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Get Supabase URL and anon key from environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Default values for development - replace with your actual Supabase URL and anon key when testing
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-supabase-project-url.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-supabase-anon-key';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables');
+// Check if we're using the default values in a production environment
+if (import.meta.env.PROD && 
+    (supabaseUrl === 'https://your-supabase-project-url.supabase.co' || 
+     supabaseAnonKey === 'your-supabase-anon-key')) {
+  console.error('WARNING: Using default Supabase credentials in production. Please set proper environment variables.');
 }
 
-export const supabase = createClient(
-  supabaseUrl || '',
-  supabaseAnonKey || ''
-);
+// Create the Supabase client
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Define types for our database
 export type Terrain = {
