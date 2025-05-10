@@ -9,7 +9,86 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      reservations: {
+        Row: {
+          created_at: string | null
+          date: string
+          duree: number
+          email: string
+          heure: string
+          id: number
+          nom_client: string
+          remarque: string | null
+          statut: string
+          tel: string
+          terrain_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          duree: number
+          email: string
+          heure: string
+          id?: number
+          nom_client: string
+          remarque?: string | null
+          statut: string
+          tel: string
+          terrain_id: number
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          duree?: number
+          email?: string
+          heure?: string
+          id?: number
+          nom_client?: string
+          remarque?: string | null
+          statut?: string
+          tel?: string
+          terrain_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_terrain_id_fkey"
+            columns: ["terrain_id"]
+            isOneToOne: false
+            referencedRelation: "terrains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      terrains: {
+        Row: {
+          actif: boolean | null
+          capacite: number
+          id: number
+          image_url: string | null
+          nom: string
+          prix: number
+          type: string
+        }
+        Insert: {
+          actif?: boolean | null
+          capacite: number
+          id?: number
+          image_url?: string | null
+          nom: string
+          prix: number
+          type: string
+        }
+        Update: {
+          actif?: boolean | null
+          capacite?: number
+          id?: number
+          image_url?: string | null
+          nom?: string
+          prix?: number
+          type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
