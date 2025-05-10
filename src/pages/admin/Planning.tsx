@@ -9,6 +9,7 @@ import { ChevronLeft, ChevronRight, Loader2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Reservation, Terrain } from '@/lib/supabase';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 // Time slots for the planning
 const timeSlots = [
@@ -17,6 +18,9 @@ const timeSlots = [
 ];
 
 const Planning = () => {
+  // Add authentication check
+  const { user, loading: authLoading } = useRequireAuth('/login');
+  
   const [selectedTerrain, setSelectedTerrain] = useState<number | null>(null);
   const [startDate, setStartDate] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 })); // Start with current week, Monday
   const [weekDays, setWeekDays] = useState<Date[]>([]);
@@ -74,13 +78,18 @@ const Planning = () => {
     }
   };
 
-  if (terrainsLoading || reservationsLoading) {
+  if (authLoading || terrainsLoading || reservationsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-sport-green" />
       </div>
     );
   }
+
+  // Make sure we're not showing empty state when we have terrains
+  const filteredTerrains = selectedTerrain && terrains 
+    ? terrains.filter(t => t.id === selectedTerrain) 
+    : terrains;
 
   return (
     <div>
@@ -124,12 +133,12 @@ const Planning = () => {
         
         <div className="text-center mb-4">
           <h2 className="text-xl font-medium">
-            Semaine du {format(startDate, 'dd MMMM', { locale: fr })} au {format(weekDays[6], 'dd MMMM yyyy', { locale: fr })}
+            Semaine du {format(startDate, 'dd MMMM', { locale: fr })} au {format(weekDays[6] || addDays(startDate, 6), 'dd MMMM yyyy', { locale: fr })}
           </h2>
         </div>
         
-        {terrains && terrains.length > 0 ? (
-          (selectedTerrain ? terrains.filter(t => t.id === selectedTerrain) : terrains).map(terrain => (
+        {terrains && filteredTerrains && filteredTerrains.length > 0 ? (
+          filteredTerrains.map(terrain => (
             <Card key={terrain.id} className="mb-8">
               <CardHeader className="bg-sport-dark text-white py-3">
                 <CardTitle className="text-lg">{terrain.nom} - {terrain.type === 'foot' ? 'Football' : terrain.type === 'tennis' ? 'Tennis' : 'Padel'}</CardTitle>
