@@ -87,6 +87,9 @@ const Stats = () => {
     );
   }
 
+  // Calculate the number of days in the timeframe
+  const daysInTimeframe = timeframe === 'week' ? 7 : 30;
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -140,7 +143,7 @@ const Stats = () => {
             <div className="text-2xl font-bold">
               {terrains && terrains.length > 0 
                 ? Math.round((reservationsByDay.reduce((sum, item) => sum + item.count, 0) / 
-                   (terrains.length * timeframe === 'week' ? 7 : 30 * 13)) * 100)
+                   (terrains.length * daysInTimeframe * 13)) * 100)
                 : 0}%
             </div>
             <p className="text-xs text-muted-foreground">
