@@ -78,14 +78,15 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
           <div>
             <Label htmlFor="terrain">Terrain</Label>
             <Select 
-              value={selectedField?.toString() || ''} 
-              onValueChange={(value) => setSelectedField(parseInt(value))}
+              value={selectedField?.toString() || "select-terrain"} 
+              onValueChange={(value) => setSelectedField(value !== "select-terrain" ? parseInt(value) : null)}
               disabled={terrainsLoading || !terrains}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionnez un terrain" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="select-terrain">Sélectionnez un terrain</SelectItem>
                 {terrains?.map((terrain) => (
                   <SelectItem key={terrain.id} value={terrain.id.toString()}>
                     {terrain.nom} - {terrain.type} ({terrain.prix} DT/h)
@@ -111,13 +112,14 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
             <div>
               <Label htmlFor="time">Heure</Label>
               <Select 
-                value={selectedTime} 
-                onValueChange={setSelectedTime}
+                value={selectedTime || "select-time"} 
+                onValueChange={(value) => setSelectedTime(value !== "select-time" ? value : "")}
               >
                 <SelectTrigger id="time">
                   <SelectValue placeholder="Heure" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="select-time">Choisir une heure</SelectItem>
                   {timeSlots.map((time) => (
                     <SelectItem key={time} value={time}>
                       {time}

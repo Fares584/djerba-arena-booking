@@ -101,14 +101,14 @@ const Planning = () => {
         <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
           <div className="w-full md:w-64">
             <Select 
-              value={selectedTerrain?.toString() || ''}
-              onValueChange={(value) => setSelectedTerrain(value ? parseInt(value) : null)}
+              value={selectedTerrain ? selectedTerrain.toString() : "all"}
+              onValueChange={(value) => setSelectedTerrain(value === "all" ? null : parseInt(value))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Tous les terrains" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous les terrains</SelectItem>
+                <SelectItem value="all">Tous les terrains</SelectItem>
                 {terrains?.map((terrain) => (
                   <SelectItem key={terrain.id} value={terrain.id.toString()}>
                     {terrain.nom}
