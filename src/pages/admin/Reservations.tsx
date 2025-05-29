@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -8,7 +7,7 @@ import { toast } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Plus, Check, X, Calendar, edit } from 'lucide-react';
+import { Loader2, Plus, Check, X, Calendar, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
 import ReservationForm from '@/components/admin/ReservationForm';
@@ -57,6 +56,28 @@ const Reservations = () => {
     setIsEditDialogOpen(false);
     setEditingReservation(null);
     refetch();
+  };
+
+  const handleDelete = async (id: number) => {
+    setIsUpdating(true);
+    
+    try {
+      const { error } = await supabase
+        .from('reservations')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      toast.success('Réservation supprimée avec succès');
+      
+      refetch();
+    } catch (error) {
+      console.error('Error deleting reservation:', error);
+      toast.error('Erreur lors de la suppression de la réservation');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const getTerrainName = (terrainId: number) => {
@@ -180,7 +201,7 @@ const Reservations = () => {
                             className="text-blue-600 border-blue-600 hover:bg-blue-50"
                             onClick={() => handleEdit(reservation)}
                           >
-                            <edit className="h-4 w-4" />
+                            <Edit className="h-4 w-4" />
                           </Button>
                           {reservation.statut === 'en_attente' && (
                             <>
@@ -204,6 +225,15 @@ const Reservations = () => {
                               </Button>
                             </>
                           )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 border-red-600 hover:bg-red-50"
+                            disabled={isUpdating}
+                            onClick={() => handleDelete(reservation.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
