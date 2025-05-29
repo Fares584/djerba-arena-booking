@@ -8,6 +8,8 @@ export function useRequireAuth(redirectTo = '/login') {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('useRequireAuth - user:', user?.email, 'loading:', loading);
+    
     if (!loading && !user) {
       console.log("User not authenticated, redirecting to", redirectTo);
       navigate(redirectTo);
