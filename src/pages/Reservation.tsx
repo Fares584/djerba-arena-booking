@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -9,7 +8,9 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useTerrains, useTerrain } from '@/hooks/useTerrains';
 import { useCreateReservation } from '@/hooks/useReservations';
+import { useReservations, isTimeSlotAvailable, getUnavailableDates } from '@/hooks/useAvailability';
 import { Terrain } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
 
 // Available time slots
 const timeSlots = [
@@ -48,6 +49,12 @@ const Reservation = () => {
   // Fetch single terrain if ID provided
   const { data: terrain } = useTerrain(fieldIdParam ? parseInt(fieldIdParam) : undefined);
   
+  // Fetch reservations for availability checking
+  const { data: reservations } = useReservations({
+    terrain_id: selectedField?.id,
+    date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined
+  });
+  
   // Mutation to create a reservation
   const createReservation = useCreateReservation();
   
@@ -55,6 +62,9 @@ const Reservation = () => {
   const filteredFields = terrains?.filter(
     field => !selectedType || field.type === selectedType
   ) || [];
+
+  // Get unavailable dates for the selected field
+  const unavailableDates = selectedField ? getUnavailableDates(reservations, selectedField.id) : [];
 
   // Initialize from URL parameters and fetched data
   useEffect(() => {
@@ -66,6 +76,11 @@ const Reservation = () => {
     }
   }, [terrain, typeParam]);
 
+  // Reset time when date or field changes
+  useEffect(() => {
+    setSelectedTime('');
+  }, [selectedDate, selectedField]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -75,8 +90,20 @@ const Reservation = () => {
       return;
     }
     
-    // Format date as ISO string (YYYY-MM-DD)
+    // Check availability before submitting
     const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+    const isAvailable = isTimeSlotAvailable(
+      reservations,
+      selectedField.id,
+      formattedDate,
+      selectedTime,
+      parseFloat(selectedDuration)
+    );
+    
+    if (!isAvailable) {
+      toast.error('Ce créneau n\'est plus disponible. Veuillez choisir un autre horaire.');
+      return;
+    }
     
     // Create reservation in Supabase
     createReservation.mutate({
@@ -116,7 +143,7 @@ const Reservation = () => {
         <div className="container-custom">
           <h1 className="text-4xl font-bold mb-4">Réservation de terrain</h1>
           <p className="text-xl max-w-2xl">
-            Remplissez le formulaire ci-dessous pour réserver votre terrain. Tous les champs marqués d'un astérisque (*) sont obligatoires.
+            Remplissez le formulaire ci-dessous pour réserver votre terrain. Les créneaux indisponibles sont affichés en rouge.
           </p>
         </div>
       </div>
@@ -141,7 +168,7 @@ const Reservation = () => {
                       value={selectedType}
                       onChange={(e) => {
                         setSelectedType(e.target.value as 'foot' | 'tennis' | 'padel' | '');
-                        setSelectedField(null); // Reset selected field when type changes
+                        setSelectedField(null);
                       }}
                       required
                     >
@@ -191,14 +218,35 @@ const Reservation = () => {
                         mode="single"
                         selected={selectedDate}
                         onSelect={setSelectedDate}
-                        disabled={(date) => date < new Date(Date.now() - 86400000)} // Disable past dates
+                        disabled={(date) => {
+                          const isPast = date < new Date(Date.now() - 86400000);
+                          const isUnavailable = selectedField ? 
+                            unavailableDates.includes(format(date, 'yyyy-MM-dd')) : false;
+                          return isPast || isUnavailable;
+                        }}
                         locale={fr}
                         className="pointer-events-auto"
+                        modifiers={{
+                          unavailable: selectedField ? 
+                            unavailableDates.map(dateStr => new Date(dateStr)) : []
+                        }}
+                        modifiersStyles={{
+                          unavailable: { 
+                            color: '#dc2626',
+                            backgroundColor: '#fef2f2',
+                            textDecoration: 'line-through'
+                          }
+                        }}
                       />
                     </div>
                     <div className="mt-2 text-sm text-gray-600">
                       Date sélectionnée: {selectedDate ? format(selectedDate, 'EEEE d MMMM yyyy', { locale: fr }) : 'Aucune date sélectionnée'}
                     </div>
+                    {selectedField && unavailableDates.length > 0 && (
+                      <div className="mt-2 text-sm text-red-600">
+                        <span className="font-medium">Dates complets:</span> Les dates barrées en rouge sont entièrement réservées
+                      </div>
+                    )}
                   </div>
                   
                   {/* Time Selection */}
@@ -206,19 +254,41 @@ const Reservation = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Heure de début *
                     </label>
-                    <select 
-                      className="w-full border rounded-md p-3"
-                      value={selectedTime}
-                      onChange={(e) => setSelectedTime(e.target.value)}
-                      required
-                    >
-                      <option value="">Sélectionnez une heure</option>
-                      {timeSlots.map((time) => (
-                        <option key={time} value={time}>
-                          {time}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="grid grid-cols-3 gap-2">
+                      {timeSlots.map((time) => {
+                        const isAvailable = selectedField && selectedDate ? 
+                          isTimeSlotAvailable(
+                            reservations,
+                            selectedField.id,
+                            format(selectedDate, 'yyyy-MM-dd'),
+                            time,
+                            parseFloat(selectedDuration)
+                          ) : true;
+                        
+                        return (
+                          <button
+                            key={time}
+                            type="button"
+                            className={cn(
+                              "p-2 text-sm border rounded-md transition-colors",
+                              selectedTime === time 
+                                ? "bg-sport-green text-white border-sport-green"
+                                : isAvailable 
+                                  ? "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                                  : "bg-red-100 text-red-600 border-red-300 cursor-not-allowed line-through"
+                            )}
+                            onClick={() => isAvailable && setSelectedTime(time)}
+                            disabled={!isAvailable}
+                          >
+                            {time}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-2 text-sm text-gray-600">
+                      <span className="text-red-600">■</span> Créneaux indisponibles
+                      <span className="ml-4 text-green-600">■</span> Créneaux disponibles
+                    </div>
                   </div>
                   
                   {/* Duration Selection */}
