@@ -8,15 +8,18 @@ import { toast } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Plus, Check, X, Calendar } from 'lucide-react';
+import { Loader2, Plus, Check, X, Calendar, edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
 import ReservationForm from '@/components/admin/ReservationForm';
+import EditReservationForm from '@/components/admin/EditReservationForm';
 
 const Reservations = () => {
   const { data: reservations, isLoading, refetch } = useReservations();
   const { data: terrains } = useTerrains();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   
   const handleStatusChange = async (id: number, newStatus: 'confirmee' | 'annulee') => {
@@ -43,6 +46,17 @@ const Reservations = () => {
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleEdit = (reservation: Reservation) => {
+    setEditingReservation(reservation);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    setIsEditDialogOpen(false);
+    setEditingReservation(null);
+    refetch();
   };
 
   const getTerrainName = (terrainId: number) => {
@@ -160,6 +174,14 @@ const Reservations = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                            onClick={() => handleEdit(reservation)}
+                          >
+                            <edit className="h-4 w-4" />
+                          </Button>
                           {reservation.statut === 'en_attente' && (
                             <>
                               <Button
@@ -197,6 +219,22 @@ const Reservations = () => {
           </div>
         )}
       </div>
+      
+      {/* Edit Reservation Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Modifier la Réservation #{editingReservation?.id}</DialogTitle>
+          </DialogHeader>
+          {editingReservation && (
+            <EditReservationForm 
+              reservation={editingReservation}
+              onSuccess={handleEditSuccess}
+              onCancel={() => setIsEditDialogOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
