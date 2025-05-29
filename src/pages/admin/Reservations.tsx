@@ -252,7 +252,7 @@ const Reservations = () => {
       
       {/* Edit Reservation Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-5xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Modifier la Réservation #{editingReservation?.id}</DialogTitle>
           </DialogHeader>

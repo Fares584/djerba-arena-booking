@@ -96,82 +96,26 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette réservation ? Cette action est irréversible.')) {
-      return;
-    }
-    
-    setIsUpdating(true);
-    
-    try {
-      const { error } = await supabase
-        .from('reservations')
-        .delete()
-        .eq('id', reservation.id);
-      
-      if (error) throw error;
-      
-      toast.success('Réservation supprimée avec succès');
-      onSuccess();
-    } catch (error) {
-      console.error('Error deleting reservation:', error);
-      toast.error('Erreur lors de la suppression de la réservation');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 py-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left Column - Field Selection and Date/Time */}
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="terrain">Terrain</Label>
-            <Select 
-              value={selectedField?.toString()} 
-              onValueChange={(value) => setSelectedField(parseInt(value))}
-              disabled={terrainsLoading || !terrains}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionnez un terrain" />
-              </SelectTrigger>
-              <SelectContent>
-                {terrains?.map((terrain) => (
-                  <SelectItem key={terrain.id} value={terrain.id.toString()}>
-                    {terrain.nom} - {terrain.type} ({terrain.prix} DT/h)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div>
-            <Label>Date</Label>
-            <div className="border rounded-md p-1 mt-1">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
-                locale={fr}
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
+    <div className="max-h-[80vh] overflow-y-auto">
+      <form onSubmit={handleSubmit} className="space-y-4 p-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Left Column - Field Selection and Date/Time */}
+          <div className="space-y-3">
             <div>
-              <Label htmlFor="time">Heure</Label>
+              <Label htmlFor="terrain" className="text-sm">Terrain</Label>
               <Select 
-                value={selectedTime} 
-                onValueChange={setSelectedTime}
+                value={selectedField?.toString()} 
+                onValueChange={(value) => setSelectedField(parseInt(value))}
+                disabled={terrainsLoading || !terrains}
               >
-                <SelectTrigger id="time">
-                  <SelectValue placeholder="Heure" />
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Sélectionnez un terrain" />
                 </SelectTrigger>
                 <SelectContent>
-                  {timeSlots.map((time) => (
-                    <SelectItem key={time} value={time}>
-                      {time}
+                  {terrains?.map((terrain) => (
+                    <SelectItem key={terrain.id} value={terrain.id.toString()}>
+                      {terrain.nom} - {terrain.type} ({terrain.prix} DT/h)
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -179,16 +123,72 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
             </div>
             
             <div>
-              <Label htmlFor="duration">Durée</Label>
+              <Label className="text-sm">Date</Label>
+              <div className="border rounded-md p-1 mt-1">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  locale={fr}
+                  className="scale-90"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Right Column - Details */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="time" className="text-sm">Heure</Label>
+                <Select 
+                  value={selectedTime} 
+                  onValueChange={setSelectedTime}
+                >
+                  <SelectTrigger id="time" className="h-9">
+                    <SelectValue placeholder="Heure" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeSlots.map((time) => (
+                      <SelectItem key={time} value={time}>
+                        {time}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="duration" className="text-sm">Durée</Label>
+                <Select 
+                  value={selectedDuration} 
+                  onValueChange={setSelectedDuration}
+                >
+                  <SelectTrigger id="duration" className="h-9">
+                    <SelectValue placeholder="Durée" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {durationOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="status" className="text-sm">Statut</Label>
               <Select 
-                value={selectedDuration} 
-                onValueChange={setSelectedDuration}
+                value={selectedStatus} 
+                onValueChange={setSelectedStatus}
               >
-                <SelectTrigger id="duration">
-                  <SelectValue placeholder="Durée" />
+                <SelectTrigger id="status" className="h-9">
+                  <SelectValue placeholder="Statut" />
                 </SelectTrigger>
                 <SelectContent>
-                  {durationOptions.map((option) => (
+                  {statusOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
@@ -196,101 +196,73 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          
-          <div>
-            <Label htmlFor="status">Statut</Label>
-            <Select 
-              value={selectedStatus} 
-              onValueChange={setSelectedStatus}
-            >
-              <SelectTrigger id="status">
-                <SelectValue placeholder="Statut" />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        {/* Right Column - Client Information */}
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="clientName">Nom du client</Label>
-            <Input
-              id="clientName"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="clientEmail">Email</Label>
-            <Input
-              id="clientEmail"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="clientPhone">Téléphone</Label>
-            <Input
-              id="clientPhone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="message">Remarques</Label>
-            <Textarea
-              id="message"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="h-24"
-            />
-          </div>
-          
-          {selectedField && selectedDuration && terrains && (
-            <div className="p-4 bg-gray-50 rounded-md border">
-              <h3 className="font-medium mb-2">Prix</h3>
-              <p className="text-lg font-bold text-sport-green">
-                {(terrains.find(t => t.id === selectedField)?.prix || 0) * parseFloat(selectedDuration)} DT
-              </p>
+            
+            <div>
+              <Label htmlFor="clientName" className="text-sm">Nom du client</Label>
+              <Input
+                id="clientName"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="h-9"
+              />
             </div>
-          )}
+            
+            <div>
+              <Label htmlFor="clientEmail" className="text-sm">Email</Label>
+              <Input
+                id="clientEmail"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="h-9"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="clientPhone" className="text-sm">Téléphone</Label>
+              <Input
+                id="clientPhone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                className="h-9"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="message" className="text-sm">Remarques</Label>
+              <Textarea
+                id="message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="h-16 text-sm"
+              />
+            </div>
+          </div>
         </div>
-      </div>
-      
-      <div className="flex justify-between pt-4">
-        <Button 
-          type="button" 
-          variant="destructive"
-          onClick={handleDelete}
-          disabled={isUpdating}
-        >
-          {isUpdating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Suppression...
-            </>
-          ) : 'Supprimer'}
-        </Button>
         
-        <div className="flex space-x-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
+        {/* Price Display */}
+        {selectedField && selectedDuration && terrains && (
+          <div className="p-3 bg-gray-50 rounded-md border">
+            <h3 className="font-medium mb-1 text-sm">Prix Total</h3>
+            <p className="text-lg font-bold text-sport-green">
+              {(terrains.find(t => t.id === selectedField)?.prix || 0) * parseFloat(selectedDuration)} DT
+            </p>
+          </div>
+        )}
+        
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-2 pt-4 border-t">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onCancel}
+            disabled={isUpdating}
+          >
             Annuler
           </Button>
           <Button 
@@ -301,13 +273,13 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
             {isUpdating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                En cours...
+                Modification...
               </>
-            ) : 'Modifier'}
+            ) : 'Valider la modification'}
           </Button>
         </div>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 };
 
