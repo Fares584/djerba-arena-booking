@@ -1,108 +1,118 @@
-
-import { useRequireAuth } from '@/hooks/useRequireAuth';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { LogOut, LayoutDashboard, CalendarCheck, Users, Settings } from 'lucide-react';
+import { BarChart3, Calendar, Users, CreditCard, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/sonner';
+import { Separator } from "@/components/ui/separator"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-const AdminLayout = () => {
-  const { loading } = useRequireAuth();
-  const { signOut } = useAuth();
+const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
-  
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      toast.success('Déconnexion réussie');
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Erreur lors de la déconnexion');
-    }
-  };
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-sport-gray">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sport-green"></div>
-      </div>
-    );
+  const location = useLocation();
+  const { user, requireAuth, logout } = useAuth();
+
+  useEffect(() => {
+    requireAuth();
+  }, [requireAuth]);
+
+  if (!user) {
+    return null; // Or a loading spinner, redirect, etc.
   }
-  
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
+  const menuItems = [
+    { 
+      href: '/admin', 
+      label: 'Tableau de bord', 
+      icon: <BarChart3 className="h-4 w-4" /> 
+    },
+    { 
+      href: '/admin/reservations', 
+      label: 'Réservations', 
+      icon: <Calendar className="h-4 w-4" /> 
+    },
+    { 
+      href: '/admin/terrains', 
+      label: 'Terrains', 
+      icon: <Users className="h-4 w-4" /> 
+    },
+    { 
+      href: '/admin/abonnements', 
+      label: 'Abonnements', 
+      icon: <CreditCard className="h-4 w-4" /> 
+    },
+    { 
+      href: '/admin/planning', 
+      label: 'Planning', 
+      icon: <Calendar className="h-4 w-4" /> 
+    },
+    { 
+      href: '/admin/stats', 
+      label: 'Statistiques', 
+      icon: <BarChart3 className="h-4 w-4" /> 
+    },
+  ];
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      
-      <div className="flex-grow flex flex-col md:flex-row bg-sport-gray">
-        {/* Sidebar */}
-        <div className="md:w-64 bg-white shadow-md p-4">
-          <div className="space-y-1 mb-8">
-            <h1 className="text-xl font-bold text-sport-green px-4 py-2">Dashboard Admin</h1>
-          </div>
-          
-          <nav className="space-y-2">
-            <NavLink
-              to="/admin"
-              end
-              className={({ isActive }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-sport-green text-white' : 'hover:bg-sport-gray text-gray-700'}`}
-            >
-              <LayoutDashboard className="mr-2 h-5 w-5" />
-              <span>Tableau de bord</span>
-            </NavLink>
-            
-            <NavLink
-              to="/admin/reservations"
-              className={({ isActive }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-sport-green text-white' : 'hover:bg-sport-gray text-gray-700'}`}
-            >
-              <CalendarCheck className="mr-2 h-5 w-5" />
-              <span>Réservations</span>
-            </NavLink>
-            
-            <NavLink
-              to="/admin/terrains"
-              className={({ isActive }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-sport-green text-white' : 'hover:bg-sport-gray text-gray-700'}`}
-            >
-              <Users className="mr-2 h-5 w-5" />
-              <span>Terrains</span>
-            </NavLink>
-            
-            <NavLink
-              to="/admin/planning"
-              className={({ isActive }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-sport-green text-white' : 'hover:bg-sport-gray text-gray-700'}`}
-            >
-              <CalendarCheck className="mr-2 h-5 w-5" />
-              <span>Planning</span>
-            </NavLink>
-            
-            <NavLink
-              to="/admin/stats"
-              className={({ isActive }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-sport-green text-white' : 'hover:bg-sport-gray text-gray-700'}`}
-            >
-              <Settings className="mr-2 h-5 w-5" />
-              <span>Statistiques</span>
-            </NavLink>
-            
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-50 px-4 py-2 mt-8" 
-              onClick={handleLogout}
-            >
-              <LogOut className="mr-2 h-5 w-5" />
-              <span>Déconnexion</span>
-            </Button>
-          </nav>
+    <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
+      <div className="w-64 flex-shrink-0 bg-white border-r border-gray-200 py-4">
+        <div className="px-6 mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Admin Panel</h1>
         </div>
-        
-        {/* Main content */}
-        <div className="flex-grow p-4 md:p-8">
-          <Outlet />
+        <nav className="space-y-1">
+          {menuItems.map((item) => (
+            <Button
+              key={item.href}
+              variant="ghost"
+              className={`w-full justify-start font-normal ${location.pathname === item.href ? 'bg-gray-100 hover:bg-gray-100' : ''}`}
+              onClick={() => navigate(item.href)}
+            >
+              {item.icon}
+              <span className="ml-2">{item.label}</span>
+            </Button>
+          ))}
+        </nav>
+        <Separator className="my-4" />
+        <div className="sticky bottom-0 px-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+                <AvatarFallback>CN</AvatarFallback>
+              </Avatar>
+              <span className="text-sm font-medium">{user.email}</span>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Déconnexion
+            </Button>
+          </div>
         </div>
       </div>
-      
-      <Footer />
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 p-4">
+          <div className="container mx-auto">
+            <h2 className="text-xl font-semibold text-gray-700">
+              {menuItems.find(item => item.href === location.pathname)?.label || 'Tableau de bord'}
+            </h2>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
+          <div className="container mx-auto py-6 px-4">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
