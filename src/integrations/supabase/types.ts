@@ -9,95 +9,8 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      abonnement_types: {
-        Row: {
-          actif: boolean | null
-          created_at: string | null
-          description: string | null
-          duree_mois: number
-          id: number
-          nom: string
-          prix: number
-          reduction_pourcentage: number | null
-          reservations_incluses: number | null
-        }
-        Insert: {
-          actif?: boolean | null
-          created_at?: string | null
-          description?: string | null
-          duree_mois: number
-          id?: number
-          nom: string
-          prix: number
-          reduction_pourcentage?: number | null
-          reservations_incluses?: number | null
-        }
-        Update: {
-          actif?: boolean | null
-          created_at?: string | null
-          description?: string | null
-          duree_mois?: number
-          id?: number
-          nom?: string
-          prix?: number
-          reduction_pourcentage?: number | null
-          reservations_incluses?: number | null
-        }
-        Relationships: []
-      }
-      abonnements: {
-        Row: {
-          abonnement_type_id: number
-          client_email: string
-          client_nom: string
-          client_tel: string
-          created_at: string | null
-          date_debut: string
-          date_fin: string
-          id: number
-          reservations_utilisees: number | null
-          statut: string
-          updated_at: string | null
-        }
-        Insert: {
-          abonnement_type_id: number
-          client_email: string
-          client_nom: string
-          client_tel: string
-          created_at?: string | null
-          date_debut: string
-          date_fin: string
-          id?: number
-          reservations_utilisees?: number | null
-          statut: string
-          updated_at?: string | null
-        }
-        Update: {
-          abonnement_type_id?: number
-          client_email?: string
-          client_nom?: string
-          client_tel?: string
-          created_at?: string | null
-          date_debut?: string
-          date_fin?: string
-          id?: number
-          reservations_utilisees?: number | null
-          statut?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "abonnements_abonnement_type_id_fkey"
-            columns: ["abonnement_type_id"]
-            isOneToOne: false
-            referencedRelation: "abonnement_types"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       reservations: {
         Row: {
-          abonnement_id: number | null
           created_at: string | null
           date: string
           duree: number
@@ -111,7 +24,6 @@ export type Database = {
           terrain_id: number
         }
         Insert: {
-          abonnement_id?: number | null
           created_at?: string | null
           date: string
           duree: number
@@ -125,7 +37,6 @@ export type Database = {
           terrain_id: number
         }
         Update: {
-          abonnement_id?: number | null
           created_at?: string | null
           date?: string
           duree?: number
@@ -139,13 +50,6 @@ export type Database = {
           terrain_id?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "reservations_abonnement_id_fkey"
-            columns: ["abonnement_id"]
-            isOneToOne: false
-            referencedRelation: "abonnements"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "reservations_terrain_id_fkey"
             columns: ["terrain_id"]
