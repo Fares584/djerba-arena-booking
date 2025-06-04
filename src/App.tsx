@@ -6,7 +6,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from "@/components/ui/tooltip"
 
 // Public Pages
-import Home from '@/pages/Home';
+import Index from '@/pages/Index';
 import Tarifs from '@/pages/Tarifs';
 import Reservation from '@/pages/Reservation';
 import Contact from '@/pages/Contact';
@@ -31,7 +31,8 @@ function App() {
         <BrowserRouter>
           <Routes>
             {/* Public Routes */}
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Index />} />
+            <Route path="/tarifs" element={<Tarifs />} />
             <Route path="/reservation" element={<Reservation />} />
             <Route path="/contact" element={<Contact />} />
             
