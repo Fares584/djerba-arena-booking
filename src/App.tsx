@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -6,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 
 // Public Pages
 import Home from '@/pages/Home';
+import Tarifs from '@/pages/Tarifs';
 import Reservation from '@/pages/Reservation';
 import Contact from '@/pages/Contact';
 import NotFound from '@/pages/NotFound';
