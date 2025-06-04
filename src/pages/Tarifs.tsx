@@ -27,7 +27,7 @@ const Tarifs = () => {
           <div className="mb-12">
             <div className="flex items-center mb-8">
               <Trophy className="h-8 w-8 text-sport-green mr-3" />
-              <h2 className="text-3xl font-bold">🏓 Tennis</h2>
+              <h2 className="text-3xl font-bold">🎾 Tennis</h2>
             </div>
             
             <p className="text-gray-600 mb-8">
@@ -49,7 +49,7 @@ const Tarifs = () => {
                   </div>
                 </div>
                 
-                <h4 className="font-bold mt-6 mb-3">Formules d'abonnement (valables 2 mois)</h4>
+                <h4 className="font-bold mt-6 mb-3">Formules d'abonnement (valables pour 2 joueurs)</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>10 heures</span>
@@ -63,6 +63,12 @@ const Tarifs = () => {
                     <span>30 heures</span>
                     <span className="font-bold text-sport-green">480 DT</span>
                   </div>
+                </div>
+                
+                <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                  <p className="text-sm text-green-800">
+                    <strong>✅ Raquettes incluses dans l'abonnement</strong>
+                  </p>
                 </div>
               </div>
 
@@ -80,7 +86,7 @@ const Tarifs = () => {
                   </div>
                 </div>
                 
-                <h4 className="font-bold mt-6 mb-3">Formules d'abonnement (valables 2 mois)</h4>
+                <h4 className="font-bold mt-6 mb-3">Formules d'abonnement (valables pour 2 joueurs)</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>10 heures</span>
@@ -95,13 +101,13 @@ const Tarifs = () => {
                     <span className="font-bold text-sport-green">330 DT</span>
                   </div>
                 </div>
+                
+                <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                  <p className="text-sm text-green-800">
+                    <strong>✅ Raquettes incluses dans l'abonnement</strong>
+                  </p>
+                </div>
               </div>
-            </div>
-
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>Location raquette de tennis :</strong> 3 DT
-              </p>
             </div>
           </div>
 
@@ -109,11 +115,11 @@ const Tarifs = () => {
           <div className="mb-12">
             <div className="flex items-center mb-8">
               <Trophy className="h-8 w-8 text-sport-green mr-3" />
-              <h2 className="text-3xl font-bold">🎾 Padel</h2>
+              <h2 className="text-3xl font-bold">🏓 Padel</h2>
             </div>
             
             <p className="text-gray-600 mb-8">
-              Planet Sports Djerba dispose de deux courts de padel modernes.
+              Planet Sports Djerba met à disposition deux terrains de padel accessibles tous les jours.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -134,7 +140,7 @@ const Tarifs = () => {
 
               {/* Abonnements */}
               <div className="bg-sport-gray p-6 rounded-lg">
-                <h3 className="text-xl font-bold mb-4 text-sport-green">Packs d'abonnement</h3>
+                <h3 className="text-xl font-bold mb-4 text-sport-green">Abonnements avantageux</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>10 heures</span>
@@ -149,13 +155,13 @@ const Tarifs = () => {
                     <span className="font-bold text-sport-green">1400 DT</span>
                   </div>
                 </div>
+                
+                <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                  <p className="text-sm text-green-800">
+                    <strong>✅ Raquettes incluses dans l'abonnement</strong>
+                  </p>
+                </div>
               </div>
-            </div>
-
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>Location raquette de padel :</strong> 5 DT
-              </p>
             </div>
           </div>
 
@@ -178,10 +184,11 @@ const Tarifs = () => {
               <div className="flex items-start">
                 <Calendar className="h-6 w-6 mr-3 mt-1 flex-shrink-0" />
                 <div>
-                  <h3 className="font-bold mb-2">Validité des abonnements</h3>
+                  <h3 className="font-bold mb-2">Abonnements</h3>
                   <p className="text-sm opacity-90">
-                    Tennis : 2 mois<br />
-                    Padel : 1 mois
+                    Tennis : valables pour 2 joueurs<br />
+                    Padel : valables pour 4 joueurs<br />
+                    Raquettes incluses
                   </p>
                 </div>
               </div>
