@@ -1,63 +1,53 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/sonner';
+import { TooltipProvider } from "@/components/ui/tooltip"
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import Fields from "./pages/Fields";
-import Reservation from "./pages/Reservation";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import Login from "./pages/Login";
-import NotFound from "./pages/NotFound";
+// Public Pages
+import Home from '@/pages/Home';
+import Reservation from '@/pages/Reservation';
+import Contact from '@/pages/Contact';
+import NotFound from '@/pages/NotFound';
 
-// Admin pages
-import AdminLayout from "./pages/admin/AdminLayout";
-import Dashboard from "./pages/admin/Dashboard";
-import Reservations from "./pages/admin/Reservations";
-import Terrains from "./pages/admin/Terrains";
-import Planning from "./pages/admin/Planning";
-import Stats from "./pages/admin/Stats";
+// Admin Pages
+import AdminLayout from '@/pages/admin/AdminLayout';
+import Dashboard from '@/pages/admin/Dashboard';
+import Reservations from '@/pages/admin/Reservations';
+import Terrains from '@/pages/admin/Terrains';
+import Planning from '@/pages/admin/Planning';
+import Stats from '@/pages/admin/Stats';
+import Abonnements from '@/pages/admin/Abonnements';
 
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1
-    }
-  }
-});
+const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/fields" element={<Fields />} />
-          <Route path="/reservation" element={<Reservation />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/login" element={<Login />} />
-          
-          {/* Admin routes */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="reservations" element={<Reservations />} />
-            <Route path="terrains" element={<Terrains />} />
-            <Route path="planning" element={<Planning />} />
-            <Route path="stats" element={<Stats />} />
-          </Route>
-          
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Home />} />
+            <Route path="/reservation" element={<Reservation />} />
+            <Route path="/contact" element={<Contact />} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminLayout><Dashboard /></AdminLayout>} />
+            <Route path="/admin/reservations" element={<AdminLayout><Reservations /></AdminLayout>} />
+            <Route path="/admin/terrains" element={<AdminLayout><Terrains /></AdminLayout>} />
+            <Route path="/admin/abonnements" element={<AdminLayout><Abonnements /></AdminLayout>} />
+            <Route path="/admin/planning" element={<AdminLayout><Planning /></AdminLayout>} />
+            <Route path="/admin/stats" element={<AdminLayout><Stats /></AdminLayout>} />
+            
+            {/* Not Found Route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
