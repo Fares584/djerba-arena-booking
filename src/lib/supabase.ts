@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Define types for our database
@@ -8,6 +7,7 @@ export type Terrain = {
   type: 'foot' | 'tennis' | 'padel';
   capacite: number;
   prix: number;
+  prix_nuit?: number; // Add night pricing
   image_url: string;
   actif: boolean;
 };
@@ -57,6 +57,20 @@ export type AdminUser = {
   id: string;
   email: string;
   // Note: password_hash is handled by Supabase Auth and not directly accessible
+};
+
+// Utility function to determine if a time slot is night time (19h and after)
+export const isNightTime = (time: string): boolean => {
+  const hour = parseInt(time.split(':')[0]);
+  return hour >= 19;
+};
+
+// Function to calculate the price based on terrain and time
+export const calculatePrice = (terrain: Terrain, time: string): number => {
+  if (isNightTime(time) && terrain.prix_nuit) {
+    return terrain.prix_nuit;
+  }
+  return terrain.prix;
 };
 
 // Re-export the supabase client for backward compatibility

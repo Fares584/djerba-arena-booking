@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -9,7 +10,7 @@ import { fr } from 'date-fns/locale';
 import { useTerrains, useTerrain } from '@/hooks/useTerrains';
 import { useCreateReservation } from '@/hooks/useReservations';
 import { useReservations, isTimeSlotAvailable, getUnavailableDates } from '@/hooks/useAvailability';
-import { Terrain } from '@/lib/supabase';
+import { Terrain, isNightTime, calculatePrice } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 
 // Available time slots
@@ -65,6 +66,25 @@ const Reservation = () => {
 
   // Get unavailable dates for the selected field
   const unavailableDates = selectedField ? getUnavailableDates(reservations, selectedField.id) : [];
+
+  // Calculate total price based on selected time and duration
+  const calculateTotalPrice = (): number => {
+    if (!selectedField || !selectedTime || !selectedDuration) return 0;
+    
+    const duration = parseFloat(selectedDuration);
+    const startHour = parseInt(selectedTime.split(':')[0]);
+    let totalPrice = 0;
+    
+    // Calculate price for each hour based on day/night rates
+    for (let i = 0; i < duration; i++) {
+      const currentHour = startHour + i;
+      const timeString = `${currentHour.toString().padStart(2, '0')}:00`;
+      const hourPrice = calculatePrice(selectedField, timeString);
+      totalPrice += hourPrice;
+    }
+    
+    return totalPrice;
+  };
 
   // Initialize from URL parameters and fetched data
   useEffect(() => {
@@ -202,10 +222,15 @@ const Reservation = () => {
                       <option value="">Sélectionnez un terrain</option>
                       {filteredFields.map((field) => (
                         <option key={field.id} value={field.id}>
-                          {field.nom} - {field.prix} DT/h
+                          {field.nom} - Jour: {field.prix} DT/h{field.prix_nuit ? ` - Nuit: ${field.prix_nuit} DT/h` : ''}
                         </option>
                       ))}
                     </select>
+                    {selectedField && selectedField.prix_nuit && (
+                      <div className="mt-2 text-sm text-gray-600">
+                        <span className="text-blue-600">💡 Tarif nuit à partir de 19h00</span>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Date Selection */}
@@ -265,12 +290,15 @@ const Reservation = () => {
                             parseFloat(selectedDuration)
                           ) : true;
                         
+                        const isNight = isNightTime(time);
+                        const priceForThisHour = selectedField ? calculatePrice(selectedField, time) : 0;
+                        
                         return (
                           <button
                             key={time}
                             type="button"
                             className={cn(
-                              "p-2 text-sm border rounded-md transition-colors",
+                              "p-2 text-sm border rounded-md transition-colors relative",
                               selectedTime === time 
                                 ? "bg-sport-green text-white border-sport-green"
                                 : isAvailable 
@@ -279,8 +307,12 @@ const Reservation = () => {
                             )}
                             onClick={() => isAvailable && setSelectedTime(time)}
                             disabled={!isAvailable}
+                            title={selectedField ? `${time} - ${priceForThisHour} DT/h ${isNight ? '(Tarif nuit)' : '(Tarif jour)'}` : time}
                           >
-                            {time}
+                            <div>{time}</div>
+                            {selectedField && isNight && (
+                              <div className="text-xs opacity-75">🌙</div>
+                            )}
                           </button>
                         );
                       })}
@@ -288,6 +320,7 @@ const Reservation = () => {
                     <div className="mt-2 text-sm text-gray-600">
                       <span className="text-red-600">■</span> Créneaux indisponibles
                       <span className="ml-4 text-green-600">■</span> Créneaux disponibles
+                      <span className="ml-4">🌙</span> Tarif nuit (19h et après)
                     </div>
                   </div>
                   
@@ -374,7 +407,7 @@ const Reservation = () => {
                   </div>
                   
                   {/* Price Calculation */}
-                  {selectedField && selectedDuration && (
+                  {selectedField && selectedDuration && selectedTime && (
                     <div className="mb-6 p-4 bg-sport-green/10 rounded-md">
                       <h3 className="font-bold text-lg mb-2">Résumé de la réservation</h3>
                       <div className="flex justify-between mb-2">
@@ -382,8 +415,14 @@ const Reservation = () => {
                         <span className="font-medium">{selectedField.nom}</span>
                       </div>
                       <div className="flex justify-between mb-2">
-                        <span>Prix par heure:</span>
-                        <span className="font-medium">{selectedField.prix} DT</span>
+                        <span>Heure:</span>
+                        <span className="font-medium">{selectedTime} {isNightTime(selectedTime) ? '🌙' : '☀️'}</span>
+                      </div>
+                      <div className="flex justify-between mb-2">
+                        <span>Tarif:</span>
+                        <span className="font-medium">
+                          {isNightTime(selectedTime) ? 'Nuit' : 'Jour'} - {calculatePrice(selectedField, selectedTime)} DT/h
+                        </span>
                       </div>
                       <div className="flex justify-between mb-2">
                         <span>Durée:</span>
@@ -392,9 +431,14 @@ const Reservation = () => {
                       <div className="border-t border-gray-300 my-2 pt-2 flex justify-between">
                         <span className="font-bold">Total:</span>
                         <span className="font-bold text-sport-green">
-                          {selectedField.prix * parseFloat(selectedDuration)} DT
+                          {calculateTotalPrice()} DT
                         </span>
                       </div>
+                      {parseFloat(selectedDuration) > 1 && (
+                        <div className="text-xs text-gray-600 mt-2">
+                          * Prix calculé par heure selon le tarif jour/nuit
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

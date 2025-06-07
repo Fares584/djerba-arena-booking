@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Reservation } from '@/lib/supabase';
+import { Reservation, isNightTime, calculatePrice } from '@/lib/supabase';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
@@ -54,6 +54,28 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
   const [isUpdating, setIsUpdating] = useState(false);
   
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
+
+  // Calculate total price based on selected time and duration
+  const calculateTotalPrice = (): number => {
+    if (!selectedField || !selectedTime || !selectedDuration || !terrains) return 0;
+    
+    const terrain = terrains.find(t => t.id === selectedField);
+    if (!terrain) return 0;
+    
+    const duration = parseFloat(selectedDuration);
+    const startHour = parseInt(selectedTime.split(':')[0]);
+    let totalPrice = 0;
+    
+    // Calculate price for each hour based on day/night rates
+    for (let i = 0; i < duration; i++) {
+      const currentHour = startHour + i;
+      const timeString = `${currentHour.toString().padStart(2, '0')}:00`;
+      const hourPrice = calculatePrice(terrain, timeString);
+      totalPrice += hourPrice;
+    }
+    
+    return totalPrice;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,7 +137,7 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
                 <SelectContent>
                   {terrains?.map((terrain) => (
                     <SelectItem key={terrain.id} value={terrain.id.toString()}>
-                      {terrain.nom} - {terrain.type} ({terrain.prix} DT/h)
+                      {terrain.nom} - {terrain.type} (Jour: {terrain.prix} DT/h{terrain.prix_nuit ? `, Nuit: ${terrain.prix_nuit} DT/h` : ''})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -151,7 +173,7 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
                   <SelectContent>
                     {timeSlots.map((time) => (
                       <SelectItem key={time} value={time}>
-                        {time}
+                        {time} {isNightTime(time) ? '🌙' : '☀️'}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -246,11 +268,14 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
         </div>
         
         {/* Price Display */}
-        {selectedField && selectedDuration && terrains && (
+        {selectedField && selectedDuration && selectedTime && terrains && (
           <div className="p-3 bg-gray-50 rounded-md border">
             <h3 className="font-medium mb-1 text-sm">Prix Total</h3>
+            <div className="text-sm text-gray-600 mb-1">
+              {isNightTime(selectedTime) ? 'Tarif nuit' : 'Tarif jour'} - {selectedDuration}h
+            </div>
             <p className="text-lg font-bold text-sport-green">
-              {(terrains.find(t => t.id === selectedField)?.prix || 0) * parseFloat(selectedDuration)} DT
+              {calculateTotalPrice()} DT
             </p>
           </div>
         )}
