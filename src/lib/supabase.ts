@@ -24,6 +24,33 @@ export type Reservation = {
   statut: 'en_attente' | 'confirmee' | 'annulee';
   remarque?: string;
   created_at?: string;
+  abonnement_id?: number;
+};
+
+export type AbonnementType = {
+  id: number;
+  nom: string;
+  description?: string;
+  duree_mois: number;
+  prix: number;
+  reduction_pourcentage?: number;
+  reservations_incluses?: number;
+  actif: boolean;
+  created_at?: string;
+};
+
+export type Abonnement = {
+  id: number;
+  abonnement_type_id: number;
+  client_nom: string;
+  client_email: string;
+  client_tel: string;
+  date_debut: string;
+  date_fin: string;
+  statut: 'actif' | 'expire' | 'annule';
+  reservations_utilisees?: number;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type AdminUser = {

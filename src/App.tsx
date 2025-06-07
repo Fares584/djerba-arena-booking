@@ -19,6 +19,7 @@ import Reservations from "./pages/admin/Reservations";
 import Terrains from "./pages/admin/Terrains";
 import Planning from "./pages/admin/Planning";
 import Stats from "./pages/admin/Stats";
+import Abonnements from "./pages/admin/Abonnements";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="terrains" element={<Terrains />} />
             <Route path="planning" element={<Planning />} />
             <Route path="stats" element={<Stats />} />
+            <Route path="abonnements" element={<Abonnements />} />
           </Route>
           
           <Route path="*" element={<NotFound />} />

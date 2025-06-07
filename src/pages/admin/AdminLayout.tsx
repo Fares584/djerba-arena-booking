@@ -4,7 +4,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { LogOut, LayoutDashboard, CalendarCheck, Users, Settings } from 'lucide-react';
+import { LogOut, LayoutDashboard, CalendarCheck, Users, Settings, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 
@@ -67,6 +67,14 @@ const AdminLayout = () => {
             >
               <Users className="mr-2 h-5 w-5" />
               <span>Terrains</span>
+            </NavLink>
+            
+            <NavLink
+              to="/admin/abonnements"
+              className={({ isActive }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-sport-green text-white' : 'hover:bg-sport-gray text-gray-700'}`}
+            >
+              <CreditCard className="mr-2 h-5 w-5" />
+              <span>Abonnements</span>
             </NavLink>
             
             <NavLink
