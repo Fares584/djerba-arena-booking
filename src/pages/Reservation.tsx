@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -50,7 +49,7 @@ const Reservation = () => {
   // Fetch single terrain if ID provided
   const { data: terrain } = useTerrain(fieldIdParam ? parseInt(fieldIdParam) : undefined);
   
-  // Fetch reservations for availability checking
+  // Fetch ALL reservations for availability checking (not filtered by status)
   const { data: reservations } = useReservations({
     terrain_id: selectedField?.id,
     date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined
@@ -154,7 +153,7 @@ const Reservation = () => {
       return;
     }
     
-    // Check availability before submitting
+    // Check availability before submitting (this will now consider 'en_attente' as occupied)
     const formattedDate = format(selectedDate, 'yyyy-MM-dd');
     const isAvailable = isTimeSlotAvailable(
       reservations,
@@ -169,7 +168,7 @@ const Reservation = () => {
       return;
     }
     
-    // Create reservation in Supabase
+    // Create reservation in Supabase with 'en_attente' status
     createReservation.mutate({
       nom_client: name,
       tel: phone,
@@ -178,7 +177,7 @@ const Reservation = () => {
       date: formattedDate,
       heure: selectedTime,
       duree: parseFloat(selectedDuration),
-      statut: 'en_attente',
+      statut: 'en_attente', // Will occupy the slot immediately even though it's pending
       remarque: message || undefined
     });
   };
@@ -209,7 +208,7 @@ const Reservation = () => {
         <div className="container-custom">
           <h1 className="text-4xl font-bold mb-4">Réservation de terrain</h1>
           <p className="text-xl max-w-2xl">
-            Remplissez le formulaire ci-dessous pour réserver votre terrain. Les créneaux indisponibles sont affichés en rouge.
+            Remplissez le formulaire ci-dessous pour réserver votre terrain. Votre réservation occupera immédiatement le créneau même en attente de confirmation.
           </p>
         </div>
       </div>
@@ -364,7 +363,7 @@ const Reservation = () => {
                       })}
                     </div>
                     <div className="mt-2 text-sm text-gray-600">
-                      <span className="text-red-600">■</span> Créneaux indisponibles
+                      <span className="text-red-600">■</span> Créneaux occupés (réservations confirmées ou en attente)
                       <span className="ml-4 text-green-600">■</span> Créneaux disponibles
                       <span className="ml-4">🌙</span> Tarif nuit (19h et après)
                     </div>
