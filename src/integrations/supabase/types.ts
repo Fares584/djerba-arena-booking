@@ -163,6 +163,7 @@ export type Database = {
           image_url: string | null
           nom: string
           prix: number
+          prix_nuit: number | null
           type: string
         }
         Insert: {
@@ -172,6 +173,7 @@ export type Database = {
           image_url?: string | null
           nom: string
           prix: number
+          prix_nuit?: number | null
           type: string
         }
         Update: {
@@ -181,6 +183,7 @@ export type Database = {
           image_url?: string | null
           nom?: string
           prix?: number
+          prix_nuit?: number | null
           type?: string
         }
         Relationships: []

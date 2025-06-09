@@ -86,6 +86,50 @@ const Reservation = () => {
     return totalPrice;
   };
 
+  // Get price display info for the summary
+  const getPriceDisplayInfo = () => {
+    if (!selectedField || !selectedTime || !selectedDuration) return null;
+    
+    const duration = parseFloat(selectedDuration);
+    const startHour = parseInt(selectedTime.split(':')[0]);
+    const isStartNight = isNightTime(selectedTime);
+    
+    // Check if the reservation spans both day and night
+    let hasDayHours = false;
+    let hasNightHours = false;
+    
+    for (let i = 0; i < duration; i++) {
+      const currentHour = startHour + i;
+      const timeString = `${currentHour.toString().padStart(2, '0')}:00`;
+      if (isNightTime(timeString)) {
+        hasNightHours = true;
+      } else {
+        hasDayHours = true;
+      }
+    }
+    
+    if (hasDayHours && hasNightHours) {
+      // Mixed rates
+      return {
+        type: 'mixed',
+        dayPrice: selectedField.prix,
+        nightPrice: selectedField.prix_nuit || selectedField.prix
+      };
+    } else if (hasNightHours) {
+      // All night hours
+      return {
+        type: 'night',
+        price: selectedField.prix_nuit || selectedField.prix
+      };
+    } else {
+      // All day hours
+      return {
+        type: 'day',
+        price: selectedField.prix
+      };
+    }
+  };
+
   // Initialize from URL parameters and fetched data
   useEffect(() => {
     if (terrain) {
@@ -153,6 +197,8 @@ const Reservation = () => {
       </>
     );
   }
+
+  const priceInfo = getPriceDisplayInfo();
 
   return (
     <>
@@ -419,15 +465,28 @@ const Reservation = () => {
                         <span className="font-medium">{selectedTime} {isNightTime(selectedTime) ? '🌙' : '☀️'}</span>
                       </div>
                       <div className="flex justify-between mb-2">
-                        <span>Tarif:</span>
-                        <span className="font-medium">
-                          {isNightTime(selectedTime) ? 'Nuit' : 'Jour'} - {calculatePrice(selectedField, selectedTime)} DT/h
-                        </span>
-                      </div>
-                      <div className="flex justify-between mb-2">
                         <span>Durée:</span>
                         <span className="font-medium">{selectedDuration} heure(s)</span>
                       </div>
+                      
+                      {/* Dynamic pricing display */}
+                      {priceInfo && (
+                        <div className="mb-2">
+                          {priceInfo.type === 'mixed' ? (
+                            <div className="text-sm text-gray-600">
+                              <div>Tarif mixte: {priceInfo.dayPrice} DT/h (jour) + {priceInfo.nightPrice} DT/h (nuit)</div>
+                            </div>
+                          ) : (
+                            <div className="flex justify-between">
+                              <span>Tarif:</span>
+                              <span className="font-medium">
+                                {priceInfo.type === 'night' ? 'Nuit' : 'Jour'} - {priceInfo.price} DT/h
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
                       <div className="border-t border-gray-300 my-2 pt-2 flex justify-between">
                         <span className="font-bold">Total:</span>
                         <span className="font-bold text-sport-green">
