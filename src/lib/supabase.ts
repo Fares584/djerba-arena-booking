@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Define types for our database
@@ -51,6 +52,10 @@ export type Abonnement = {
   reservations_utilisees?: number;
   created_at?: string;
   updated_at?: string;
+  terrain_id?: number;
+  jour_semaine?: number; // 1=Lundi, 2=Mardi, etc.
+  heure_fixe?: string; // Format HH:MM
+  duree_seance?: number; // Durée en heures
 };
 
 export type AdminUser = {
@@ -71,6 +76,12 @@ export const calculatePrice = (terrain: Terrain, time: string): number => {
     return terrain.prix_nuit;
   }
   return terrain.prix;
+};
+
+// Helper function to get day name in French
+export const getDayName = (dayNumber: number): string => {
+  const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+  return days[dayNumber] || '';
 };
 
 // Re-export the supabase client for backward compatibility

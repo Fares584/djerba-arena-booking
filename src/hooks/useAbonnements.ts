@@ -47,26 +47,54 @@ export function useCreateAbonnement() {
     mutationFn: async (newAbonnement: Omit<Abonnement, 'id' | 'created_at' | 'updated_at'>) => {
       try {
         console.log("Creating abonnement:", newAbonnement);
-        const { data, error } = await supabase
+        
+        // Créer l'abonnement
+        const { data: abonnement, error: abonnementError } = await supabase
           .from('abonnements')
           .insert(newAbonnement)
           .select()
           .single();
         
-        if (error) {
-          console.error("Error creating abonnement:", error);
-          throw error;
+        if (abonnementError) {
+          console.error("Error creating abonnement:", abonnementError);
+          throw abonnementError;
+        }
+
+        // Si l'abonnement inclut terrain_id, jour_semaine et heure_fixe, générer les réservations automatiques
+        if (abonnement.terrain_id && abonnement.jour_semaine !== null && abonnement.heure_fixe && abonnement.duree_seance) {
+          console.log("Generating recurring reservations for abonnement:", abonnement.id);
+          
+          const { error: functionError } = await supabase.rpc('generer_reservations_abonnement', {
+            p_abonnement_id: abonnement.id,
+            p_terrain_id: abonnement.terrain_id,
+            p_date_debut: abonnement.date_debut,
+            p_date_fin: abonnement.date_fin,
+            p_jour_semaine: abonnement.jour_semaine,
+            p_heure: abonnement.heure_fixe,
+            p_duree: abonnement.duree_seance,
+            p_client_nom: abonnement.client_nom,
+            p_client_tel: abonnement.client_tel,
+            p_client_email: abonnement.client_email
+          });
+
+          if (functionError) {
+            console.error("Error generating recurring reservations:", functionError);
+            throw functionError;
+          }
+
+          console.log("Recurring reservations generated successfully");
         }
         
-        return data;
+        return abonnement;
       } catch (error) {
         console.error("Error in createAbonnement mutation:", error);
         throw error;
       }
     },
     onSuccess: () => {
-      toast.success("Abonnement créé avec succès!");
+      toast.success("Abonnement créé avec succès et réservations automatiques générées!");
       queryClient.invalidateQueries({ queryKey: ['abonnements'] });
+      queryClient.invalidateQueries({ queryKey: ['reservations'] });
     },
     onError: (error) => {
       toast.error("Erreur lors de la création de l'abonnement");

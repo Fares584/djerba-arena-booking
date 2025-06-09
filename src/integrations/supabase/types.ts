@@ -54,9 +54,13 @@ export type Database = {
           created_at: string | null
           date_debut: string
           date_fin: string
+          duree_seance: number | null
+          heure_fixe: string | null
           id: number
+          jour_semaine: number | null
           reservations_utilisees: number | null
           statut: string
+          terrain_id: number | null
           updated_at: string | null
         }
         Insert: {
@@ -67,9 +71,13 @@ export type Database = {
           created_at?: string | null
           date_debut: string
           date_fin: string
+          duree_seance?: number | null
+          heure_fixe?: string | null
           id?: number
+          jour_semaine?: number | null
           reservations_utilisees?: number | null
           statut: string
+          terrain_id?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -80,9 +88,13 @@ export type Database = {
           created_at?: string | null
           date_debut?: string
           date_fin?: string
+          duree_seance?: number | null
+          heure_fixe?: string | null
           id?: number
+          jour_semaine?: number | null
           reservations_utilisees?: number | null
           statut?: string
+          terrain_id?: number | null
           updated_at?: string | null
         }
         Relationships: [
@@ -91,6 +103,13 @@ export type Database = {
             columns: ["abonnement_type_id"]
             isOneToOne: false
             referencedRelation: "abonnement_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abonnements_terrain_id_fkey"
+            columns: ["terrain_id"]
+            isOneToOne: false
+            referencedRelation: "terrains"
             referencedColumns: ["id"]
           },
         ]
@@ -193,7 +212,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generer_reservations_abonnement: {
+        Args: {
+          p_abonnement_id: number
+          p_terrain_id: number
+          p_date_debut: string
+          p_date_fin: string
+          p_jour_semaine: number
+          p_heure: string
+          p_duree: number
+          p_client_nom: string
+          p_client_tel: string
+          p_client_email: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

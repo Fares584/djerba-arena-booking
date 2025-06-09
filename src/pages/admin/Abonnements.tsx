@@ -2,18 +2,20 @@
 import { useState } from 'react';
 import { useAbonnements } from '@/hooks/useAbonnements';
 import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
+import { useTerrains } from '@/hooks/useTerrains';
 import { toast } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Loader2, Plus, Calendar, CreditCard, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Abonnement } from '@/lib/supabase';
+import { Abonnement, getDayName } from '@/lib/supabase';
 import AbonnementForm from '@/components/admin/AbonnementForm';
 
 const Abonnements = () => {
   const { data: abonnements, isLoading, refetch } = useAbonnements();
   const { data: abonnementTypes } = useAbonnementTypes({ actif: true });
+  const { data: terrains } = useTerrains({ actif: true });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   
@@ -25,6 +27,12 @@ const Abonnements = () => {
   const getTypeLabel = (abonnementTypeId: number) => {
     const type = abonnementTypes?.find(t => t.id === abonnementTypeId);
     return type?.nom || 'Type inconnu';
+  };
+
+  const getTerrainLabel = (terrainId?: number) => {
+    if (!terrainId) return 'Non défini';
+    const terrain = terrains?.find(t => t.id === terrainId);
+    return terrain?.nom || 'Terrain inconnu';
   };
 
   const getStatusLabel = (statut: string) => {
@@ -73,7 +81,7 @@ const Abonnements = () => {
               Nouvel Abonnement
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Ajouter un Abonnement</DialogTitle>
             </DialogHeader>
@@ -136,12 +144,12 @@ const Abonnements = () => {
                 <TableRow>
                   <TableHead>Client</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Téléphone</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Terrain</TableHead>
+                  <TableHead>Horaire</TableHead>
                   <TableHead>Début</TableHead>
                   <TableHead>Fin</TableHead>
                   <TableHead>Statut</TableHead>
-                  <TableHead>Utilisées</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -149,8 +157,20 @@ const Abonnements = () => {
                   <TableRow key={abonnement.id}>
                     <TableCell className="font-medium">{abonnement.client_nom}</TableCell>
                     <TableCell>{abonnement.client_email}</TableCell>
-                    <TableCell>{abonnement.client_tel}</TableCell>
                     <TableCell>{getTypeLabel(abonnement.abonnement_type_id)}</TableCell>
+                    <TableCell>{getTerrainLabel(abonnement.terrain_id)}</TableCell>
+                    <TableCell>
+                      {abonnement.jour_semaine !== null && abonnement.heure_fixe ? (
+                        <div className="text-sm">
+                          <div>{getDayName(abonnement.jour_semaine)}</div>
+                          <div className="text-gray-500">
+                            {abonnement.heure_fixe} ({abonnement.duree_seance || 1}h)
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">Non défini</span>
+                      )}
+                    </TableCell>
                     <TableCell>{new Date(abonnement.date_debut).toLocaleDateString('fr-FR')}</TableCell>
                     <TableCell>{new Date(abonnement.date_fin).toLocaleDateString('fr-FR')}</TableCell>
                     <TableCell>
@@ -159,11 +179,6 @@ const Abonnements = () => {
                       >
                         {getStatusLabel(abonnement.statut)}
                       </span>
-                    </TableCell>
-                    <TableCell>
-                      {abonnement.reservations_utilisees || 0} / {
-                        abonnementTypes?.find(t => t.id === abonnement.abonnement_type_id)?.reservations_incluses || 0
-                      }
                     </TableCell>
                   </TableRow>
                 ))}
