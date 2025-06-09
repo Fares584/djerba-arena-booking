@@ -102,3 +102,88 @@ export function useCreateAbonnement() {
     },
   });
 }
+
+export function useUpdateAbonnement() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: number; updates: Partial<Abonnement> }) => {
+      try {
+        console.log("Updating abonnement:", id, updates);
+        
+        const { data, error } = await supabase
+          .from('abonnements')
+          .update({ ...updates, updated_at: new Date().toISOString() })
+          .eq('id', id)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error("Error updating abonnement:", error);
+          throw error;
+        }
+        
+        return data;
+      } catch (error) {
+        console.error("Error in updateAbonnement mutation:", error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Abonnement mis à jour avec succès!");
+      queryClient.invalidateQueries({ queryKey: ['abonnements'] });
+    },
+    onError: (error) => {
+      toast.error("Erreur lors de la mise à jour de l'abonnement");
+      console.error("Abonnement update error:", error);
+    },
+  });
+}
+
+export function useDeleteAbonnement() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: number) => {
+      try {
+        console.log("Deleting abonnement:", id);
+        
+        // Supprimer d'abord les réservations liées à cet abonnement
+        const { error: reservationError } = await supabase
+          .from('reservations')
+          .delete()
+          .eq('abonnement_id', id);
+        
+        if (reservationError) {
+          console.error("Error deleting related reservations:", reservationError);
+          throw reservationError;
+        }
+        
+        // Ensuite supprimer l'abonnement
+        const { error } = await supabase
+          .from('abonnements')
+          .delete()
+          .eq('id', id);
+        
+        if (error) {
+          console.error("Error deleting abonnement:", error);
+          throw error;
+        }
+        
+        return id;
+      } catch (error) {
+        console.error("Error in deleteAbonnement mutation:", error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Abonnement et réservations associées supprimés avec succès!");
+      queryClient.invalidateQueries({ queryKey: ['abonnements'] });
+      queryClient.invalidateQueries({ queryKey: ['reservations'] });
+    },
+    onError: (error) => {
+      toast.error("Erreur lors de la suppression de l'abonnement");
+      console.error("Abonnement deletion error:", error);
+    },
+  });
+}

@@ -1,27 +1,68 @@
 
 import { useState } from 'react';
-import { useAbonnements } from '@/hooks/useAbonnements';
+import { useAbonnements, useDeleteAbonnement, useUpdateAbonnement } from '@/hooks/useAbonnements';
 import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
 import { useTerrains } from '@/hooks/useTerrains';
 import { toast } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Plus, Calendar, CreditCard, Users } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, Plus, Calendar, CreditCard, Users, Edit, Trash2 } from 'lucide-react';
 import { Abonnement, getDayName } from '@/lib/supabase';
 import AbonnementForm from '@/components/admin/AbonnementForm';
+import EditAbonnementForm from '@/components/admin/EditAbonnementForm';
 
 const Abonnements = () => {
   const { data: abonnements, isLoading, refetch } = useAbonnements();
   const { data: abonnementTypes } = useAbonnementTypes({ actif: true });
   const { data: terrains } = useTerrains({ actif: true });
+  const deleteAbonnement = useDeleteAbonnement();
+  const updateAbonnement = useUpdateAbonnement();
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [editingAbonnement, setEditingAbonnement] = useState<Abonnement | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   const handleFormSuccess = () => {
     setIsDialogOpen(false);
     refetch();
+  };
+
+  const handleEditSuccess = () => {
+    setIsEditDialogOpen(false);
+    setEditingAbonnement(null);
+    refetch();
+  };
+
+  const handleEditCancel = () => {
+    setIsEditDialogOpen(false);
+    setEditingAbonnement(null);
+  };
+
+  const handleEdit = (abonnement: Abonnement) => {
+    setEditingAbonnement(abonnement);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteAbonnement.mutateAsync(id);
+    } catch (error) {
+      console.error('Error deleting abonnement:', error);
+    }
+  };
+
+  const handleStatusChange = async (abonnementId: number, newStatus: 'actif' | 'expire' | 'annule') => {
+    try {
+      await updateAbonnement.mutateAsync({
+        id: abonnementId,
+        updates: { statut: newStatus }
+      });
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
   };
 
   const getTypeLabel = (abonnementTypeId: number) => {
@@ -150,6 +191,7 @@ const Abonnements = () => {
                   <TableHead>Début</TableHead>
                   <TableHead>Fin</TableHead>
                   <TableHead>Statut</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -174,11 +216,62 @@ const Abonnements = () => {
                     <TableCell>{new Date(abonnement.date_debut).toLocaleDateString('fr-FR')}</TableCell>
                     <TableCell>{new Date(abonnement.date_fin).toLocaleDateString('fr-FR')}</TableCell>
                     <TableCell>
-                      <span 
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(abonnement.statut)}`}
+                      <Select
+                        value={abonnement.statut}
+                        onValueChange={(value: 'actif' | 'expire' | 'annule') => 
+                          handleStatusChange(abonnement.id, value)
+                        }
                       >
-                        {getStatusLabel(abonnement.statut)}
-                      </span>
+                        <SelectTrigger className="w-28">
+                          <SelectValue>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(abonnement.statut)}`}>
+                              {getStatusLabel(abonnement.statut)}
+                            </span>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="actif">Actif</SelectItem>
+                          <SelectItem value="expire">Expiré</SelectItem>
+                          <SelectItem value="annule">Annulé</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(abonnement)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Supprimer l'abonnement</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Êtes-vous sûr de vouloir supprimer cet abonnement ? 
+                                Cette action supprimera également toutes les réservations associées et ne peut pas être annulée.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDelete(abonnement.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Supprimer
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -192,6 +285,22 @@ const Abonnements = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Modifier l'Abonnement</DialogTitle>
+          </DialogHeader>
+          {editingAbonnement && (
+            <EditAbonnementForm
+              abonnement={editingAbonnement}
+              onSuccess={handleEditSuccess}
+              onCancel={handleEditCancel}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
