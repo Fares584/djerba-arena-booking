@@ -123,11 +123,13 @@ const Reservations = () => {
               Nouvelle Réservation
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
             <DialogHeader>
               <DialogTitle>Ajouter une Réservation</DialogTitle>
             </DialogHeader>
-            <ReservationForm onSuccess={handleReservationAdded} />
+            <div className="overflow-y-auto max-h-[calc(90vh-100px)]">
+              <ReservationForm onSuccess={handleReservationAdded} />
+            </div>
           </DialogContent>
         </Dialog>
       </div>
@@ -174,17 +176,19 @@ const Reservations = () => {
       
       {/* Edit Reservation Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-5xl max-h-[90vh]">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
           <DialogHeader>
             <DialogTitle>Modifier la Réservation #{editingReservation?.id}</DialogTitle>
           </DialogHeader>
-          {editingReservation && (
-            <EditReservationForm 
-              reservation={editingReservation}
-              onSuccess={handleEditSuccess}
-              onCancel={() => setIsEditDialogOpen(false)}
-            />
-          )}
+          <div className="overflow-y-auto max-h-[calc(90vh-100px)]">
+            {editingReservation && (
+              <EditReservationForm 
+                reservation={editingReservation}
+                onSuccess={handleEditSuccess}
+                onCancel={() => setIsEditDialogOpen(false)}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
