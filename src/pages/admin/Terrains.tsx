@@ -3,12 +3,12 @@ import { useState } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { toast } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Plus, Check, X, Edit } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Terrain } from '@/lib/supabase';
 import TerrainForm from '@/components/admin/TerrainForm';
+import TerrainCard from '@/components/admin/TerrainCard';
 
 const Terrains = () => {
   const { data: terrains, isLoading, refetch } = useTerrains();
@@ -53,19 +53,6 @@ const Terrains = () => {
     refetch();
   };
 
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'foot':
-        return 'Football';
-      case 'tennis':
-        return 'Tennis';
-      case 'padel':
-        return 'Padel';
-      default:
-        return type;
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -75,8 +62,8 @@ const Terrains = () => {
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Gestion des Terrains</h1>
         
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
@@ -103,84 +90,24 @@ const Terrains = () => {
         </Dialog>
       </div>
       
-      <div className="bg-white p-6 rounded-lg shadow">
-        {terrains && terrains.length > 0 ? (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Capacité</TableHead>
-                  <TableHead>Prix (DT/h)</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {terrains.map((terrain: Terrain) => (
-                  <TableRow key={terrain.id}>
-                    <TableCell>{terrain.id}</TableCell>
-                    <TableCell className="font-medium">{terrain.nom}</TableCell>
-                    <TableCell>{getTypeLabel(terrain.type)}</TableCell>
-                    <TableCell>{terrain.capacite} personnes</TableCell>
-                    <TableCell>{terrain.prix} DT</TableCell>
-                    <TableCell>
-                      <span 
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          terrain.actif ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}
-                      >
-                        {terrain.actif ? 'Actif' : 'Inactif'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-gray-300 hover:bg-gray-50"
-                          onClick={() => handleEdit(terrain)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        
-                        {terrain.actif ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-red-600 border-red-600 hover:bg-red-50"
-                            disabled={isUpdating}
-                            onClick={() => handleStatusChange(terrain.id, false)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-green-600 border-green-600 hover:bg-green-50"
-                            disabled={isUpdating}
-                            onClick={() => handleStatusChange(terrain.id, true)}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <div className="text-center py-10">
-            <h3 className="mt-2 text-xl font-medium text-gray-900">Aucun terrain</h3>
-            <p className="mt-1 text-gray-500">Il n'y a pas encore de terrains à afficher.</p>
-          </div>
-        )}
-      </div>
+      {terrains && terrains.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {terrains.map((terrain: Terrain) => (
+            <TerrainCard
+              key={terrain.id}
+              terrain={terrain}
+              onStatusChange={handleStatusChange}
+              onEdit={handleEdit}
+              isUpdating={isUpdating}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-20">
+          <h3 className="mt-2 text-xl font-medium text-gray-900">Aucun terrain</h3>
+          <p className="mt-1 text-gray-500">Il n'y a pas encore de terrains à afficher.</p>
+        </div>
+      )}
     </div>
   );
 };
