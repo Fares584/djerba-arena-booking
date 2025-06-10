@@ -24,6 +24,7 @@ const Planning = () => {
   const [selectedTerrain, setSelectedTerrain] = useState<number | null>(null);
   const [startDate, setStartDate] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 })); // Start with current week, Monday
   const [weekDays, setWeekDays] = useState<Date[]>([]);
+  const [selectedDay, setSelectedDay] = useState<Date>(new Date());
   
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
   const { data: reservations, isLoading: reservationsLoading } = useReservations({
@@ -37,6 +38,7 @@ const Planning = () => {
       days.push(addDays(startDate, i));
     }
     setWeekDays(days);
+    setSelectedDay(days[0]); // Set first day as default for mobile
   }, [startDate]);
 
   const goToPreviousWeek = () => {
@@ -49,6 +51,34 @@ const Planning = () => {
 
   const goToCurrentWeek = () => {
     setStartDate(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  };
+
+  const goToPreviousDay = () => {
+    const currentIndex = weekDays.findIndex(day => 
+      format(day, 'yyyy-MM-dd') === format(selectedDay, 'yyyy-MM-dd')
+    );
+    if (currentIndex > 0) {
+      setSelectedDay(weekDays[currentIndex - 1]);
+    } else {
+      // Go to previous week, last day
+      const newStartDate = addDays(startDate, -7);
+      setStartDate(newStartDate);
+      setSelectedDay(addDays(newStartDate, 6));
+    }
+  };
+
+  const goToNextDay = () => {
+    const currentIndex = weekDays.findIndex(day => 
+      format(day, 'yyyy-MM-dd') === format(selectedDay, 'yyyy-MM-dd')
+    );
+    if (currentIndex < weekDays.length - 1) {
+      setSelectedDay(weekDays[currentIndex + 1]);
+    } else {
+      // Go to next week, first day
+      const newStartDate = addDays(startDate, 7);
+      setStartDate(newStartDate);
+      setSelectedDay(newStartDate);
+    }
   };
 
   const getReservationsForSlot = (terrain: Terrain, day: Date, timeSlot: string) => {
@@ -94,10 +124,10 @@ const Planning = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Planning des Terrains</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Planning des Terrains</h1>
       </div>
       
-      <div className="bg-white p-6 rounded-lg shadow mb-8">
+      <div className="bg-white p-4 md:p-6 rounded-lg shadow mb-8">
         <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
           <div className="w-full md:w-64">
             <Select 
@@ -118,7 +148,8 @@ const Planning = () => {
             </Select>
           </div>
           
-          <div className="flex items-center space-x-2">
+          {/* Desktop Week Navigation */}
+          <div className="hidden md:flex items-center space-x-2">
             <Button variant="outline" size="sm" onClick={goToPreviousWeek}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -129,58 +160,124 @@ const Planning = () => {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
+
+          {/* Mobile Day Navigation */}
+          <div className="flex md:hidden items-center justify-between">
+            <Button variant="outline" size="sm" onClick={goToPreviousDay}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm font-medium px-4">
+              {format(selectedDay, 'EEEE dd/MM', { locale: fr })}
+            </span>
+            <Button variant="outline" size="sm" onClick={goToNextDay}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         
-        <div className="text-center mb-4">
+        {/* Desktop Week Header */}
+        <div className="hidden md:block text-center mb-4">
           <h2 className="text-xl font-medium">
             Semaine du {format(startDate, 'dd MMMM', { locale: fr })} au {format(weekDays[6] || addDays(startDate, 6), 'dd MMMM yyyy', { locale: fr })}
           </h2>
+        </div>
+
+        {/* Mobile Day Selector */}
+        <div className="md:hidden mb-4">
+          <div className="grid grid-cols-7 gap-1">
+            {weekDays.map((day, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedDay(day)}
+                className={`p-2 rounded text-xs font-medium ${
+                  format(day, 'yyyy-MM-dd') === format(selectedDay, 'yyyy-MM-dd')
+                    ? 'bg-sport-green text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <div>{format(day, 'EEE', { locale: fr })}</div>
+                <div>{format(day, 'dd')}</div>
+              </button>
+            ))}
+          </div>
         </div>
         
         {terrains && filteredTerrains && filteredTerrains.length > 0 ? (
           filteredTerrains.map(terrain => (
             <Card key={terrain.id} className="mb-8">
               <CardHeader className="bg-sport-dark text-white py-3">
-                <CardTitle className="text-lg">{terrain.nom} - {terrain.type === 'foot' ? 'Football' : terrain.type === 'tennis' ? 'Tennis' : 'Padel'}</CardTitle>
+                <CardTitle className="text-base md:text-lg">{terrain.nom} - {terrain.type === 'foot' ? 'Football' : terrain.type === 'tennis' ? 'Tennis' : 'Padel'}</CardTitle>
               </CardHeader>
-              <CardContent className="p-0 overflow-x-auto">
-                <div className="min-w-[800px]">
-                  <div className="grid grid-cols-8 bg-gray-100">
-                    <div className="p-2 border-b border-r border-gray-200 font-medium">Heure</div>
-                    {weekDays.map((day, index) => (
-                      <div key={index} className="p-2 border-b border-r border-gray-200 text-center font-medium">
-                        <div>{format(day, 'EEE', { locale: fr })}</div>
-                        <div>{format(day, 'dd/MM')}</div>
+              <CardContent className="p-0">
+                {/* Desktop View - Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <div className="min-w-[800px]">
+                    <div className="grid grid-cols-8 bg-gray-100">
+                      <div className="p-2 border-b border-r border-gray-200 font-medium">Heure</div>
+                      {weekDays.map((day, index) => (
+                        <div key={index} className="p-2 border-b border-r border-gray-200 text-center font-medium">
+                          <div>{format(day, 'EEE', { locale: fr })}</div>
+                          <div>{format(day, 'dd/MM')}</div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {timeSlots.map((timeSlot) => (
+                      <div key={timeSlot} className="grid grid-cols-8">
+                        <div className="p-2 border-b border-r border-gray-200 font-medium">
+                          {timeSlot}
+                        </div>
+                        
+                        {weekDays.map((day, dayIndex) => {
+                          const reservationsForSlot = getReservationsForSlot(terrain, day, timeSlot);
+                          const reservation = reservationsForSlot[0]; // Just take the first one if multiple
+                          
+                          return (
+                            <div 
+                              key={dayIndex}
+                              className={`p-2 border-b border-r ${getCellClassName(reservation)}`}
+                            >
+                              {reservation ? (
+                                <div className="text-xs">
+                                  <div className="font-medium">{reservation.nom_client}</div>
+                                  <div>{reservation.duree}h</div>
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
                       </div>
                     ))}
                   </div>
-                  
-                  {timeSlots.map((timeSlot) => (
-                    <div key={timeSlot} className="grid grid-cols-8">
-                      <div className="p-2 border-b border-r border-gray-200 font-medium">
-                        {timeSlot}
-                      </div>
+                </div>
+
+                {/* Mobile View - Cards */}
+                <div className="md:hidden p-4">
+                  <div className="space-y-3">
+                    {timeSlots.map((timeSlot) => {
+                      const reservationsForSlot = getReservationsForSlot(terrain, selectedDay, timeSlot);
+                      const reservation = reservationsForSlot[0];
                       
-                      {weekDays.map((day, dayIndex) => {
-                        const reservationsForSlot = getReservationsForSlot(terrain, day, timeSlot);
-                        const reservation = reservationsForSlot[0]; // Just take the first one if multiple
-                        
-                        return (
-                          <div 
-                            key={dayIndex}
-                            className={`p-2 border-b border-r ${getCellClassName(reservation)}`}
-                          >
+                      return (
+                        <div 
+                          key={timeSlot}
+                          className={`p-3 rounded-lg ${getCellClassName(reservation)}`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <div className="font-medium text-sm">{timeSlot}</div>
                             {reservation ? (
-                              <div className="text-xs">
-                                <div className="font-medium">{reservation.nom_client}</div>
-                                <div>{reservation.duree}h</div>
+                              <div className="text-right">
+                                <div className="font-medium text-sm">{reservation.nom_client}</div>
+                                <div className="text-xs opacity-75">{reservation.duree}h</div>
                               </div>
-                            ) : null}
+                            ) : (
+                              <div className="text-xs text-gray-500">Libre</div>
+                            )}
                           </div>
-                        );
-                      })}
-                    </div>
-                  ))}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </CardContent>
             </Card>
