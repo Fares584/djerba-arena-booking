@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Check, X, Edit, Trash2, Clock, MapPin, User, Phone, Mail } from 'lucide-react';
+import { Check, X, Edit, Trash2, Clock, MapPin, User, Phone, Mail, Calendar } from 'lucide-react';
 import { Reservation } from '@/lib/supabase';
 
 interface ReservationCardProps {
@@ -50,6 +50,11 @@ const ReservationCard = ({
     }
   };
 
+  const formatCreatedAt = (createdAt?: string) => {
+    if (!createdAt) return 'Date inconnue';
+    return format(new Date(createdAt), 'dd/MM/yyyy à HH:mm', { locale: fr });
+  };
+
   return (
     <Card className="hover:shadow-lg transition-shadow duration-200">
       <CardHeader className="pb-3">
@@ -60,6 +65,12 @@ const ReservationCard = ({
           <Badge className={getStatusClass(reservation.statut)}>
             {getStatusLabel(reservation.statut)}
           </Badge>
+        </div>
+        
+        {/* Creation time */}
+        <div className="flex items-center gap-2 text-sm text-gray-500 mt-2">
+          <Calendar className="h-4 w-4" />
+          <span>Réservé le {formatCreatedAt(reservation.created_at)}</span>
         </div>
       </CardHeader>
       

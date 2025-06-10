@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -97,13 +96,11 @@ const Reservations = () => {
     reservation.nom_client.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
+  // Sort reservations by creation date (most recent first)
   const sortedReservations = filteredReservations.sort((a, b) => {
-    const dateA = new Date(a.date);
-    const dateB = new Date(b.date);
-    if (dateA.getTime() !== dateB.getTime()) {
-      return dateB.getTime() - dateA.getTime();
-    }
-    return a.heure.localeCompare(b.heure);
+    const dateA = new Date(a.created_at || 0);
+    const dateB = new Date(b.created_at || 0);
+    return dateB.getTime() - dateA.getTime();
   });
 
   if (isLoading) {
