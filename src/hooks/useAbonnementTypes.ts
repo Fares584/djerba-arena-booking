@@ -1,8 +1,8 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AbonnementType } from '@/lib/supabase';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 
 export function useAbonnementTypes(filters?: { actif?: boolean }) {
   return useQuery({

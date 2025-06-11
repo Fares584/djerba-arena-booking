@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Abonnement } from '@/lib/supabase';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 
 export function useAbonnements(filters?: { 
   statut?: string;
@@ -58,6 +58,10 @@ export function useCreateAbonnement() {
         if (abonnementError) {
           console.error("Error creating abonnement:", abonnementError);
           throw abonnementError;
+        }
+
+        if (!abonnement) {
+          throw new Error("No abonnement returned from insert");
         }
 
         // Si l'abonnement inclut terrain_id, jour_semaine et heure_fixe, générer les réservations automatiques

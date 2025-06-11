@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 export function useReservations(filters?: { 
@@ -50,7 +50,7 @@ export function useCreateReservation() {
   const navigate = useNavigate();
   
   return useMutation({
-    mutationFn: async (newReservation: Omit<Reservation, 'id' | 'created_at'>) => {
+    mutationFn: async (newReservation: Omit<Reservation, 'id' | 'created_at' | 'updated_at'>) => {
       try {
         console.log("Creating reservation:", newReservation);
         const { data, error } = await supabase

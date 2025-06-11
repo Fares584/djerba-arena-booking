@@ -1,11 +1,10 @@
 
 import { useState, useEffect } from 'react';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +20,7 @@ const TerrainForm = ({ onSuccess, terrainToEdit }: TerrainFormProps) => {
   const [type, setType] = useState<'foot' | 'tennis' | 'padel'>('foot');
   const [capacity, setCapacity] = useState('');
   const [price, setPrice] = useState('');
+  const [nightPrice, setNightPrice] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,6 +32,7 @@ const TerrainForm = ({ onSuccess, terrainToEdit }: TerrainFormProps) => {
       setType(terrainToEdit.type as 'foot' | 'tennis' | 'padel');
       setCapacity(terrainToEdit.capacite.toString());
       setPrice(terrainToEdit.prix.toString());
+      setNightPrice(terrainToEdit.prix_nuit?.toString() || '');
       setImageUrl(terrainToEdit.image_url || '');
       setIsActive(terrainToEdit.actif || false);
     }
@@ -53,6 +54,7 @@ const TerrainForm = ({ onSuccess, terrainToEdit }: TerrainFormProps) => {
         type,
         capacite: parseInt(capacity),
         prix: parseFloat(price),
+        prix_nuit: nightPrice ? parseFloat(nightPrice) : null,
         image_url: imageUrl || null,
         actif: isActive
       };
@@ -131,7 +133,7 @@ const TerrainForm = ({ onSuccess, terrainToEdit }: TerrainFormProps) => {
         </div>
         
         <div>
-          <Label htmlFor="price">Prix (DT/heure)*</Label>
+          <Label htmlFor="price">Prix jour (DT/heure)*</Label>
           <Input
             id="price"
             type="number"
@@ -142,6 +144,19 @@ const TerrainForm = ({ onSuccess, terrainToEdit }: TerrainFormProps) => {
             required
           />
         </div>
+      </div>
+
+      <div>
+        <Label htmlFor="nightPrice">Prix nuit (DT/heure) - optionnel</Label>
+        <Input
+          id="nightPrice"
+          type="number"
+          min="0"
+          step="0.01"
+          value={nightPrice}
+          onChange={(e) => setNightPrice(e.target.value)}
+          placeholder="Prix pour les créneaux 19h et après"
+        />
       </div>
       
       <div>

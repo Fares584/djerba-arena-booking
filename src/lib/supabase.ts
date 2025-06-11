@@ -9,8 +9,9 @@ export type Terrain = {
   capacite: number;
   prix: number;
   prix_nuit?: number; // Add night pricing
-  image_url: string;
+  image_url: string | null;
   actif: boolean;
+  created_at?: string;
 };
 
 export type Reservation = {
@@ -23,19 +24,20 @@ export type Reservation = {
   heure: string;
   duree: number;
   statut: 'en_attente' | 'confirmee' | 'annulee';
-  remarque?: string;
+  remarque?: string | null;
   created_at?: string;
-  abonnement_id?: number;
+  updated_at?: string;
+  abonnement_id?: number | null;
 };
 
 export type AbonnementType = {
   id: number;
   nom: string;
-  description?: string;
+  description?: string | null;
   duree_mois: number;
   prix: number;
-  reduction_pourcentage?: number;
-  reservations_incluses?: number;
+  reduction_pourcentage?: number | null;
+  reservations_incluses?: number | null;
   actif: boolean;
   created_at?: string;
 };
@@ -49,19 +51,19 @@ export type Abonnement = {
   date_debut: string;
   date_fin: string;
   statut: 'actif' | 'expire' | 'annule';
-  reservations_utilisees?: number;
+  reservations_utilisees?: number | null;
   created_at?: string;
   updated_at?: string;
-  terrain_id?: number;
-  jour_semaine?: number; // 1=Lundi, 2=Mardi, etc.
-  heure_fixe?: string; // Format HH:MM
-  duree_seance?: number; // Durée en heures
+  terrain_id?: number | null;
+  jour_semaine?: number | null; // 0=Dimanche, 1=Lundi, etc.
+  heure_fixe?: string | null; // Format HH:MM
+  duree_seance?: number | null; // Durée en heures
 };
 
 export type AdminUser = {
   id: string;
   email: string;
-  // Note: password_hash is handled by Supabase Auth and not directly accessible
+  created_at?: string;
 };
 
 // Utility function to determine if a time slot is night time (19h and after)

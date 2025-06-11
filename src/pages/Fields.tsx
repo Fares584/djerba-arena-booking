@@ -104,7 +104,7 @@ const Fields = () => {
                     type: field.type,
                     capacity: field.capacite,
                     price: field.prix,
-                    imageUrl: field.image_url,
+                    imageUrl: field.image_url || '',
                     status: field.actif ? 'available' : 'reserved'
                   }} 
                 />
