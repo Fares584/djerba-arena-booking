@@ -1,307 +1,300 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
-import { useCreateAbonnement } from '@/hooks/useAbonnements';
-import { useTerrains } from '@/hooks/useTerrains';
-import { Loader2 } from 'lucide-react';
 
-const formSchema = z.object({
-  client_nom: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
-  client_email: z.string().email('Email invalide'),
-  client_tel: z.string().min(8, 'Le numéro de téléphone doit contenir au moins 8 caractères'),
-  abonnement_type_id: z.string().min(1, 'Veuillez sélectionner un type d\'abonnement'),
-  terrain_id: z.string().min(1, 'Veuillez sélectionner un terrain'),
-  jour_semaine: z.string().min(1, 'Veuillez sélectionner un jour'),
-  heure_fixe: z.string().min(1, 'Veuillez sélectionner une heure'),
-  duree_seance: z.string().min(1, 'Veuillez sélectionner une durée'),
-  date_debut: z.string().min(1, 'Date de début requise'),
-});
+import { useState, useEffect } from 'react';
+import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
+import { useTerrains } from '@/hooks/useTerrains';
+import { useCreateAbonnement } from '@/hooks/useAbonnements';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
+
+// Jours de la semaine
+const joursOptions = [
+  { value: 0, label: 'Dimanche' },
+  { value: 1, label: 'Lundi' },
+  { value: 2, label: 'Mardi' },
+  { value: 3, label: 'Mercredi' },
+  { value: 4, label: 'Jeudi' },
+  { value: 5, label: 'Vendredi' },
+  { value: 6, label: 'Samedi' },
+];
+
+// Créneaux horaires
+const timeSlots = [
+  '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', 
+  '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
+];
+
+// Options de durée pour les terrains non-football
+const durationOptions = [
+  { value: '1', label: '1 heure' },
+  { value: '1.5', label: '1 heure 30 minutes' },
+  { value: '2', label: '2 heures' },
+  { value: '3', label: '3 heures' },
+];
 
 interface AbonnementFormProps {
   onSuccess: () => void;
 }
 
 const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const { data: abonnementTypes } = useAbonnementTypes({ actif: true });
-  const { data: terrains } = useTerrains({ actif: true });
+  const [typeId, setTypeId] = useState<number | null>(null);
+  const [terrainId, setTerrainId] = useState<number | null>(null);
+  const [dateDebut, setDateDebut] = useState('');
+  const [dateFin, setDateFin] = useState('');
+  const [jourSemaine, setJourSemaine] = useState<number | null>(null);
+  const [heureFixe, setHeureFixe] = useState('');
+  const [dureeSeance, setDureeSeance] = useState('1');
+  const [clientNom, setClientNom] = useState('');
+  const [clientEmail, setClientEmail] = useState('');
+  const [clientTel, setClientTel] = useState('');
+
+  const { data: types, isLoading: typesLoading } = useAbonnementTypes({ actif: true });
+  const { data: terrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
   const createAbonnement = useCreateAbonnement();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      client_nom: '',
-      client_email: '',
-      client_tel: '',
-      abonnement_type_id: '',
-      terrain_id: '',
-      jour_semaine: '',
-      heure_fixe: '',
-      duree_seance: '1',
-      date_debut: new Date().toISOString().split('T')[0],
-    },
-  });
+  // Get selected terrain object
+  const selectedTerrain = terrains?.find(t => t.id === terrainId);
 
-  const calculateEndDate = (startDate: string, durationMonths: number): string => {
-    const start = new Date(startDate);
-    const end = new Date(start);
-    end.setMonth(end.getMonth() + durationMonths);
-    return end.toISOString().split('T')[0];
-  };
-
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsLoading(true);
-    try {
-      const selectedType = abonnementTypes?.find(t => t.id === parseInt(values.abonnement_type_id));
-      if (!selectedType) {
-        throw new Error('Type d\'abonnement non trouvé');
-      }
-
-      const endDate = calculateEndDate(values.date_debut, selectedType.duree_mois);
-
-      const abonnementData = {
-        client_nom: values.client_nom,
-        client_email: values.client_email,
-        client_tel: values.client_tel,
-        abonnement_type_id: parseInt(values.abonnement_type_id),
-        terrain_id: parseInt(values.terrain_id),
-        jour_semaine: parseInt(values.jour_semaine),
-        heure_fixe: values.heure_fixe,
-        duree_seance: parseFloat(values.duree_seance),
-        date_debut: values.date_debut,
-        date_fin: endDate,
-        statut: 'actif' as const,
-        reservations_utilisees: 0,
-      };
-
-      await createAbonnement.mutateAsync(abonnementData);
-      onSuccess();
-    } catch (error) {
-      console.error('Error creating abonnement:', error);
-    } finally {
-      setIsLoading(false);
+  // Get effective duration - ALWAYS 1.5 for football
+  const getEffectiveDuration = (): string => {
+    if (selectedTerrain?.type === 'foot') {
+      return '1.5'; // Football always 1.5 hours
     }
+    return dureeSeance;
   };
 
-  const dayOptions = [
-    { value: '1', label: 'Lundi' },
-    { value: '2', label: 'Mardi' },
-    { value: '3', label: 'Mercredi' },
-    { value: '4', label: 'Jeudi' },
-    { value: '5', label: 'Vendredi' },
-    { value: '6', label: 'Samedi' },
-    { value: '0', label: 'Dimanche' },
-  ];
+  // Update duration when terrain changes
+  useEffect(() => {
+    if (selectedTerrain?.type === 'foot') {
+      setDureeSeance('1.5');
+    }
+  }, [selectedTerrain]);
 
-  const timeOptions = [
-    '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
-    '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
-  ];
+  // Calculer automatiquement la date de fin en fonction du type d'abonnement
+  useEffect(() => {
+    if (typeId && dateDebut && types) {
+      const type = types.find(t => t.id === typeId);
+      if (type) {
+        const debut = new Date(dateDebut);
+        const fin = new Date(debut);
+        fin.setMonth(fin.getMonth() + type.duree_mois);
+        setDateFin(format(fin, 'yyyy-MM-dd'));
+      }
+    }
+  }, [typeId, dateDebut, types]);
 
-  const durationOptions = [
-    { value: '1', label: '1 heure' },
-    { value: '1.5', label: '1h30' },
-    { value: '2', label: '2 heures' },
-    { value: '2.5', label: '2h30' },
-    { value: '3', label: '3 heures' },
-  ];
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!typeId || !terrainId || !dateDebut || !dateFin || jourSemaine === null || !heureFixe || !clientNom || !clientEmail || !clientTel) {
+      return;
+    }
+
+    const effectiveDuration = getEffectiveDuration();
+
+    createAbonnement.mutate({
+      abonnement_type_id: typeId,
+      terrain_id: terrainId,
+      date_debut: dateDebut,
+      date_fin: dateFin,
+      jour_semaine: jourSemaine,
+      heure_fixe: heureFixe,
+      duree_seance: parseFloat(effectiveDuration),
+      client_nom: clientNom,
+      client_email: clientEmail,
+      client_tel: clientTel,
+      statut: 'actif'
+    }, {
+      onSuccess: () => {
+        onSuccess();
+      }
+    });
+  };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="client_nom"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nom du client</FormLabel>
-              <FormControl>
-                <Input placeholder="Nom complet" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="type">Type d'abonnement</Label>
+        <Select 
+          value={typeId?.toString() || ""} 
+          onValueChange={(value) => setTypeId(parseInt(value))}
+          disabled={typesLoading}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Sélectionnez un type" />
+          </SelectTrigger>
+          <SelectContent>
+            {types?.map((type) => (
+              <SelectItem key={type.id} value={type.id.toString()}>
+                {type.nom} - {type.prix} DT ({type.duree_mois} mois)
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-        <FormField
-          control={form.control}
-          name="client_email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="email@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <div>
+        <Label htmlFor="terrain">Terrain</Label>
+        <Select 
+          value={terrainId?.toString() || ""} 
+          onValueChange={(value) => setTerrainId(parseInt(value))}
+          disabled={terrainsLoading}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Sélectionnez un terrain" />
+          </SelectTrigger>
+          <SelectContent>
+            {terrains?.map((terrain) => (
+              <SelectItem key={terrain.id} value={terrain.id.toString()}>
+                {terrain.nom} - {terrain.type}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-        <FormField
-          control={form.control}
-          name="client_tel"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Téléphone</FormLabel>
-              <FormControl>
-                <Input placeholder="Numéro de téléphone" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="dateDebut">Date de début</Label>
+          <Input
+            id="dateDebut"
+            type="date"
+            value={dateDebut}
+            onChange={(e) => setDateDebut(e.target.value)}
+            required
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="dateFin">Date de fin</Label>
+          <Input
+            id="dateFin"
+            type="date"
+            value={dateFin}
+            onChange={(e) => setDateFin(e.target.value)}
+            required
+            readOnly
+            className="bg-gray-100"
+          />
+        </div>
+      </div>
 
-        <FormField
-          control={form.control}
-          name="abonnement_type_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Type d'abonnement</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {abonnementTypes?.map((type) => (
-                    <SelectItem key={type.id} value={type.id.toString()}>
-                      {type.nom} - {type.prix} DT
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="jour">Jour de la semaine</Label>
+          <Select 
+            value={jourSemaine?.toString() || ""} 
+            onValueChange={(value) => setJourSemaine(parseInt(value))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionnez un jour" />
+            </SelectTrigger>
+            <SelectContent>
+              {joursOptions.map((jour) => (
+                <SelectItem key={jour.value} value={jour.value.toString()}>
+                  {jour.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <FormField
-          control={form.control}
-          name="terrain_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Terrain</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un terrain" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {terrains?.map((terrain) => (
-                    <SelectItem key={terrain.id} value={terrain.id.toString()}>
-                      {terrain.nom} ({terrain.type})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div>
+          <Label htmlFor="heure">Heure</Label>
+          <Select 
+            value={heureFixe} 
+            onValueChange={setHeureFixe}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionnez une heure" />
+            </SelectTrigger>
+            <SelectContent>
+              {timeSlots.map((time) => (
+                <SelectItem key={time} value={time}>
+                  {time}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-        <FormField
-          control={form.control}
-          name="jour_semaine"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Jour de la semaine</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un jour" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {dayOptions.map((day) => (
-                    <SelectItem key={day.value} value={day.value}>
-                      {day.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <div>
+        <Label htmlFor="duree">Durée de séance</Label>
+        {selectedTerrain?.type === 'foot' ? (
+          <div className="w-full border rounded-md p-2 bg-gray-100 text-gray-700 text-sm flex items-center h-10">
+            1h30 (fixe pour football)
+          </div>
+        ) : (
+          <Select 
+            value={dureeSeance} 
+            onValueChange={setDureeSeance}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionnez une durée" />
+            </SelectTrigger>
+            <SelectContent>
+              {durationOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
 
-        <FormField
-          control={form.control}
-          name="heure_fixe"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Heure</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une heure" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {timeOptions.map((time) => (
-                    <SelectItem key={time} value={time}>
-                      {time}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
+      <div>
+        <Label htmlFor="clientNom">Nom du client</Label>
+        <Input
+          id="clientNom"
+          type="text"
+          value={clientNom}
+          onChange={(e) => setClientNom(e.target.value)}
+          required
         />
+      </div>
 
-        <FormField
-          control={form.control}
-          name="duree_seance"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Durée de la séance</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une durée" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {durationOptions.map((duration) => (
-                    <SelectItem key={duration.value} value={duration.value}>
-                      {duration.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
+      <div>
+        <Label htmlFor="clientEmail">Email du client</Label>
+        <Input
+          id="clientEmail"
+          type="email"
+          value={clientEmail}
+          onChange={(e) => setClientEmail(e.target.value)}
+          required
         />
+      </div>
 
-        <FormField
-          control={form.control}
-          name="date_debut"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Date de début</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+      <div>
+        <Label htmlFor="clientTel">Téléphone du client</Label>
+        <Input
+          id="clientTel"
+          type="tel"
+          value={clientTel}
+          onChange={(e) => setClientTel(e.target.value)}
+          required
         />
+      </div>
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Créer l'abonnement
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button 
+          type="submit" 
+          disabled={createAbonnement.isPending}
+          className="bg-sport-green hover:bg-sport-dark"
+        >
+          {createAbonnement.isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Création...
+            </>
+          ) : 'Créer l\'abonnement'}
         </Button>
-      </form>
-    </Form>
+      </div>
+    </form>
   );
 };
 

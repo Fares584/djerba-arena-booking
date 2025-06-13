@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -20,7 +19,7 @@ const timeSlots = [
   '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
 ];
 
-// Duration options
+// Duration options for non-football fields
 const durationOptions = [
   { value: '1', label: '1 heure' },
   { value: '1.5', label: '1 heure 30 minutes' },
@@ -76,17 +75,12 @@ const Reservation = () => {
     return nightTimeSetting?.setting_value || '19:00';
   };
 
-  // Get effective duration based on terrain type
+  // Get effective duration - ALWAYS 1.5 for football
   const getEffectiveDuration = (): string => {
     if (selectedField?.type === 'foot') {
       return '1.5'; // Football always 1.5 hours
     }
     return selectedDuration;
-  };
-
-  // Check if duration should be changeable
-  const isDurationChangeable = (): boolean => {
-    return selectedField?.type !== 'foot';
   };
 
   // Calculate total price based on selected time and duration
@@ -417,22 +411,17 @@ const Reservation = () => {
                     </div>
                   </div>
                   
-                  {/* Duration Selection */}
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Durée *
-                    </label>
-                    {selectedField?.type === 'foot' ? (
-                      <div className="w-full border rounded-md p-3 bg-gray-100 text-gray-700">
-                        1 heure 30 minutes (durée fixe pour le football)
-                      </div>
-                    ) : (
+                  {/* Duration Selection - Only show for non-football */}
+                  {selectedField?.type !== 'foot' && (
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Durée *
+                      </label>
                       <select 
                         className="w-full border rounded-md p-3"
                         value={selectedDuration}
                         onChange={(e) => setSelectedDuration(e.target.value)}
                         required
-                        disabled={!isDurationChangeable()}
                       >
                         {durationOptions.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -440,8 +429,20 @@ const Reservation = () => {
                           </option>
                         ))}
                       </select>
-                    )}
-                  </div>
+                    </div>
+                  )}
+                  
+                  {/* Football duration info */}
+                  {selectedField?.type === 'foot' && (
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Durée
+                      </label>
+                      <div className="w-full border rounded-md p-3 bg-gray-100 text-gray-700">
+                        1 heure 30 minutes (durée fixe pour le football)
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Right Column - Contact Information */}
