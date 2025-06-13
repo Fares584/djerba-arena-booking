@@ -21,6 +21,7 @@ const TerrainForm = ({ onSuccess, terrainToEdit }: TerrainFormProps) => {
   const [capacity, setCapacity] = useState('');
   const [price, setPrice] = useState('');
   const [nightPrice, setNightPrice] = useState('');
+  const [nightStartTime, setNightStartTime] = useState('19:00');
   const [imageUrl, setImageUrl] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,6 +34,7 @@ const TerrainForm = ({ onSuccess, terrainToEdit }: TerrainFormProps) => {
       setCapacity(terrainToEdit.capacite.toString());
       setPrice(terrainToEdit.prix.toString());
       setNightPrice(terrainToEdit.prix_nuit?.toString() || '');
+      setNightStartTime(terrainToEdit.heure_debut_nuit?.substring(0, 5) || '19:00');
       setImageUrl(terrainToEdit.image_url || '');
       setIsActive(terrainToEdit.actif || false);
     }
@@ -41,7 +43,7 @@ const TerrainForm = ({ onSuccess, terrainToEdit }: TerrainFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !type || !capacity || !price) {
+    if (!name || !type || !capacity || !price || !nightStartTime) {
       toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
@@ -55,6 +57,7 @@ const TerrainForm = ({ onSuccess, terrainToEdit }: TerrainFormProps) => {
         capacite: parseInt(capacity),
         prix: parseFloat(price),
         prix_nuit: nightPrice ? parseFloat(nightPrice) : null,
+        heure_debut_nuit: nightStartTime + ':00',
         image_url: imageUrl || null,
         actif: isActive
       };
@@ -146,17 +149,33 @@ const TerrainForm = ({ onSuccess, terrainToEdit }: TerrainFormProps) => {
         </div>
       </div>
 
-      <div>
-        <Label htmlFor="nightPrice">Prix nuit (DT/heure) - optionnel</Label>
-        <Input
-          id="nightPrice"
-          type="number"
-          min="0"
-          step="0.01"
-          value={nightPrice}
-          onChange={(e) => setNightPrice(e.target.value)}
-          placeholder="Prix pour les créneaux 19h et après"
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="nightPrice">Prix nuit (DT/heure)</Label>
+          <Input
+            id="nightPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            value={nightPrice}
+            onChange={(e) => setNightPrice(e.target.value)}
+            placeholder="Prix pour les créneaux de nuit"
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="nightStartTime">Heure début tarif nuit*</Label>
+          <Input
+            id="nightStartTime"
+            type="time"
+            value={nightStartTime}
+            onChange={(e) => setNightStartTime(e.target.value)}
+            required
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Heure à partir de laquelle le tarif de nuit s'applique
+          </p>
+        </div>
       </div>
       
       <div>

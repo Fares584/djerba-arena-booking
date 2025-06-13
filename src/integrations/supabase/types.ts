@@ -200,6 +200,7 @@ export type Database = {
           actif: boolean | null
           capacite: number
           created_at: string | null
+          heure_debut_nuit: string | null
           id: number
           image_url: string | null
           nom: string
@@ -211,6 +212,7 @@ export type Database = {
           actif?: boolean | null
           capacite: number
           created_at?: string | null
+          heure_debut_nuit?: string | null
           id?: number
           image_url?: string | null
           nom: string
@@ -222,6 +224,7 @@ export type Database = {
           actif?: boolean | null
           capacite?: number
           created_at?: string | null
+          heure_debut_nuit?: string | null
           id?: number
           image_url?: string | null
           nom?: string

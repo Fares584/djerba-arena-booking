@@ -66,6 +66,13 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     return totalPrice;
   };
 
+  // Get night start time for selected terrain
+  const getNightStartTime = (): string => {
+    if (!selectedField || !terrains) return '19:00';
+    const terrain = terrains.find(t => t.id === selectedField);
+    return terrain?.heure_debut_nuit?.substring(0, 5) || '19:00';
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -112,7 +119,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
                 <SelectItem value="select-terrain">Sélectionnez un terrain</SelectItem>
                 {terrains?.map((terrain) => (
                   <SelectItem key={terrain.id} value={terrain.id.toString()}>
-                    {terrain.nom} - {terrain.type} (Jour: {terrain.prix} DT/h{terrain.prix_nuit ? `, Nuit: ${terrain.prix_nuit} DT/h` : ''})
+                    {terrain.nom} - {terrain.type} (Jour: {terrain.prix} DT/h{terrain.prix_nuit ? `, Nuit: ${terrain.prix_nuit} DT/h dès ${terrain.heure_debut_nuit?.substring(0, 5) || '19:00'}` : ''})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -145,7 +152,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
                   <SelectItem value="select-time">Choisir une heure</SelectItem>
                   {timeSlots.map((time) => (
                     <SelectItem key={time} value={time}>
-                      {time} {isNightTime(time) ? '🌙' : '☀️'}
+                      {time} {isNightTime(time, getNightStartTime()) ? '🌙' : '☀️'}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -222,7 +229,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
             <div className="p-4 bg-gray-50 rounded-md border">
               <h3 className="font-medium mb-2">Prix Total</h3>
               <div className="text-sm text-gray-600 mb-1">
-                {isNightTime(selectedTime) ? 'Tarif nuit' : 'Tarif jour'} - {selectedDuration}h
+                {isNightTime(selectedTime, getNightStartTime()) ? `Tarif nuit (dès ${getNightStartTime()})` : 'Tarif jour'} - {selectedDuration}h
               </div>
               <p className="text-lg font-bold text-sport-green">
                 {calculateTotalPrice()} DT
