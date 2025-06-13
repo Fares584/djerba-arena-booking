@@ -1,43 +1,57 @@
 
 import React from 'react';
 import Hero from '@/components/Hero';
-import FieldCard, { Field } from '@/components/FieldCard';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-
-// Simulated fields data for the featured fields section
-const featuredFields: Field[] = [
-  {
-    id: 1,
-    name: 'Foot à 7 - Terrain A',
-    type: 'foot',
-    capacity: 14,
-    price: 60,
-    imageUrl: 'https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&q=80',
-    status: 'available',
-  },
-  {
-    id: 2,
-    name: 'Tennis - Court 1',
-    type: 'tennis',
-    capacity: 4,
-    price: 30,
-    imageUrl: 'https://images.unsplash.com/photo-1500673922987-e212871fec22?auto=format&fit=crop&q=80',
-    status: 'reserved',
-  },
-  {
-    id: 3,
-    name: 'Padel - Court 1',
-    type: 'padel',
-    capacity: 4,
-    price: 40,
-    imageUrl: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&q=80',
-    status: 'available',
-  },
-];
+import { useTerrains } from '@/hooks/useTerrains';
+import { Loader2 } from 'lucide-react';
 
 const Index = () => {
+  const { data: terrains, isLoading } = useTerrains({ actif: true });
+
+  // Get the first 3 active terrains for the featured section
+  const featuredTerrains = terrains?.slice(0, 3) || [];
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'foot':
+        return 'Football';
+      case 'tennis':
+        return 'Tennis';
+      case 'padel':
+        return 'Padel';
+      default:
+        return type;
+    }
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'foot':
+        return (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 9l-3 3m0 0L9 9m3 3V6m0 0v6" />
+          </svg>
+        );
+      case 'tennis':
+        return (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <circle cx="12" cy="12" r="10" strokeWidth={2} />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.5 7.5 6.5 16.5 12 22M12 2c5.5 5.5 5.5 14.5 0 20" />
+          </svg>
+        );
+      case 'padel':
+        return (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 9H9m0 0v6" />
+          </svg>
+        );
+    }
+  };
+
   return (
     <>
       <Navbar />
@@ -53,11 +67,51 @@ const Index = () => {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredFields.map((field) => (
-              <FieldCard key={field.id} field={field} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-sport-green" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {featuredTerrains.map((terrain) => (
+                <div key={terrain.id} className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+                  <div className="relative h-48">
+                    <img 
+                      src={terrain.image_url || '/placeholder.svg'} 
+                      alt={terrain.nom} 
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-4 right-4 bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">
+                      Disponible
+                    </div>
+                  </div>
+                  <div className="p-5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="text-sport-green">
+                        {getTypeIcon(terrain.type)}
+                      </div>
+                      <span className="text-sm text-gray-600 font-medium">
+                        {getTypeLabel(terrain.type)}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-xl mb-2">{terrain.nom}</h3>
+                    <div className="flex justify-between items-center mb-4">
+                      <div>
+                        <p className="text-sm text-gray-600">Capacité: {terrain.capacite} personnes</p>
+                        <p className="text-lg font-bold text-sport-green">{terrain.prix} DT/heure</p>
+                      </div>
+                    </div>
+                    <Link 
+                      to={`/reservation?fieldId=${terrain.id}`} 
+                      className="w-full btn-primary block text-center"
+                    >
+                      Réserver
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
       
