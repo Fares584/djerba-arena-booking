@@ -114,6 +114,23 @@ const Reservation = () => {
     });
   };
 
+  // Calculate total price based on selected time and terrain
+  const calculateTotalPrice = (): number => {
+    if (!selectedTerrain || !selectedTime) return 0;
+    
+    const duration = parseFloat(getEffectiveDuration());
+    
+    // For football terrains, use fixed pricing regardless of duration
+    if (selectedTerrain.type === 'foot') {
+      const globalNightStartTime = '19:00'; // Default night start time
+      return calculatePrice(selectedTerrain, selectedTime, globalNightStartTime);
+    }
+    
+    // For other terrains, calculate based on hourly rate × duration
+    const hourlyRate = selectedTerrain.prix; // Using day rate for simplicity in public form
+    return hourlyRate * duration;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -378,9 +395,14 @@ const Reservation = () => {
                     <div className="flex justify-between text-lg font-bold">
                       <span>Prix total:</span>
                       <span className="text-sport-green">
-                        {(selectedTerrain.prix * parseFloat(getEffectiveDuration())).toFixed(2)} DT
+                        {calculateTotalPrice().toFixed(2)} DT
                       </span>
                     </div>
+                    {selectedTerrain.type === 'foot' && (
+                      <div className="text-sm text-gray-600 mt-1">
+                        Tarif fixe pour 1h30 ({isNightTime(selectedTime, '19:00') ? 'nuit' : 'jour'})
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

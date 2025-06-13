@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useAppSetting } from '@/hooks/useAppSettings';
@@ -74,14 +73,21 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     const terrain = terrains.find(t => t.id === selectedField);
     if (!terrain) return 0;
     
-    const duration = parseFloat(getEffectiveDuration());
-    const startHour = parseInt(selectedTime.split(':')[0]);
-    let totalPrice = 0;
+    const effectiveDuration = getEffectiveDuration();
     const globalNightStartTime = getGlobalNightStartTime();
+    
+    // For football terrains, use fixed pricing
+    if (terrain.type === 'foot') {
+      return calculatePrice(terrain, selectedTime, globalNightStartTime);
+    }
+    
+    // For other terrains, calculate hourly rate × duration
+    const duration = parseFloat(effectiveDuration);
+    let totalPrice = 0;
     
     // Calculate price for each hour based on day/night rates
     for (let i = 0; i < duration; i++) {
-      const currentHour = startHour + i;
+      const currentHour = parseInt(selectedTime.split(':')[0]) + i;
       const timeString = `${currentHour.toString().padStart(2, '0')}:00`;
       const hourPrice = calculatePrice(terrain, timeString, globalNightStartTime);
       totalPrice += hourPrice;
@@ -261,7 +267,11 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
             <div className="p-4 bg-gray-50 rounded-md border">
               <h3 className="font-medium mb-2">Prix Total</h3>
               <div className="text-sm text-gray-600 mb-1">
-                {isNightTime(selectedTime, getGlobalNightStartTime()) ? `Tarif nuit (dès ${getGlobalNightStartTime()})` : 'Tarif jour'} - {getEffectiveDuration()}h
+                {selectedTerrain?.type === 'foot' ? (
+                  `Tarif fixe 1h30 (${isNightTime(selectedTime, getGlobalNightStartTime()) ? 'nuit' : 'jour'})`
+                ) : (
+                  `${isNightTime(selectedTime, getGlobalNightStartTime()) ? `Tarif nuit (dès ${getGlobalNightStartTime()})` : 'Tarif jour'} - ${getEffectiveDuration()}h`
+                )}
                 {selectedTerrain?.type === 'foot' && (
                   <span className="text-blue-600 ml-1">(durée fixe)</span>
                 )}
