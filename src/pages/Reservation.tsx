@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -9,6 +10,7 @@ import { fr } from 'date-fns/locale';
 import { useTerrains, useTerrain } from '@/hooks/useTerrains';
 import { useCreateReservation } from '@/hooks/useReservations';
 import { useReservations, isTimeSlotAvailable, getUnavailableDates } from '@/hooks/useAvailability';
+import { useAppSetting } from '@/hooks/useAppSettings';
 import { Terrain, isNightTime, calculatePrice } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 
@@ -49,6 +51,9 @@ const Reservation = () => {
   // Fetch single terrain if ID provided
   const { data: terrain } = useTerrain(fieldIdParam ? parseInt(fieldIdParam) : undefined);
   
+  // Fetch global night start time setting
+  const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
+  
   // Fetch ALL reservations for availability checking (not filtered by status)
   const { data: reservations } = useReservations({
     terrain_id: selectedField?.id,
@@ -66,6 +71,11 @@ const Reservation = () => {
   // Get unavailable dates for the selected field
   const unavailableDates = selectedField ? getUnavailableDates(reservations, selectedField.id) : [];
 
+  // Get global night start time
+  const getGlobalNightStartTime = (): string => {
+    return nightTimeSetting?.setting_value || '19:00';
+  };
+
   // Calculate total price based on selected time and duration
   const calculateTotalPrice = (): number => {
     if (!selectedField || !selectedTime || !selectedDuration) return 0;
@@ -73,12 +83,13 @@ const Reservation = () => {
     const duration = parseFloat(selectedDuration);
     const startHour = parseInt(selectedTime.split(':')[0]);
     let totalPrice = 0;
+    const globalNightStartTime = getGlobalNightStartTime();
     
     // Calculate price for each hour based on day/night rates
     for (let i = 0; i < duration; i++) {
       const currentHour = startHour + i;
       const timeString = `${currentHour.toString().padStart(2, '0')}:00`;
-      const hourPrice = calculatePrice(selectedField, timeString);
+      const hourPrice = calculatePrice(selectedField, timeString, globalNightStartTime);
       totalPrice += hourPrice;
     }
     
@@ -91,7 +102,8 @@ const Reservation = () => {
     
     const duration = parseFloat(selectedDuration);
     const startHour = parseInt(selectedTime.split(':')[0]);
-    const isStartNight = isNightTime(selectedTime);
+    const globalNightStartTime = getGlobalNightStartTime();
+    const isStartNight = isNightTime(selectedTime, globalNightStartTime);
     
     // Check if the reservation spans both day and night
     let hasDayHours = false;
@@ -100,7 +112,7 @@ const Reservation = () => {
     for (let i = 0; i < duration; i++) {
       const currentHour = startHour + i;
       const timeString = `${currentHour.toString().padStart(2, '0')}:00`;
-      if (isNightTime(timeString)) {
+      if (isNightTime(timeString, globalNightStartTime)) {
         hasNightHours = true;
       } else {
         hasDayHours = true;
@@ -198,6 +210,7 @@ const Reservation = () => {
   }
 
   const priceInfo = getPriceDisplayInfo();
+  const globalNightStartTime = getGlobalNightStartTime();
 
   return (
     <>
@@ -273,7 +286,7 @@ const Reservation = () => {
                     </select>
                     {selectedField && selectedField.prix_nuit && (
                       <div className="mt-2 text-sm text-gray-600">
-                        <span className="text-blue-600">💡 Tarif nuit à partir de 19h00</span>
+                        <span className="text-blue-600">💡 Tarif nuit à partir de {globalNightStartTime}</span>
                       </div>
                     )}
                   </div>
@@ -335,8 +348,8 @@ const Reservation = () => {
                             parseFloat(selectedDuration)
                           ) : true;
                         
-                        const isNight = isNightTime(time);
-                        const priceForThisHour = selectedField ? calculatePrice(selectedField, time) : 0;
+                        const isNight = isNightTime(time, globalNightStartTime);
+                        const priceForThisHour = selectedField ? calculatePrice(selectedField, time, globalNightStartTime) : 0;
                         
                         return (
                           <button
@@ -365,7 +378,7 @@ const Reservation = () => {
                     <div className="mt-2 text-sm text-gray-600">
                       <span className="text-red-600">■</span> Créneaux occupés (réservations confirmées ou en attente)
                       <span className="ml-4 text-green-600">■</span> Créneaux disponibles
-                      <span className="ml-4">🌙</span> Tarif nuit (19h et après)
+                      <span className="ml-4">🌙</span> Tarif nuit ({globalNightStartTime} et après)
                     </div>
                   </div>
                   
@@ -461,7 +474,7 @@ const Reservation = () => {
                       </div>
                       <div className="flex justify-between mb-2">
                         <span>Heure:</span>
-                        <span className="font-medium">{selectedTime} {isNightTime(selectedTime) ? '🌙' : '☀️'}</span>
+                        <span className="font-medium">{selectedTime} {isNightTime(selectedTime, globalNightStartTime) ? '🌙' : '☀️'}</span>
                       </div>
                       <div className="flex justify-between mb-2">
                         <span>Durée:</span>
