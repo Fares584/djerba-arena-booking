@@ -76,11 +76,24 @@ const Reservation = () => {
     return nightTimeSetting?.setting_value || '19:00';
   };
 
+  // Get effective duration based on terrain type
+  const getEffectiveDuration = (): string => {
+    if (selectedField?.type === 'foot') {
+      return '1.5'; // Football always 1.5 hours
+    }
+    return selectedDuration;
+  };
+
+  // Check if duration should be changeable
+  const isDurationChangeable = (): boolean => {
+    return selectedField?.type !== 'foot';
+  };
+
   // Calculate total price based on selected time and duration
   const calculateTotalPrice = (): number => {
-    if (!selectedField || !selectedTime || !selectedDuration) return 0;
+    if (!selectedField || !selectedTime) return 0;
     
-    const duration = parseFloat(selectedDuration);
+    const duration = parseFloat(getEffectiveDuration());
     const startHour = parseInt(selectedTime.split(':')[0]);
     let totalPrice = 0;
     const globalNightStartTime = getGlobalNightStartTime();
@@ -98,9 +111,9 @@ const Reservation = () => {
 
   // Get price display info for the summary
   const getPriceDisplayInfo = () => {
-    if (!selectedField || !selectedTime || !selectedDuration) return null;
+    if (!selectedField || !selectedTime) return null;
     
-    const duration = parseFloat(selectedDuration);
+    const duration = parseFloat(getEffectiveDuration());
     const startHour = parseInt(selectedTime.split(':')[0]);
     const globalNightStartTime = getGlobalNightStartTime();
     const isStartNight = isNightTime(selectedTime, globalNightStartTime);
@@ -146,10 +159,25 @@ const Reservation = () => {
     if (terrain) {
       setSelectedField(terrain);
       setSelectedType(terrain.type);
+      // Set default duration to 1.5 for football
+      if (terrain.type === 'foot') {
+        setSelectedDuration('1.5');
+      }
     } else if (typeParam) {
       setSelectedType(typeParam);
+      // Set default duration to 1.5 for football
+      if (typeParam === 'foot') {
+        setSelectedDuration('1.5');
+      }
     }
   }, [terrain, typeParam]);
+
+  // Update duration when field changes
+  useEffect(() => {
+    if (selectedField?.type === 'foot') {
+      setSelectedDuration('1.5');
+    }
+  }, [selectedField]);
 
   // Reset time when date or field changes
   useEffect(() => {
@@ -160,10 +188,12 @@ const Reservation = () => {
     e.preventDefault();
     
     // Basic validation
-    if (!selectedField || !selectedDate || !selectedTime || !selectedDuration || !name || !email || !phone) {
+    if (!selectedField || !selectedDate || !selectedTime || !name || !email || !phone) {
       toast.error('Veuillez remplir tous les champs obligatoires.');
       return;
     }
+    
+    const effectiveDuration = getEffectiveDuration();
     
     // Check availability before submitting (this will now consider 'en_attente' as occupied)
     const formattedDate = format(selectedDate, 'yyyy-MM-dd');
@@ -172,7 +202,7 @@ const Reservation = () => {
       selectedField.id,
       formattedDate,
       selectedTime,
-      parseFloat(selectedDuration)
+      parseFloat(effectiveDuration)
     );
     
     if (!isAvailable) {
@@ -188,7 +218,7 @@ const Reservation = () => {
       terrain_id: selectedField.id,
       date: formattedDate,
       heure: selectedTime,
-      duree: parseFloat(selectedDuration),
+      duree: parseFloat(effectiveDuration),
       statut: 'en_attente', // Will occupy the slot immediately even though it's pending
       remarque: message || undefined
     });
@@ -211,6 +241,7 @@ const Reservation = () => {
 
   const priceInfo = getPriceDisplayInfo();
   const globalNightStartTime = getGlobalNightStartTime();
+  const effectiveDuration = getEffectiveDuration();
 
   return (
     <>
@@ -247,6 +278,10 @@ const Reservation = () => {
                       onChange={(e) => {
                         setSelectedType(e.target.value as 'foot' | 'tennis' | 'padel' | '');
                         setSelectedField(null);
+                        // Set default duration for football
+                        if (e.target.value === 'foot') {
+                          setSelectedDuration('1.5');
+                        }
                       }}
                       required
                     >
@@ -345,7 +380,7 @@ const Reservation = () => {
                             selectedField.id,
                             format(selectedDate, 'yyyy-MM-dd'),
                             time,
-                            parseFloat(selectedDuration)
+                            parseFloat(effectiveDuration)
                           ) : true;
                         
                         const isNight = isNightTime(time, globalNightStartTime);
@@ -387,18 +422,25 @@ const Reservation = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Durée *
                     </label>
-                    <select 
-                      className="w-full border rounded-md p-3"
-                      value={selectedDuration}
-                      onChange={(e) => setSelectedDuration(e.target.value)}
-                      required
-                    >
-                      {durationOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    {selectedField?.type === 'foot' ? (
+                      <div className="w-full border rounded-md p-3 bg-gray-100 text-gray-700">
+                        1 heure 30 minutes (durée fixe pour le football)
+                      </div>
+                    ) : (
+                      <select 
+                        className="w-full border rounded-md p-3"
+                        value={selectedDuration}
+                        onChange={(e) => setSelectedDuration(e.target.value)}
+                        required
+                        disabled={!isDurationChangeable()}
+                      >
+                        {durationOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 </div>
                 
@@ -465,7 +507,7 @@ const Reservation = () => {
                   </div>
                   
                   {/* Price Calculation */}
-                  {selectedField && selectedDuration && selectedTime && (
+                  {selectedField && selectedTime && (
                     <div className="mb-6 p-4 bg-sport-green/10 rounded-md">
                       <h3 className="font-bold text-lg mb-2">Résumé de la réservation</h3>
                       <div className="flex justify-between mb-2">
@@ -478,7 +520,12 @@ const Reservation = () => {
                       </div>
                       <div className="flex justify-between mb-2">
                         <span>Durée:</span>
-                        <span className="font-medium">{selectedDuration} heure(s)</span>
+                        <span className="font-medium">
+                          {effectiveDuration} heure(s)
+                          {selectedField.type === 'foot' && (
+                            <span className="text-sm text-gray-600 ml-1">(fixe)</span>
+                          )}
+                        </span>
                       </div>
                       
                       {/* Dynamic pricing display */}
@@ -505,7 +552,7 @@ const Reservation = () => {
                           {calculateTotalPrice()} DT
                         </span>
                       </div>
-                      {parseFloat(selectedDuration) > 1 && (
+                      {parseFloat(effectiveDuration) > 1 && (
                         <div className="text-xs text-gray-600 mt-2">
                           * Prix calculé par heure selon le tarif jour/nuit
                         </div>

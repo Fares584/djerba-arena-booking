@@ -46,19 +46,35 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
   const createReservation = useCreateReservation();
 
+  // Get selected terrain object
+  const selectedTerrain = terrains?.find(t => t.id === selectedField);
+
   // Get global night start time
   const getGlobalNightStartTime = (): string => {
     return nightTimeSetting?.setting_value || '19:00';
   };
 
+  // Get effective duration based on terrain type
+  const getEffectiveDuration = (): string => {
+    if (selectedTerrain?.type === 'foot') {
+      return '1.5'; // Football always 1.5 hours
+    }
+    return selectedDuration;
+  };
+
+  // Check if duration should be changeable
+  const isDurationChangeable = (): boolean => {
+    return selectedTerrain?.type !== 'foot';
+  };
+
   // Calculate total price based on selected time and duration
   const calculateTotalPrice = (): number => {
-    if (!selectedField || !selectedTime || !selectedDuration || !terrains) return 0;
+    if (!selectedField || !selectedTime || !terrains) return 0;
     
     const terrain = terrains.find(t => t.id === selectedField);
     if (!terrain) return 0;
     
-    const duration = parseFloat(selectedDuration);
+    const duration = parseFloat(getEffectiveDuration());
     const startHour = parseInt(selectedTime.split(':')[0]);
     let totalPrice = 0;
     const globalNightStartTime = getGlobalNightStartTime();
@@ -74,6 +90,13 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     return totalPrice;
   };
 
+  // Update duration when terrain changes
+  useEffect(() => {
+    if (selectedTerrain?.type === 'foot') {
+      setSelectedDuration('1.5');
+    }
+  }, [selectedTerrain]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -83,6 +106,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     
     // Format date as ISO string (YYYY-MM-DD)
     const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+    const effectiveDuration = getEffectiveDuration();
     
     createReservation.mutate({
       nom_client: name,
@@ -91,7 +115,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       terrain_id: selectedField,
       date: formattedDate,
       heure: selectedTime,
-      duree: parseFloat(selectedDuration),
+      duree: parseFloat(effectiveDuration),
       statut: 'confirmee', // Admin-created reservations are automatically confirmed
       remarque: message || undefined
     }, {
@@ -162,21 +186,28 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
             
             <div>
               <Label htmlFor="duration">Durée</Label>
-              <Select 
-                value={selectedDuration} 
-                onValueChange={setSelectedDuration}
-              >
-                <SelectTrigger id="duration">
-                  <SelectValue placeholder="Durée" />
-                </SelectTrigger>
-                <SelectContent>
-                  {durationOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {selectedTerrain?.type === 'foot' ? (
+                <div className="w-full border rounded-md p-2 bg-gray-100 text-gray-700 text-sm flex items-center h-10">
+                  1h30 (fixe pour football)
+                </div>
+              ) : (
+                <Select 
+                  value={selectedDuration} 
+                  onValueChange={setSelectedDuration}
+                  disabled={!isDurationChangeable()}
+                >
+                  <SelectTrigger id="duration">
+                    <SelectValue placeholder="Durée" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {durationOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
         </div>
@@ -226,11 +257,14 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
             />
           </div>
           
-          {selectedField && selectedDuration && selectedTime && terrains && (
+          {selectedField && selectedTime && terrains && (
             <div className="p-4 bg-gray-50 rounded-md border">
               <h3 className="font-medium mb-2">Prix Total</h3>
               <div className="text-sm text-gray-600 mb-1">
-                {isNightTime(selectedTime, getGlobalNightStartTime()) ? `Tarif nuit (dès ${getGlobalNightStartTime()})` : 'Tarif jour'} - {selectedDuration}h
+                {isNightTime(selectedTime, getGlobalNightStartTime()) ? `Tarif nuit (dès ${getGlobalNightStartTime()})` : 'Tarif jour'} - {getEffectiveDuration()}h
+                {selectedTerrain?.type === 'foot' && (
+                  <span className="text-blue-600 ml-1">(durée fixe)</span>
+                )}
               </div>
               <p className="text-lg font-bold text-sport-green">
                 {calculateTotalPrice()} DT
