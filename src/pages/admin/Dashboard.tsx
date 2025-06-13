@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -6,6 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { CalendarCheck, Users, ChartBar } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { Reservation } from '@/lib/supabase';
 
 const Dashboard = () => {
   // Exclure les réservations d'abonnement des statistiques
@@ -20,6 +25,9 @@ const Dashboard = () => {
   });
   
   const [typeStats, setTypeStats] = useState<{ name: string; count: number }[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedReservations, setSelectedReservations] = useState<Reservation[]>([]);
+  const [dialogTitle, setDialogTitle] = useState('');
   
   useEffect(() => {
     if (reservations) {
@@ -48,12 +56,77 @@ const Dashboard = () => {
     
   }, [reservations, terrains]);
 
+  const handleCardClick = (type: 'total' | 'confirmees' | 'enAttente' | 'annulees') => {
+    if (!reservations) return;
+    
+    let filteredReservations: Reservation[] = [];
+    let title = '';
+    
+    switch (type) {
+      case 'total':
+        filteredReservations = reservations;
+        title = 'Toutes les Réservations';
+        break;
+      case 'confirmees':
+        filteredReservations = reservations.filter(r => r.statut === 'confirmee');
+        title = 'Réservations Confirmées';
+        break;
+      case 'enAttente':
+        filteredReservations = reservations.filter(r => r.statut === 'en_attente');
+        title = 'Réservations en Attente';
+        break;
+      case 'annulees':
+        filteredReservations = reservations.filter(r => r.statut === 'annulee');
+        title = 'Réservations Annulées';
+        break;
+    }
+    
+    setSelectedReservations(filteredReservations);
+    setDialogTitle(title);
+    setIsDialogOpen(true);
+  };
+
+  const getTerrainName = (terrainId: number) => {
+    if (!terrains) return 'Inconnu';
+    const terrain = terrains.find(t => t.id === terrainId);
+    return terrain ? terrain.nom : 'Inconnu';
+  };
+
+  const getStatusClass = (status: string) => {
+    switch (status) {
+      case 'confirmee':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'en_attente':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'annulee':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'confirmee':
+        return 'Confirmée';
+      case 'en_attente':
+        return 'En attente';
+      case 'annulee':
+        return 'Annulée';
+      default:
+        return status;
+    }
+  };
+
   return (
     <div>
       <h1 className="text-3xl font-bold mb-8">Tableau de bord</h1>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+          onClick={() => handleCardClick('total')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Réservations</CardTitle>
             <CalendarCheck className="h-5 w-5 text-sport-green" />
@@ -64,7 +137,10 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+          onClick={() => handleCardClick('confirmees')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Réservations Confirmées</CardTitle>
             <CalendarCheck className="h-5 w-5 text-green-500" />
@@ -79,7 +155,10 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+          onClick={() => handleCardClick('enAttente')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Réservations en Attente</CardTitle>
             <CalendarCheck className="h-5 w-5 text-yellow-500" />
@@ -94,7 +173,10 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+          onClick={() => handleCardClick('annulees')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Réservations Annulées</CardTitle>
             <CalendarCheck className="h-5 w-5 text-red-500" />
@@ -210,6 +292,60 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog for showing reservation details */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{dialogTitle} ({selectedReservations.length})</DialogTitle>
+          </DialogHeader>
+          
+          {selectedReservations.length > 0 ? (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Téléphone</TableHead>
+                    <TableHead>Terrain</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Heure</TableHead>
+                    <TableHead>Durée</TableHead>
+                    <TableHead>Statut</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selectedReservations.map((reservation) => (
+                    <TableRow key={reservation.id}>
+                      <TableCell className="font-medium">#{reservation.id}</TableCell>
+                      <TableCell>{reservation.nom_client}</TableCell>
+                      <TableCell>{reservation.email}</TableCell>
+                      <TableCell>{reservation.tel}</TableCell>
+                      <TableCell>{getTerrainName(reservation.terrain_id)}</TableCell>
+                      <TableCell>
+                        {format(new Date(reservation.date), 'dd/MM/yyyy', { locale: fr })}
+                      </TableCell>
+                      <TableCell>{reservation.heure}</TableCell>
+                      <TableCell>{reservation.duree}h</TableCell>
+                      <TableCell>
+                        <Badge className={getStatusClass(reservation.statut)}>
+                          {getStatusLabel(reservation.statut)}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Aucune réservation trouvée pour cette catégorie.</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
