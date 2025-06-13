@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Calendar, Clock, User, Phone, Mail, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import TerrainSelector from '@/components/TerrainSelector';
+import { calculatePrice, isNightTime } from '@/lib/supabase';
 
 // Créneaux horaires
 const timeSlots = [
