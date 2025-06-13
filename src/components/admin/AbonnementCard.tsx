@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Edit, Trash2, Calendar, Clock, MapPin, User, Mail, Phone } from 'lucide-react';
+import { Edit, Trash2, Calendar, Clock, MapPin, User, Mail, Phone, AlertTriangle } from 'lucide-react';
 import { Abonnement, getDayName } from '@/lib/supabase';
+import { calculateDaysRemaining } from '@/hooks/useAbonnementExpiration';
 
 interface AbonnementCardProps {
   abonnement: Abonnement;
@@ -50,6 +51,23 @@ const AbonnementCard = ({
     }
   };
 
+  // Calculer les jours restants
+  const daysRemaining = calculateDaysRemaining(abonnement.date_fin);
+  
+  const getDaysRemainingColor = (days: number) => {
+    if (days < 0) return 'text-red-600';
+    if (days <= 7) return 'text-orange-600';
+    if (days <= 30) return 'text-yellow-600';
+    return 'text-green-600';
+  };
+
+  const getDaysRemainingText = (days: number) => {
+    if (days < 0) return `Expiré depuis ${Math.abs(days)} jour(s)`;
+    if (days === 0) return 'Expire aujourd\'hui';
+    if (days === 1) return 'Expire demain';
+    return `${days} jour(s) restant(s)`;
+  };
+
   return (
     <Card className="hover:shadow-lg transition-shadow duration-200">
       <CardHeader className="pb-3">
@@ -57,9 +75,17 @@ const AbonnementCard = ({
           <CardTitle className="text-lg font-semibold text-gray-900">
             {abonnement.client_nom}
           </CardTitle>
-          <Badge className={getStatusColor(abonnement.statut)}>
-            {getStatusLabel(abonnement.statut)}
-          </Badge>
+          <div className="flex flex-col items-end gap-2">
+            <Badge className={getStatusColor(abonnement.statut)}>
+              {getStatusLabel(abonnement.statut)}
+            </Badge>
+            {abonnement.statut === 'actif' && (
+              <div className={`flex items-center gap-1 text-sm font-medium ${getDaysRemainingColor(daysRemaining)}`}>
+                {daysRemaining <= 7 && <AlertTriangle className="h-4 w-4" />}
+                <span>{getDaysRemainingText(daysRemaining)}</span>
+              </div>
+            )}
+          </div>
         </div>
       </CardHeader>
       

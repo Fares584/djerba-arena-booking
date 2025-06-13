@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { useAbonnements, useDeleteAbonnement, useUpdateAbonnement } from '@/hooks/useAbonnements';
+import { useAbonnementExpiration } from '@/hooks/useAbonnementExpiration';
 import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
 import { useTerrains } from '@/hooks/useTerrains';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,9 @@ const Abonnements = () => {
   const { data: terrains } = useTerrains({ actif: true });
   const deleteAbonnement = useDeleteAbonnement();
   const updateAbonnement = useUpdateAbonnement();
+  
+  // Ajouter la vérification automatique d'expiration
+  useAbonnementExpiration(abonnements);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAbonnement, setEditingAbonnement] = useState<Abonnement | null>(null);
