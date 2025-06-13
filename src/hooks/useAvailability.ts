@@ -43,6 +43,44 @@ export function useReservations(filters?: {
   });
 }
 
+// New hook for availability checking - this is what Reservation.tsx is trying to import
+export function useAvailability({ 
+  terrainId, 
+  date, 
+  enabled = true 
+}: { 
+  terrainId?: number | null; 
+  date?: string; 
+  enabled?: boolean;
+}) {
+  return useQuery({
+    queryKey: ['availability', terrainId, date],
+    queryFn: async () => {
+      if (!terrainId || !date) return [];
+      
+      try {
+        const { data, error } = await supabase
+          .from('reservations')
+          .select('*')
+          .eq('terrain_id', terrainId)
+          .eq('date', date)
+          .in('statut', ['en_attente', 'confirmee']);
+        
+        if (error) {
+          console.error("Error fetching availability:", error);
+          throw error;
+        }
+        
+        return data as Reservation[];
+      } catch (error) {
+        console.error("Error in useAvailability hook:", error);
+        throw error;
+      }
+    },
+    enabled: enabled && !!terrainId && !!date,
+  });
+}
+
 // Check if a specific time slot is available
 export function isTimeSlotAvailable(
   reservations: Reservation[] | undefined,
