@@ -356,19 +356,6 @@ const Reservation = () => {
                   required
                 />
               </div>
-
-              <div className="mb-8">
-                <Label htmlFor="remarks" className="text-base font-medium mb-2 block">
-                  Remarques (optionnel)
-                </Label>
-                <Textarea
-                  id="remarks"
-                  value={remarks}
-                  onChange={(e) => setRemarks(e.target.value)}
-                  placeholder="Ajoutez des informations supplémentaires..."
-                  rows={3}
-                />
-              </div>
             </div>
 
             {/* Price Summary */}
