@@ -301,44 +301,95 @@ const Dashboard = () => {
           </DialogHeader>
           
           {selectedReservations.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Client</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Téléphone</TableHead>
-                    <TableHead>Terrain</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Heure</TableHead>
-                    <TableHead>Durée</TableHead>
-                    <TableHead>Statut</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {selectedReservations.map((reservation) => (
-                    <TableRow key={reservation.id}>
-                      <TableCell className="font-medium">#{reservation.id}</TableCell>
-                      <TableCell>{reservation.nom_client}</TableCell>
-                      <TableCell>{reservation.email}</TableCell>
-                      <TableCell>{reservation.tel}</TableCell>
-                      <TableCell>{getTerrainName(reservation.terrain_id)}</TableCell>
-                      <TableCell>
-                        {format(new Date(reservation.date), 'dd/MM/yyyy', { locale: fr })}
-                      </TableCell>
-                      <TableCell>{reservation.heure}</TableCell>
-                      <TableCell>{reservation.duree}h</TableCell>
-                      <TableCell>
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Téléphone</TableHead>
+                      <TableHead>Terrain</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Heure</TableHead>
+                      <TableHead>Durée</TableHead>
+                      <TableHead>Statut</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedReservations.map((reservation) => (
+                      <TableRow key={reservation.id}>
+                        <TableCell className="font-medium">#{reservation.id}</TableCell>
+                        <TableCell>{reservation.nom_client}</TableCell>
+                        <TableCell>{reservation.email}</TableCell>
+                        <TableCell>{reservation.tel}</TableCell>
+                        <TableCell>{getTerrainName(reservation.terrain_id)}</TableCell>
+                        <TableCell>
+                          {format(new Date(reservation.date), 'dd/MM/yyyy', { locale: fr })}
+                        </TableCell>
+                        <TableCell>{reservation.heure}</TableCell>
+                        <TableCell>{reservation.duree}h</TableCell>
+                        <TableCell>
+                          <Badge className={getStatusClass(reservation.statut)}>
+                            {getStatusLabel(reservation.statut)}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {selectedReservations.map((reservation) => (
+                  <Card key={reservation.id} className="border border-gray-200">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="font-semibold text-lg">{reservation.nom_client}</h3>
+                          <p className="text-sm text-gray-600">#{reservation.id}</p>
+                        </div>
                         <Badge className={getStatusClass(reservation.statut)}>
                           {getStatusLabel(reservation.statut)}
                         </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Email:</span>
+                          <span className="font-medium">{reservation.email}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Téléphone:</span>
+                          <span className="font-medium">{reservation.tel}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Terrain:</span>
+                          <span className="font-medium">{getTerrainName(reservation.terrain_id)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Date:</span>
+                          <span className="font-medium">
+                            {format(new Date(reservation.date), 'dd/MM/yyyy', { locale: fr })}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Heure:</span>
+                          <span className="font-medium">{reservation.heure}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Durée:</span>
+                          <span className="font-medium">{reservation.duree}h</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500">Aucune réservation trouvée pour cette catégorie.</p>
