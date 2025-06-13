@@ -8,7 +8,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 
 import { CalendarCheck, Users, ChartBar } from 'lucide-react';
 
 const Dashboard = () => {
-  const { data: reservations } = useReservations();
+  // Exclure les réservations d'abonnement des statistiques
+  const { data: reservations } = useReservations({ excludeSubscriptions: true });
   const { data: terrains } = useTerrains();
   
   const [reservationStats, setReservationStats] = useState({
