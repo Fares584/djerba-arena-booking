@@ -2,26 +2,31 @@
 import { useState, useEffect } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
-import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { Loader2, Calendar, ArrowUpRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Loader2, ArrowUpRight } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Stats = () => {
   const [timeframe, setTimeframe] = useState<'week' | 'month'>('week');
-  const [startDate, setStartDate] = useState<Date>(subDays(new Date(), 6)); // Last 7 days
+  const [startDate, setStartDate] = useState<Date>(subDays(new Date(), 6));
   const [endDate] = useState<Date>(new Date());
   
   const { data: reservations, isLoading: reservationsLoading } = useReservations();
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
   
-  const [reservationsByDay, setReservationsByDay] = useState<any[]>([]);
-  const [reservationsByType, setReservationsByType] = useState<any[]>([]);
-  const [revenueByType, setRevenueByType] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    totalReservations: 0,
+    totalRevenue: 0,
+    occupancyRate: 0,
+    averageRevenue: 0,
+    footballReservations: 0,
+    tennisReservations: 0,
+    padelReservations: 0,
+    footballRevenue: 0,
+    tennisRevenue: 0,
+    padelRevenue: 0
+  });
   
   useEffect(() => {
     if (timeframe === 'week') {
@@ -34,50 +39,53 @@ const Stats = () => {
   useEffect(() => {
     if (!reservations || !terrains) return;
     
-    // Configure date range
-    const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
-    
-    // Calculate reservations by day
-    const reservationsByDayData = dateRange.map(date => {
-      const dateStr = format(date, 'yyyy-MM-dd');
-      const count = reservations.filter(r => r.date === dateStr).length;
-      
-      return {
-        date: format(date, 'dd/MM'),
-        count: count
-      };
+    const filteredReservations = reservations.filter(reservation => {
+      const reservationDate = new Date(reservation.date);
+      return reservationDate >= startDate && reservationDate <= endDate;
     });
-    setReservationsByDay(reservationsByDayData);
-    
-    // Calculate reservations and revenue by type
-    const typeData: Record<string, { count: number; revenue: number }> = {
-      'foot': { count: 0, revenue: 0 },
-      'tennis': { count: 0, revenue: 0 },
-      'padel': { count: 0, revenue: 0 }
+
+    const typeStats = {
+      foot: { count: 0, revenue: 0 },
+      tennis: { count: 0, revenue: 0 },
+      padel: { count: 0, revenue: 0 }
     };
-    
-    reservations.forEach(reservation => {
+
+    let totalRevenue = 0;
+
+    filteredReservations.forEach(reservation => {
       const terrain = terrains.find(t => t.id === reservation.terrain_id);
       if (!terrain) return;
+
+      const revenue = terrain.prix * reservation.duree;
+      totalRevenue += revenue;
       
-      const reservationDate = new Date(reservation.date);
-      if (reservationDate >= startDate && reservationDate <= endDate) {
-        typeData[terrain.type].count += 1;
-        typeData[terrain.type].revenue += terrain.prix * reservation.duree;
-      }
+      typeStats[terrain.type].count += 1;
+      typeStats[terrain.type].revenue += revenue;
+    });
+
+    const daysInTimeframe = timeframe === 'week' ? 7 : 30;
+    const occupancyRate = terrains.length > 0 
+      ? Math.round((filteredReservations.length / (terrains.length * daysInTimeframe * 13)) * 100)
+      : 0;
+
+    const averageRevenue = filteredReservations.length > 0 
+      ? Math.round(totalRevenue / filteredReservations.length)
+      : 0;
+
+    setStats({
+      totalReservations: filteredReservations.length,
+      totalRevenue: totalRevenue,
+      occupancyRate: occupancyRate,
+      averageRevenue: averageRevenue,
+      footballReservations: typeStats.foot.count,
+      tennisReservations: typeStats.tennis.count,
+      padelReservations: typeStats.padel.count,
+      footballRevenue: typeStats.foot.revenue,
+      tennisRevenue: typeStats.tennis.revenue,
+      padelRevenue: typeStats.padel.revenue
     });
     
-    setReservationsByType(Object.entries(typeData).map(([type, data]) => ({
-      type: type === 'foot' ? 'Football' : type === 'tennis' ? 'Tennis' : 'Padel',
-      count: data.count
-    })));
-    
-    setRevenueByType(Object.entries(typeData).map(([type, data]) => ({
-      type: type === 'foot' ? 'Football' : type === 'tennis' ? 'Tennis' : 'Padel',
-      revenue: data.revenue
-    })));
-    
-  }, [reservations, terrains, startDate, endDate]);
+  }, [reservations, terrains, startDate, endDate, timeframe]);
   
   if (reservationsLoading || terrainsLoading) {
     return (
@@ -86,9 +94,6 @@ const Stats = () => {
       </div>
     );
   }
-
-  // Calculate the number of days in the timeframe
-  const daysInTimeframe = timeframe === 'week' ? 7 : 30;
 
   return (
     <div>
@@ -110,11 +115,9 @@ const Stats = () => {
             <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {reservationsByDay.reduce((sum, item) => sum + item.count, 0)}
-            </div>
+            <div className="text-2xl font-bold">{stats.totalReservations}</div>
             <p className="text-xs text-muted-foreground">
-              +{Math.floor(Math.random() * 20) + 5}% par rapport à la période précédente
+              Période sélectionnée
             </p>
           </CardContent>
         </Card>
@@ -125,11 +128,9 @@ const Stats = () => {
             <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {revenueByType.reduce((sum, item) => sum + item.revenue, 0)} DT
-            </div>
+            <div className="text-2xl font-bold">{stats.totalRevenue} DT</div>
             <p className="text-xs text-muted-foreground">
-              +{Math.floor(Math.random() * 15) + 3}% par rapport à la période précédente
+              Revenus générés
             </p>
           </CardContent>
         </Card>
@@ -140,12 +141,7 @@ const Stats = () => {
             <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {terrains && terrains.length > 0 
-                ? Math.round((reservationsByDay.reduce((sum, item) => sum + item.count, 0) / 
-                   (terrains.length * daysInTimeframe * 13)) * 100)
-                : 0}%
-            </div>
+            <div className="text-2xl font-bold">{stats.occupancyRate}%</div>
             <p className="text-xs text-muted-foreground">
               {terrains?.filter(t => t.actif).length} terrains actifs
             </p>
@@ -158,136 +154,74 @@ const Stats = () => {
             <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {reservationsByDay.reduce((sum, item) => sum + item.count, 0) > 0
-                ? Math.round(revenueByType.reduce((sum, item) => sum + item.revenue, 0) / 
-                   reservationsByDay.reduce((sum, item) => sum + item.count, 0))
-                : 0} DT
-            </div>
+            <div className="text-2xl font-bold">{stats.averageRevenue} DT</div>
             <p className="text-xs text-muted-foreground">
-              {Math.floor(Math.random() * 10) > 5 ? '+' : '-'}
-              {Math.floor(Math.random() * 10) + 2}% par rapport à la période précédente
+              Par réservation
             </p>
           </CardContent>
         </Card>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Réservations par jour</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <ChartContainer 
-              config={{
-                reservations: { color: '#10b981' }
-              }}
-              className="aspect-auto h-80"
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={reservationsByDay}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip content={({ active, payload, label }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="bg-white p-2 border rounded shadow-sm">
-                          <p className="font-medium">{label}</p>
-                          <p>{`${payload[0].value} réservations`}</p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }} />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="count" 
-                    name="Réservations" 
-                    stroke="#10b981" 
-                    activeDot={{ r: 8 }} 
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-        
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Réservations par type de terrain</CardTitle>
           </CardHeader>
-          <CardContent className="pt-4">
-            <ChartContainer 
-              config={{
-                Football: { color: '#10b981' },
-                Tennis: { color: '#3b82f6' },
-                Padel: { color: '#f59e0b' },
-              }}
-              className="aspect-auto h-80"
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={reservationsByType}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="type" />
-                  <YAxis />
-                  <Tooltip content={({ active, payload, label }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="bg-white p-2 border rounded shadow-sm">
-                          <p className="font-medium">{label}</p>
-                          <p>{`${payload[0].value} réservations`}</p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }} />
-                  <Legend />
-                  <Bar dataKey="count" name="Réservations" fill="#10b981" />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span>Football:</span>
+                <div className="text-right">
+                  <div className="font-medium">{stats.footballReservations} réservations</div>
+                  <div className="text-sm text-muted-foreground">{stats.footballRevenue} DT</div>
+                </div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Tennis:</span>
+                <div className="text-right">
+                  <div className="font-medium">{stats.tennisReservations} réservations</div>
+                  <div className="text-sm text-muted-foreground">{stats.tennisRevenue} DT</div>
+                </div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Padel:</span>
+                <div className="text-right">
+                  <div className="font-medium">{stats.padelReservations} réservations</div>
+                  <div className="text-sm text-muted-foreground">{stats.padelRevenue} DT</div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Répartition des revenus</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between">
+                <span>Football:</span>
+                <span className="font-medium text-green-600">
+                  {((stats.footballRevenue / stats.totalRevenue) * 100 || 0).toFixed(1)}%
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Tennis:</span>
+                <span className="font-medium text-blue-600">
+                  {((stats.tennisRevenue / stats.totalRevenue) * 100 || 0).toFixed(1)}%
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Padel:</span>
+                <span className="font-medium text-yellow-600">
+                  {((stats.padelRevenue / stats.totalRevenue) * 100 || 0).toFixed(1)}%
+                </span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Revenus par type de terrain</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <ChartContainer 
-            config={{
-              Football: { color: '#10b981' },
-              Tennis: { color: '#3b82f6' },
-              Padel: { color: '#f59e0b' },
-            }}
-            className="aspect-auto h-80"
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={revenueByType}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="type" />
-                <YAxis />
-                <Tooltip content={({ active, payload, label }) => {
-                  if (active && payload && payload.length) {
-                    return (
-                      <div className="bg-white p-2 border rounded shadow-sm">
-                        <p className="font-medium">{label}</p>
-                        <p>{`${payload[0].value} DT`}</p>
-                      </div>
-                    );
-                  }
-                  return null;
-                }} />
-                <Legend />
-                <Bar dataKey="revenue" name="Revenus (DT)" fill="#3b82f6" />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        </CardContent>
-      </Card>
     </div>
   );
 };
