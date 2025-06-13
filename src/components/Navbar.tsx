@@ -42,9 +42,6 @@ const Navbar = () => {
             <Link to="/about" className="text-sport-dark hover:text-sport-green font-medium transition-colors">
               À Propos
             </Link>
-            <Link to="/contact" className="text-sport-dark hover:text-sport-green font-medium transition-colors">
-              Contact
-            </Link>
             <Link to="/login" className="btn-primary">
               Admin
             </Link>
@@ -81,13 +78,6 @@ const Navbar = () => {
               onClick={() => setIsMenuOpen(false)}
             >
               À Propos
-            </Link>
-            <Link 
-              to="/contact" 
-              className="block text-sport-dark hover:text-sport-green font-medium transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Contact
             </Link>
             <Link 
               to="/login" 
