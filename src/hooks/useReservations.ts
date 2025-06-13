@@ -9,6 +9,7 @@ export function useReservations(filters?: {
   terrain_id?: number; 
   date?: string;
   statut?: string;
+  excludeSubscriptions?: boolean;
 }) {
   return useQuery({
     queryKey: ['reservations', filters],
@@ -26,6 +27,11 @@ export function useReservations(filters?: {
         
         if (filters?.statut) {
           query = query.eq('statut', filters.statut);
+        }
+        
+        // Exclure les réservations d'abonnement si demandé
+        if (filters?.excludeSubscriptions) {
+          query = query.is('abonnement_id', null);
         }
         
         const { data, error } = await query.order('date', { ascending: true }).order('heure', { ascending: true });

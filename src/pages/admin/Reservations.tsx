@@ -14,7 +14,8 @@ import EditReservationForm from '@/components/admin/EditReservationForm';
 import ReservationCard from '@/components/admin/ReservationCard';
 
 const Reservations = () => {
-  const { data: reservations, isLoading, refetch } = useReservations();
+  // Exclure les réservations d'abonnement
+  const { data: reservations, isLoading, refetch } = useReservations({ excludeSubscriptions: true });
   const { data: terrains } = useTerrains();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
