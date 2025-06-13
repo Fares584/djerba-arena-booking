@@ -114,6 +114,10 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
     });
   };
 
+  const handleStatusChange = (value: string) => {
+    setStatut(value as 'actif' | 'expire' | 'annule');
+  };
+
   return (
     <div className="max-h-[80vh] overflow-y-auto">
       <form onSubmit={handleSubmit} className="space-y-4 p-1">
@@ -252,7 +256,7 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
           <Label htmlFor="statut" className="text-sm">Statut</Label>
           <Select 
             value={statut} 
-            onValueChange={setStatut}
+            onValueChange={handleStatusChange}
           >
             <SelectTrigger className="h-9">
               <SelectValue placeholder="Sélectionnez un statut" />
