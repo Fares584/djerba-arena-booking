@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -5,6 +6,7 @@ import Footer from '@/components/Footer';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useCreateReservation } from '@/hooks/useReservations';
 import { useAvailability } from '@/hooks/useAvailability';
+import { useAppSetting } from '@/hooks/useAppSettings';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -13,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Calendar, Clock, User, Phone, Mail, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import TerrainSelector from '@/components/TerrainSelector';
+import { calculatePrice, isNightTime } from '@/lib/supabase';
 
 // Créneaux horaires
 const timeSlots = [
@@ -45,6 +48,7 @@ const Reservation = () => {
 
   // Hooks
   const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
+  const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
   const createReservation = useCreateReservation();
 
   // Filter terrains by selected type
@@ -55,12 +59,44 @@ const Reservation = () => {
   // Get selected terrain object
   const selectedTerrain = allTerrains?.find(t => t.id === selectedTerrainId);
 
+  // Get global night start time
+  const getGlobalNightStartTime = (): string => {
+    return nightTimeSetting?.setting_value || '19:00';
+  };
+
   // Get effective duration - ALWAYS 1.5 for football
   const getEffectiveDuration = (): string => {
     if (selectedTerrain?.type === 'foot') {
       return '1.5'; // Football always 1.5 hours
     }
     return duration;
+  };
+
+  // Calculate total price with correct logic for football
+  const calculateTotalPrice = (): number => {
+    if (!selectedTerrain || !selectedTime) return 0;
+    
+    const effectiveDuration = parseFloat(getEffectiveDuration());
+    const globalNightStartTime = getGlobalNightStartTime();
+    
+    if (selectedTerrain.type === 'foot') {
+      // Pour le football: tarif fixe basé sur l'heure de début (1h30 = prix d'une séance)
+      const basePrice = calculatePrice(selectedTerrain, selectedTime, globalNightStartTime);
+      return basePrice * 1.5; // 1h30 coûte 1.5 fois le prix horaire
+    } else {
+      // Pour les autres sports: calcul par heure
+      const startHour = parseInt(selectedTime.split(':')[0]);
+      let totalPrice = 0;
+      
+      for (let i = 0; i < effectiveDuration; i++) {
+        const currentHour = startHour + i;
+        const timeString = `${currentHour.toString().padStart(2, '0')}:00`;
+        const hourPrice = calculatePrice(selectedTerrain, timeString, globalNightStartTime);
+        totalPrice += hourPrice;
+      }
+      
+      return totalPrice;
+    }
   };
 
   // Initialize from URL params
@@ -374,11 +410,18 @@ const Reservation = () => {
                     <span>Durée:</span>
                     <span className="font-medium">{getEffectiveDuration()}h</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span>Tarif:</span>
+                    <span className="font-medium">
+                      {isNightTime(selectedTime, getGlobalNightStartTime()) ? 'Nuit' : 'Jour'}
+                      {selectedTerrain.type === 'foot' && ' (tarif fixe 1h30)'}
+                    </span>
+                  </div>
                   <div className="border-t pt-2 mt-2">
                     <div className="flex justify-between text-lg font-bold">
                       <span>Prix total:</span>
                       <span className="text-sport-green">
-                        {(selectedTerrain.prix * parseFloat(getEffectiveDuration())).toFixed(2)} DT
+                        {calculateTotalPrice().toFixed(2)} DT
                       </span>
                     </div>
                   </div>

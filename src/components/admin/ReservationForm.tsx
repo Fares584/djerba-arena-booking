@@ -67,7 +67,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     return selectedTerrain?.type !== 'foot';
   };
 
-  // Calculate total price based on selected time and duration
+  // Calculate total price with correct logic for football
   const calculateTotalPrice = (): number => {
     if (!selectedField || !selectedTime || !terrains) return 0;
     
@@ -75,19 +75,26 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     if (!terrain) return 0;
     
     const duration = parseFloat(getEffectiveDuration());
-    const startHour = parseInt(selectedTime.split(':')[0]);
-    let totalPrice = 0;
     const globalNightStartTime = getGlobalNightStartTime();
     
-    // Calculate price for each hour based on day/night rates
-    for (let i = 0; i < duration; i++) {
-      const currentHour = startHour + i;
-      const timeString = `${currentHour.toString().padStart(2, '0')}:00`;
-      const hourPrice = calculatePrice(terrain, timeString, globalNightStartTime);
-      totalPrice += hourPrice;
+    if (terrain.type === 'foot') {
+      // Pour le football: tarif fixe basé sur l'heure de début (1h30 = prix d'une séance)
+      const basePrice = calculatePrice(terrain, selectedTime, globalNightStartTime);
+      return basePrice * 1.5; // 1h30 coûte 1.5 fois le prix horaire
+    } else {
+      // Pour les autres sports: calcul par heure
+      const startHour = parseInt(selectedTime.split(':')[0]);
+      let totalPrice = 0;
+      
+      for (let i = 0; i < duration; i++) {
+        const currentHour = startHour + i;
+        const timeString = `${currentHour.toString().padStart(2, '0')}:00`;
+        const hourPrice = calculatePrice(terrain, timeString, globalNightStartTime);
+        totalPrice += hourPrice;
+      }
+      
+      return totalPrice;
     }
-    
-    return totalPrice;
   };
 
   // Update duration when terrain changes
@@ -263,11 +270,11 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
               <div className="text-sm text-gray-600 mb-1">
                 {isNightTime(selectedTime, getGlobalNightStartTime()) ? `Tarif nuit (dès ${getGlobalNightStartTime()})` : 'Tarif jour'} - {getEffectiveDuration()}h
                 {selectedTerrain?.type === 'foot' && (
-                  <span className="text-blue-600 ml-1">(durée fixe)</span>
+                  <span className="text-blue-600 ml-1">(tarif fixe 1h30)</span>
                 )}
               </div>
               <p className="text-lg font-bold text-sport-green">
-                {calculateTotalPrice()} DT
+                {calculateTotalPrice().toFixed(2)} DT
               </p>
             </div>
           )}
