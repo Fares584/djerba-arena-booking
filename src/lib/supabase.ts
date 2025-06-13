@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Define types for our database
@@ -8,7 +9,6 @@ export type Terrain = {
   capacite: number;
   prix: number;
   prix_nuit?: number; // Add night pricing
-  heure_debut_nuit?: string; // Add configurable night time start
   image_url: string | null;
   actif: boolean;
   created_at?: string;
@@ -66,16 +66,25 @@ export type AdminUser = {
   created_at?: string;
 };
 
-// Utility function to determine if a time slot is night time (configurable per terrain)
-export const isNightTime = (time: string, nightStartTime?: string): boolean => {
+export type AppSetting = {
+  id: number;
+  setting_name: string;
+  setting_value: string;
+  description?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+// Utility function to determine if a time slot is night time (using global setting)
+export const isNightTime = (time: string, globalNightStartTime?: string): boolean => {
   const hour = parseInt(time.split(':')[0]);
-  const nightHour = nightStartTime ? parseInt(nightStartTime.split(':')[0]) : 19;
+  const nightHour = globalNightStartTime ? parseInt(globalNightStartTime.split(':')[0]) : 19;
   return hour >= nightHour;
 };
 
-// Function to calculate the price based on terrain and time
-export const calculatePrice = (terrain: Terrain, time: string): number => {
-  if (isNightTime(time, terrain.heure_debut_nuit) && terrain.prix_nuit) {
+// Function to calculate the price based on terrain and time (using global night time setting)
+export const calculatePrice = (terrain: Terrain, time: string, globalNightStartTime?: string): number => {
+  if (isNightTime(time, globalNightStartTime) && terrain.prix_nuit) {
     return terrain.prix_nuit;
   }
   return terrain.prix;

@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
+import { useAppSetting } from '@/hooks/useAppSettings';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -54,6 +55,12 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
   const [isUpdating, setIsUpdating] = useState(false);
   
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
+  const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
+
+  // Get global night start time
+  const getGlobalNightStartTime = (): string => {
+    return nightTimeSetting?.setting_value || '19:00';
+  };
 
   // Calculate total price based on selected time and duration
   const calculateTotalPrice = (): number => {
@@ -65,23 +72,17 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
     const duration = parseFloat(selectedDuration);
     const startHour = parseInt(selectedTime.split(':')[0]);
     let totalPrice = 0;
+    const globalNightStartTime = getGlobalNightStartTime();
     
     // Calculate price for each hour based on day/night rates
     for (let i = 0; i < duration; i++) {
       const currentHour = startHour + i;
       const timeString = `${currentHour.toString().padStart(2, '0')}:00`;
-      const hourPrice = calculatePrice(terrain, timeString);
+      const hourPrice = calculatePrice(terrain, timeString, globalNightStartTime);
       totalPrice += hourPrice;
     }
     
     return totalPrice;
-  };
-
-  // Get night start time for selected terrain
-  const getNightStartTime = (): string => {
-    if (!selectedField || !terrains) return '19:00';
-    const terrain = terrains.find(t => t.id === selectedField);
-    return terrain?.heure_debut_nuit?.substring(0, 5) || '19:00';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -144,7 +145,7 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
                 <SelectContent>
                   {terrains?.map((terrain) => (
                     <SelectItem key={terrain.id} value={terrain.id.toString()}>
-                      {terrain.nom} - {terrain.type} (Jour: {terrain.prix} DT/h{terrain.prix_nuit ? `, Nuit: ${terrain.prix_nuit} DT/h dès ${terrain.heure_debut_nuit?.substring(0, 5) || '19:00'}` : ''})
+                      {terrain.nom} - {terrain.type} (Jour: {terrain.prix} DT/h{terrain.prix_nuit ? `, Nuit: ${terrain.prix_nuit} DT/h dès ${getGlobalNightStartTime()}` : ''})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -180,7 +181,7 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
                   <SelectContent>
                     {timeSlots.map((time) => (
                       <SelectItem key={time} value={time}>
-                        {time} {isNightTime(time, getNightStartTime()) ? '🌙' : '☀️'}
+                        {time} {isNightTime(time, getGlobalNightStartTime()) ? '🌙' : '☀️'}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -279,7 +280,7 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
           <div className="p-3 bg-gray-50 rounded-md border">
             <h3 className="font-medium mb-1 text-sm">Prix Total</h3>
             <div className="text-sm text-gray-600 mb-1">
-              {isNightTime(selectedTime, getNightStartTime()) ? `Tarif nuit (dès ${getNightStartTime()})` : 'Tarif jour'} - {selectedDuration}h
+              {isNightTime(selectedTime, getGlobalNightStartTime()) ? `Tarif nuit (dès ${getGlobalNightStartTime()})` : 'Tarif jour'} - {selectedDuration}h
             </div>
             <p className="text-lg font-bold text-sport-green">
               {calculateTotalPrice()} DT

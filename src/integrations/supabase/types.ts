@@ -132,6 +132,33 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: number
+          setting_name: string
+          setting_value: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          setting_name: string
+          setting_value: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          setting_name?: string
+          setting_value?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       reservations: {
         Row: {
           abonnement_id: number | null
@@ -200,7 +227,6 @@ export type Database = {
           actif: boolean | null
           capacite: number
           created_at: string | null
-          heure_debut_nuit: string | null
           id: number
           image_url: string | null
           nom: string
@@ -212,7 +238,6 @@ export type Database = {
           actif?: boolean | null
           capacite: number
           created_at?: string | null
-          heure_debut_nuit?: string | null
           id?: number
           image_url?: string | null
           nom: string
@@ -224,7 +249,6 @@ export type Database = {
           actif?: boolean | null
           capacite?: number
           created_at?: string | null
-          heure_debut_nuit?: string | null
           id?: number
           image_url?: string | null
           nom?: string
