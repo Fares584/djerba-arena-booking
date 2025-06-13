@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
-import { format, addDays, startOfWeek } from 'date-fns';
+import { format, addDays, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, Loader2, Calendar } from 'lucide-react';
@@ -22,7 +21,7 @@ const Planning = () => {
   const { user, loading: authLoading } = useRequireAuth('/login');
   
   const [selectedTerrain, setSelectedTerrain] = useState<number | null>(null);
-  const [startDate, setStartDate] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 })); // Start with current week, Monday
+  const [startDate, setStartDate] = useState<Date>(startOfDay(new Date())); // Start with today
   const [weekDays, setWeekDays] = useState<Date[]>([]);
   const [selectedDay, setSelectedDay] = useState<Date>(new Date());
   
@@ -31,7 +30,7 @@ const Planning = () => {
     terrain_id: selectedTerrain || undefined
   });
 
-  // Generate array of dates for the week
+  // Generate array of dates for the week (today + 7 days)
   useEffect(() => {
     const days = [];
     for (let i = 0; i < 7; i++) {
@@ -50,7 +49,7 @@ const Planning = () => {
   };
 
   const goToCurrentWeek = () => {
-    setStartDate(startOfWeek(new Date(), { weekStartsOn: 1 }));
+    setStartDate(startOfDay(new Date()));
   };
 
   const goToPreviousDay = () => {
@@ -154,7 +153,7 @@ const Planning = () => {
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button variant="outline" size="sm" onClick={goToCurrentWeek}>
-              Cette semaine
+              Aujourd'hui
             </Button>
             <Button variant="outline" size="sm" onClick={goToNextWeek}>
               <ChevronRight className="h-4 w-4" />
@@ -178,7 +177,7 @@ const Planning = () => {
         {/* Desktop Week Header */}
         <div className="hidden md:block text-center mb-4">
           <h2 className="text-xl font-medium">
-            Semaine du {format(startDate, 'dd MMMM', { locale: fr })} au {format(weekDays[6] || addDays(startDate, 6), 'dd MMMM yyyy', { locale: fr })}
+            Du {format(startDate, 'dd MMMM', { locale: fr })} au {format(weekDays[6] || addDays(startDate, 6), 'dd MMMM yyyy', { locale: fr })}
           </h2>
         </div>
 
