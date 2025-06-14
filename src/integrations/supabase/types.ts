@@ -162,6 +162,8 @@ export type Database = {
       reservations: {
         Row: {
           abonnement_id: number | null
+          confirmation_token: string | null
+          confirmed_by_user: boolean | null
           created_at: string | null
           date: string
           duree: number
@@ -177,6 +179,8 @@ export type Database = {
         }
         Insert: {
           abonnement_id?: number | null
+          confirmation_token?: string | null
+          confirmed_by_user?: boolean | null
           created_at?: string | null
           date: string
           duree: number
@@ -192,6 +196,8 @@ export type Database = {
         }
         Update: {
           abonnement_id?: number | null
+          confirmation_token?: string | null
+          confirmed_by_user?: boolean | null
           created_at?: string | null
           date?: string
           duree?: number
