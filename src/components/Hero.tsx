@@ -12,7 +12,7 @@ const Hero = () => {
           playsInline
           className="absolute inset-0 w-full h-full object-cover z-0">
           <source
-            src="https://res.cloudinary.com/your-cloud-name/video/upload/q_auto,f_auto/v1718370000/yvtj4bqdfvibo7pfnftj.mp4"
+            src="https://ik.imagekit.io/k4czw9rkh/demoNa9esPadel.mp4?updatedAt=1749909031621"
             type="video/mp4"/>
           Your browser does not support the video tag.
       </video>
