@@ -283,7 +283,7 @@ const Reservation = () => {
                     selectedTime={selectedTime}
                     isTimeSlotAvailable={isTimeSlotAvailable}
                     onTimeSelect={setSelectedTime}
-                    loading={availabilityLoading && selectedDate}
+                    loading={availabilityLoading && !!selectedDate}
                   />
                 </div>
               </div>
