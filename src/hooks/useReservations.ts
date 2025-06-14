@@ -63,10 +63,10 @@ export function useReservations(filters?: {
   });
 }
 
-export function useCreateReservation() {
+export function useCreateReservation(options?: { onSuccess?: () => void }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  
+
   return useMutation({
     mutationFn: async (newReservation: Omit<Reservation, 'id' | 'created_at' | 'updated_at'>) => {
       try {
@@ -114,15 +114,19 @@ export function useCreateReservation() {
         throw error;
       }
     },
-    onSuccess: () => {
-      toast.success(
-        "Votre réservation a bien été enregistrée ! " +
-        "Merci de confirmer votre réservation via l'email reçu sous 15 minutes, sinon votre créneau sera libéré et la réservation annulée."
-      );
+    onSuccess: (...args) => {
+      if (options?.onSuccess) {
+        options.onSuccess();
+      }
+      // On ne redirige plus ici
+      // On garde le toast d'information admin si besoin (pour les cas BackOffice)
+      // toast.success(
+      //   "Votre réservation a bien été enregistrée ! Merci de confirmer votre réservation via l'email reçu sous 15 minutes, sinon votre créneau sera libéré et la réservation annulée."
+      // );
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
-      setTimeout(() => {
-        navigate('/');
-      }, 2000);
+      // setTimeout(() => {
+      //   navigate('/');
+      // }, 2000);
     },
     onError: (error) => {
       toast.error("Erreur lors de la création de la réservation");

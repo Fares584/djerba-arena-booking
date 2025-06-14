@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import TerrainSelector from '@/components/TerrainSelector';
 import { calculatePrice, isNightTime } from '@/lib/supabase';
 import ReservationDatePicker from "@/components/ReservationDatePicker";
+import ReservationSuccessDialog from "@/components/ReservationSuccessDialog";
 
 // Créneaux horaires
 const timeSlots = [
@@ -75,10 +76,15 @@ const Reservation = () => {
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [remarks, setRemarks] = useState('');
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   // Hooks
   const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
-  const createReservation = useCreateReservation();
+  const createReservation = useCreateReservation({
+    onSuccess: () => {
+      setShowSuccessDialog(true);
+    },
+  });
 
   // Filter terrains by selected type
   const filteredTerrains = allTerrains?.filter(terrain => 
@@ -193,6 +199,12 @@ const Reservation = () => {
   };
 
   const today = new Date().toISOString().split('T')[0];
+
+  // Quand l'utilisateur clique sur "OK", fermer la popup et rediriger vers l'accueil
+  const handleDialogOk = () => {
+    setShowSuccessDialog(false);
+    navigate('/');
+  };
 
   return (
     <>
@@ -433,6 +445,11 @@ const Reservation = () => {
           </form>
         </div>
       </section>
+
+      <ReservationSuccessDialog
+        open={showSuccessDialog}
+        onOk={handleDialogOk}
+      />
 
       <Footer />
     </>
