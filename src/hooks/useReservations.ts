@@ -95,18 +95,24 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
 
         // Send confirmation email via edge function (call from frontend)
         const confirmLink = `${window.location.origin}/confirm-reservation?token=${confirmation_token}`;
-        await fetch("https://gohcvgpwuzlepfcucvmj.supabase.co/functions/v1/send-reservation-confirmation", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+
+        // ⚠️ Utilise supabase.functions.invoke (AU LIEU de fetch)
+        const { data: emailData, error: emailError } = await supabase.functions.invoke('send-reservation-confirmation', {
+          body: {
             email: data.email,
             nom_client: data.nom_client,
             field_name: data.terrain?.nom ?? '—',
             date: data.date,
             heure: data.heure,
             confirmation_link: confirmLink,
-          }),
+          },
         });
+
+        if (emailError) {
+          console.error("Error sending confirmation email via edge function:", emailError);
+        } else {
+          console.log("Confirmation email sent (edge function result):", emailData);
+        }
 
         return data;
       } catch (error) {
@@ -118,15 +124,7 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
       if (options?.onSuccess) {
         options.onSuccess();
       }
-      // On ne redirige plus ici
-      // On garde le toast d'information admin si besoin (pour les cas BackOffice)
-      // toast.success(
-      //   "Votre réservation a bien été enregistrée ! Merci de confirmer votre réservation via l'email reçu sous 15 minutes, sinon votre créneau sera libéré et la réservation annulée."
-      // );
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
-      // setTimeout(() => {
-      //   navigate('/');
-      // }, 2000);
     },
     onError: (error) => {
       toast.error("Erreur lors de la création de la réservation");
