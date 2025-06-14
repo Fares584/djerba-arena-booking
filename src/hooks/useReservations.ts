@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
@@ -116,7 +115,10 @@ export function useCreateReservation() {
       }
     },
     onSuccess: () => {
-      toast.success("Votre réservation a bien été enregistrée. Veuillez confirmer via l'email que vous venez de recevoir.");
+      toast.success(
+        "Votre réservation a bien été enregistrée ! " +
+        "Merci de confirmer votre réservation via l'email reçu sous 15 minutes, sinon votre créneau sera libéré et la réservation annulée."
+      );
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
       setTimeout(() => {
         navigate('/');

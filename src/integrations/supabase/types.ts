@@ -269,6 +269,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      annuler_reservations_non_confirmees: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       generer_reservations_abonnement: {
         Args: {
           p_abonnement_id: number
