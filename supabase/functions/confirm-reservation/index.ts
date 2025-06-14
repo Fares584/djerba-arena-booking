@@ -21,30 +21,20 @@ serve(async (req: Request) => {
         ? await req.json()
         : Object.fromEntries(url.searchParams.entries());
 
-    // LOG: Affichage du token reçu
-    console.log("[EdgeFunction] Token reçu :", token);
-
     if (!token) {
-      return new Response(
-        JSON.stringify({ error: "Token manquant", debug: { step: "token_missing", url: req.url } }),
-        { status: 400, headers: corsHeaders }
-      );
+      return new Response(JSON.stringify({ error: "Token manquant" }), { status: 400, headers: corsHeaders });
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Recherche toutes les réservations liées à ce token
+    // DEBUG: Logger ce qu'on cherche
     const { data: checkData, error: checkErr } = await supabase
       .from("reservations")
       .select("*")
       .eq("confirmation_token", token)
       .order("created_at", { ascending: false });
 
-    // LOG : ce qu'on trouve
-    console.log("[EdgeFunction] Rows trouvées avec ce token :", checkData);
-
     if (checkErr) {
-      console.error("[EdgeFunction] Erreur check token:", checkErr);
       return new Response(
         JSON.stringify({ error: "Erreur lors de la recherche de la réservation", details: checkErr }),
         { status: 500, headers: corsHeaders }
@@ -53,106 +43,43 @@ serve(async (req: Request) => {
 
     if (!checkData || checkData.length === 0) {
       return new Response(
-        JSON.stringify({
-          error: "Aucune réservation trouvée avec ce token",
-          debug: {
-            step: "no_res_found",
-            token,
-            url: req.url,
-            candidates: []
-          }
-        }),
+        JSON.stringify({ error: "Aucune réservation trouvée avec ce token", token }),
         { status: 400, headers: corsHeaders }
       );
     }
 
-    // Essayons de trouver la réservation en attente uniquement
-    const waiting = checkData.filter(res =>
-      res.confirmed_by_user === false && res.statut === "en_attente"
-    );
-
-    // LOG: On affiche quand même les candidats "en_attente"
-    console.log("[EdgeFunction] Candidats en_attente pour update :", waiting);
-
-    if (waiting.length === 0) {
-      // Si aucune, loguons toutes les lignes candidates pour analyse
-      return new Response(
-        JSON.stringify({
-          error: "Lien invalide ou déjà confirmé",
-          debug: {
-            step: "no_pending_found",
-            token,
-            url: req.url,
-            all_rows_with_token: checkData,
-            pending_candidates: waiting
-          }
-        }),
-        { status: 400, headers: corsHeaders }
-      );
-    }
-
-    // On confirme la toute dernière réservation en attente (la plus récente)
-    const toConfirmId = waiting[0].id;
-    const { data: confirmedRow, error: updError } = await supabase
+    // Trouver la réservation non encore confirmée
+    const { data, error } = await supabase
       .from("reservations")
       .update({ confirmed_by_user: true, statut: "confirmee" })
-      .eq("id", toConfirmId)
+      .eq("confirmation_token", token)
+      .eq("confirmed_by_user", false)
       .select()
       .maybeSingle();
 
-    console.log("[EdgeFunction] Résultat update :", confirmedRow, updError);
-
-    if (updError) {
+    if (error) {
       return new Response(
-        JSON.stringify({
-          error: "Erreur lors de la confirmation de la réservation",
-          details: updError,
-          debug: {
-            step: "update_failed",
-            token,
-            url: req.url,
-            row_id: toConfirmId
-          }
-        }),
+        JSON.stringify({ error: "Erreur lors de la confirmation de la réservation", details: error }),
         { status: 400, headers: corsHeaders }
       );
     }
 
-    if (!confirmedRow) {
+    if (!data) {
       return new Response(
         JSON.stringify({
-          error: "Impossible de confirmer la réservation.",
-          debug: {
-            step: "update_no_row",
-            tried_row: toConfirmId,
-            token,
-            url: req.url
-          }
-        }),
-        { status: 400, headers: corsHeaders }
-      );
-    }
-
-    // Tout fonctionne
-    return new Response(
-      JSON.stringify({
-        success: true,
-        nom_client: confirmedRow.nom_client,
-        debug: {
-          step: "success",
+          error: "Lien invalide ou déjà confirmé",
           token,
-          id_confirmed: confirmedRow.id
-        }
-      }), { headers: corsHeaders }
-    );
+          rows_with_token: checkData,
+          message: "Aucune réservation en attente avec ce token à confirmer.",
+        }),
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    return new Response(JSON.stringify({ success: true, nom_client: data.nom_client }), {
+      headers: corsHeaders
+    });
   } catch (e) {
-    console.error("[EdgeFunction] Exception", e);
-    return new Response(
-      JSON.stringify({
-        error: e.message,
-        debug: { step: "exception", stack: e.stack ?? undefined }
-      }),
-      { status: 500, headers: corsHeaders }
-    );
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: corsHeaders });
   }
 });
