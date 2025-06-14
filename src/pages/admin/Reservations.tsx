@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -14,8 +13,9 @@ import EditReservationForm from '@/components/admin/EditReservationForm';
 import ReservationCard from '@/components/admin/ReservationCard';
 
 const Reservations = () => {
+  // Afficher uniquement les réservations confirmées dans le dashboard
   // Exclure les réservations d'abonnement
-  const { data: reservations, isLoading, refetch } = useReservations({ excludeSubscriptions: true });
+  const { data: reservations, isLoading, refetch } = useReservations({ excludeSubscriptions: true, statut: 'confirmee' });
   const { data: terrains } = useTerrains();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
