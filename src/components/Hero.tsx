@@ -6,15 +6,17 @@ const Hero = () => {
     <div className="relative bg-sport-dark text-white overflow-hidden">
       {/* Background video */}
       <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover z-0"
-      >
-        <source src="https://drive.google.com/uc?export=download&id=1LepVF0SKNNyRf_vZVAeLgEiZIzEcSx0h" type="video/mp4" />
-        Your browser does not support the video tag.
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover z-0">
+          <source
+            src="https://res.cloudinary.com/your-cloud-name/video/upload/q_auto,f_auto/v1718370000/yvtj4bqdfvibo7pfnftj.mp4"
+            type="video/mp4"/>
+          Your browser does not support the video tag.
       </video>
+
 
       {/* Optional: Overlay for better contrast */}
       <div className="absolute inset-0 bg-black/50 z-0" />
