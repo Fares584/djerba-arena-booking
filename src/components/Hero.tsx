@@ -8,9 +8,6 @@ const Hero = () => {
       {/* Background image with overlay */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ 
-          backgroundImage: 'url(https://images.unsplash.com/photo-1615729947596-a598e5de0ab3?auto=format&fit=crop&q=80)',
-          filter: 'brightness(0.4)'
         }}
       />
       
