@@ -6,9 +6,10 @@ interface TerrainSelectorProps {
   terrains: Terrain[];
   selectedTerrainId: number | null;
   onTerrainSelect: (terrainId: number) => void;
+  disabled?: boolean;
 }
 
-const TerrainSelector = ({ terrains, selectedTerrainId, onTerrainSelect }: TerrainSelectorProps) => {
+const TerrainSelector = ({ terrains, selectedTerrainId, onTerrainSelect, disabled = false }: TerrainSelectorProps) => {
   if (terrains.length === 0) {
     return (
       <div className="text-center text-gray-500 py-8">
@@ -26,8 +27,12 @@ const TerrainSelector = ({ terrains, selectedTerrainId, onTerrainSelect }: Terra
             selectedTerrainId === terrain.id
               ? 'border-sport-green bg-sport-green/5'
               : 'border-gray-200 hover:border-sport-green/50'
-          }`}
-          onClick={() => onTerrainSelect(terrain.id)}
+          } ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
+          onClick={() => {
+            if (!disabled) {
+              onTerrainSelect(terrain.id);
+            }
+          }}
         >
           <div className="relative h-32 overflow-hidden rounded-t-lg">
             <img
