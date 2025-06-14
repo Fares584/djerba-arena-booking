@@ -14,6 +14,7 @@ import { Loader2, Calendar, Clock, User, Phone, Mail, MapPin } from 'lucide-reac
 import { toast } from 'sonner';
 import TerrainSelector from '@/components/TerrainSelector';
 import { calculatePrice, isNightTime } from '@/lib/supabase';
+import ReservationDatePicker from "@/components/ReservationDatePicker";
 
 // Créneaux horaires
 const timeSlots = [
@@ -251,29 +252,18 @@ const Reservation = () => {
             {/* Date and Time Selection */}
             {selectedTerrainId && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {/* Remplace input date par ReservationDatePicker */}
                 <div>
-                  <Label htmlFor="date" className="text-lg font-semibold mb-2 flex items-center">
-                    <Calendar className="mr-2 h-5 w-5" />
-                    Date *
-                  </Label>
-                  <Input
-                    id="date"
-                    type="date"
+                  <ReservationDatePicker
                     value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    min={today}
-                    required
-                    className="w-full"
+                    onChange={setSelectedDate}
                   />
                 </div>
-
                 <div>
                   <Label htmlFor="time" className="text-lg font-semibold mb-2 flex items-center">
                     <Clock className="mr-2 h-5 w-5" />
                     Heure *
                   </Label>
-
-                  {/* Nouvelle grille de boutons horaires */}
                   <div className="grid grid-cols-3 gap-2">
                     {timeSlots.map((time) => {
                       const available = isTimeSlotAvailable(time);
