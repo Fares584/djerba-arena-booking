@@ -27,18 +27,51 @@ serve(async (req: Request) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Find the reservation with that token and not already confirmed
+    // DEBUG: Logger ce qu'on cherche
+    const { data: checkData, error: checkErr } = await supabase
+      .from("reservations")
+      .select("*")
+      .eq("confirmation_token", token)
+      .order("created_at", { ascending: false });
+
+    if (checkErr) {
+      return new Response(
+        JSON.stringify({ error: "Erreur lors de la recherche de la réservation", details: checkErr }),
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
+    if (!checkData || checkData.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Aucune réservation trouvée avec ce token", token }),
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    // Trouver la réservation non encore confirmée
     const { data, error } = await supabase
       .from("reservations")
       .update({ confirmed_by_user: true, statut: "confirmee" })
       .eq("confirmation_token", token)
       .eq("confirmed_by_user", false)
       .select()
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
+    if (error) {
       return new Response(
-        JSON.stringify({ error: "Lien invalide ou déjà confirmé" }),
+        JSON.stringify({ error: "Erreur lors de la confirmation de la réservation", details: error }),
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    if (!data) {
+      return new Response(
+        JSON.stringify({
+          error: "Lien invalide ou déjà confirmé",
+          token,
+          rows_with_token: checkData,
+          message: "Aucune réservation en attente avec ce token à confirmer.",
+        }),
         { status: 400, headers: corsHeaders }
       );
     }
