@@ -5,6 +5,19 @@ import { Reservation } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
+function generateToken(length = 48) {
+  // crypto for browsers; fallback if not available
+  if ('crypto' in window) {
+    return Array.from(window.crypto.getRandomValues(new Uint8Array(length)))
+      .map(x => ('00' + x.toString(16)).slice(-2)).join('');
+  } else {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let res = "";
+    for (let i = 0; i < length; ++i) res += chars.charAt(Math.floor(Math.random() * chars.length));
+    return res;
+  }
+}
+
 export function useReservations(filters?: { 
   terrain_id?: number; 
   date?: string;
@@ -58,18 +71,44 @@ export function useCreateReservation() {
   return useMutation({
     mutationFn: async (newReservation: Omit<Reservation, 'id' | 'created_at' | 'updated_at'>) => {
       try {
-        console.log("Creating reservation:", newReservation);
+        // Generate confirmation token
+        const confirmation_token = generateToken(32);
+
+        // First: create reservation, statut = 'en_attente', confirmed_by_user: false
         const { data, error } = await supabase
           .from('reservations')
-          .insert(newReservation)
-          .select()
+          .insert({
+            ...newReservation,
+            confirmation_token,
+            confirmed_by_user: false,
+            statut: 'en_attente',
+          })
+          .select(`
+            *, 
+            terrain:terrains(id, nom)
+          `)
           .single();
-        
+
         if (error) {
           console.error("Error creating reservation:", error);
           throw error;
         }
-        
+
+        // Send confirmation email via edge function (call from frontend)
+        const confirmLink = `${window.location.origin}/confirm-reservation?token=${confirmation_token}`;
+        await fetch("https://gohcvgpwuzlepfcucvmj.supabase.co/functions/v1/send-reservation-confirmation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: data.email,
+            nom_client: data.nom_client,
+            field_name: data.terrain?.nom ?? '—',
+            date: data.date,
+            heure: data.heure,
+            confirmation_link: confirmLink,
+          }),
+        });
+
         return data;
       } catch (error) {
         console.error("Error in createReservation mutation:", error);
@@ -77,9 +116,8 @@ export function useCreateReservation() {
       }
     },
     onSuccess: () => {
-      toast.success("Réservation envoyée avec succès!");
+      toast.success("Votre réservation a bien été enregistrée. Veuillez confirmer via l'email que vous venez de recevoir.");
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
-      // Redirect to home page after successful reservation
       setTimeout(() => {
         navigate('/');
       }, 2000);

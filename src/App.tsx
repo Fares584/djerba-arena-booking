@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +9,7 @@ import Reservation from "./pages/Reservation";
 import About from "./pages/About";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import ConfirmReservation from "./pages/ConfirmReservation";
 
 // Admin pages
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -30,34 +30,38 @@ const queryClient = new QueryClient({
   }
 });
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/fields" element={<Fields />} />
-          <Route path="/reservation" element={<Reservation />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/login" element={<Login />} />
-          
-          {/* Admin routes */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="reservations" element={<Reservations />} />
-            <Route path="terrains" element={<Terrains />} />
-            <Route path="planning" element={<Planning />} />
-            <Route path="stats" element={<Stats />} />
-            <Route path="abonnements" element={<Abonnements />} />
-          </Route>
-          
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/fields" element={<Fields />} />
+            <Route path="/reservation" element={<Reservation />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/login" element={<Login />} />
+            
+            {/* Admin routes */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="reservations" element={<Reservations />} />
+              <Route path="terrains" element={<Terrains />} />
+              <Route path="planning" element={<Planning />} />
+              <Route path="stats" element={<Stats />} />
+              <Route path="abonnements" element={<Abonnements />} />
+            </Route>
+            
+            <Route path="/confirm-reservation" element={<ConfirmReservation />} />
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
