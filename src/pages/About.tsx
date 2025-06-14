@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -51,7 +50,7 @@ const About = () => {
         <div className="container-custom">
           <h2 className="text-3xl font-bold mb-10 text-center">Nos Installations</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-8">
             {/* Facility 1 */}
             <div className="bg-white p-6 rounded-lg shadow-md">
               <div className="mb-4">
@@ -106,6 +105,53 @@ const About = () => {
                 <li>• Courts couverts panoramiques</li>
                 <li>• Équipement de qualité professionnelle</li>
                 <li>• Initiation pour débutants disponible</li>
+              </ul>
+            </div>
+
+            {/* Facility 4: Espace Enfant */}
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="mb-4">
+                {/* Optionally an image or simple colored div if desired */}
+                <div className="w-12 h-12 rounded-full bg-sport-green/20 flex items-center justify-center text-sport-green font-bold text-2xl">👦</div>
+              </div>
+              <h3 className="text-xl font-bold mb-3">Espace Enfant</h3>
+              <p className="text-gray-700 mb-4">
+                Un espace sécurisé et dédié pour permettre aux enfants de s’amuser pendant que les parents profitent de leur activité sportive.
+              </p>
+              <ul className="text-gray-700 space-y-1">
+                <li>• Jeux adaptés pour petits</li>
+                <li>• Encadrement disponible</li>
+                <li>• Zone ombragée et sécurisée</li>
+              </ul>
+            </div>
+            {/* Facility 5: Buvette */}
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="mb-4">
+                <div className="w-12 h-12 rounded-full bg-sport-green/20 flex items-center justify-center text-sport-green font-bold text-2xl">🥤</div>
+              </div>
+              <h3 className="text-xl font-bold mb-3">Buvette</h3>
+              <p className="text-gray-700 mb-4">
+                Rafraîchissez-vous après l’effort grâce à notre buvette conviviale proposant boissons fraîches et snacks variés.
+              </p>
+              <ul className="text-gray-700 space-y-1">
+                <li>• Boissons fraîches et chaudes</li>
+                <li>• Snacks et encas</li>
+                <li>• Espace détente</li>
+              </ul>
+            </div>
+            {/* Facility 6: Location des chaussures de foot */}
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="mb-4">
+                <div className="w-12 h-12 rounded-full bg-sport-green/20 flex items-center justify-center text-sport-green font-bold text-2xl">👟</div>
+              </div>
+              <h3 className="text-xl font-bold mb-3">Location des chaussures de foot</h3>
+              <p className="text-gray-700 mb-4">
+                Vous n’avez pas de chaussures adaptées ? Profitez de notre service de location à petit prix, pour jouer sans souci !
+              </p>
+              <ul className="text-gray-700 space-y-1">
+                <li>• Toutes tailles disponibles</li>
+                <li>• Matériel désinfecté après chaque utilisation</li>
+                <li>• Facilité de location sur place</li>
               </ul>
             </div>
           </div>
