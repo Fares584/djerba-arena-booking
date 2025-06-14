@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -44,6 +45,9 @@ const Reservation = () => {
   const [customerEmail, setCustomerEmail] = useState('');
   const [remarks, setRemarks] = useState('');
 
+  // NEW STATE: isPreselected = fieldId via URL
+  const [preselected, setPreselected] = useState(false);
+
   // Hooks
   const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
   const createReservation = useCreateReservation();
@@ -64,17 +68,27 @@ const Reservation = () => {
     return duration;
   };
 
-  // Initialize from URL params
+  // Preselection from URL param
   useEffect(() => {
     const fieldId = searchParams.get('fieldId');
     if (fieldId && allTerrains) {
-      const terrain = allTerrains.find(t => t.id === parseInt(fieldId));
+      const numericId = parseInt(fieldId);
+      const terrain = allTerrains.find(t => t.id === numericId);
       if (terrain) {
         setSelectedType(terrain.type);
         setSelectedTerrainId(terrain.id);
+        setPreselected(true); // mark that it's preselected
       }
     }
   }, [searchParams, allTerrains]);
+
+  // If manually changing type (not preselected), reset terrain
+  useEffect(() => {
+    // Only reset terrain if not in preselected mode
+    if (!preselected) {
+      setSelectedTerrainId(null);
+    }
+  }, [selectedType, preselected]);
 
   // Update duration when terrain changes
   useEffect(() => {
@@ -82,11 +96,6 @@ const Reservation = () => {
       setDuration('1.5');
     }
   }, [selectedTerrain]);
-
-  // Reset terrain selection when type changes
-  useEffect(() => {
-    setSelectedTerrainId(null);
-  }, [selectedType]);
 
   // Availability check
   const { data: availability, isLoading: availabilityLoading } = useAvailability({
@@ -185,8 +194,12 @@ const Reservation = () => {
                 <MapPin className="mr-2 h-5 w-5" />
                 Type de terrain *
               </Label>
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-full">
+              <Select 
+                value={selectedType}
+                onValueChange={val => { setSelectedType(val); setPreselected(false); }}
+                disabled={preselected}
+              >
+                <SelectTrigger className="w-full" disabled={preselected}>
                   <SelectValue placeholder="Sélectionnez un type de terrain" />
                 </SelectTrigger>
                 <SelectContent>
@@ -195,6 +208,11 @@ const Reservation = () => {
                   <SelectItem value="padel">Padel</SelectItem>
                 </SelectContent>
               </Select>
+              {preselected && selectedType && (
+                <div className="mt-2 text-xs text-gray-500">
+                  Type détecté automatiquement depuis le terrain choisi.
+                </div>
+              )}
             </div>
 
             {/* Terrain Selection */}
@@ -211,8 +229,14 @@ const Reservation = () => {
                   <TerrainSelector
                     terrains={filteredTerrains}
                     selectedTerrainId={selectedTerrainId}
-                    onTerrainSelect={setSelectedTerrainId}
+                    onTerrainSelect={val => { setSelectedTerrainId(val); setPreselected(false); }}
+                    disabled={preselected}
                   />
+                )}
+                {preselected && selectedTerrain && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    Terrain détecté automatiquement depuis la fiche terrain.
+                  </div>
                 )}
               </div>
             )}
@@ -423,3 +447,4 @@ const Reservation = () => {
 };
 
 export default Reservation;
+
