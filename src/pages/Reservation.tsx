@@ -16,6 +16,8 @@ import TerrainSelector from '@/components/TerrainSelector';
 import { calculatePrice, isNightTime } from '@/lib/supabase';
 import ReservationDatePicker from "@/components/ReservationDatePicker";
 import ReservationSuccessDialog from "@/components/ReservationSuccessDialog";
+import TimeSlotSelector from "@/components/TimeSlotSelector";
+import ReservationSummary from "@/components/ReservationSummary";
 
 // Créneaux horaires
 const timeSlots = [
@@ -276,25 +278,13 @@ const Reservation = () => {
                     <Clock className="mr-2 h-5 w-5" />
                     Heure *
                   </Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {timeSlots.map((time) => {
-                      const available = isTimeSlotAvailable(time);
-                      return (
-                        <TimeSlotButton
-                          key={time}
-                          time={time}
-                          selected={selectedTime === time}
-                          disabled={!available}
-                          onClick={(val) => setSelectedTime(val)}
-                        />
-                      );
-                    })}
-                  </div>
-                  {availabilityLoading && selectedDate && (
-                    <p className="text-sm text-gray-500 mt-1">
-                      Vérification de la disponibilité...
-                    </p>
-                  )}
+                  <TimeSlotSelector
+                    timeSlots={timeSlots}
+                    selectedTime={selectedTime}
+                    isTimeSlotAvailable={isTimeSlotAvailable}
+                    onTimeSelect={setSelectedTime}
+                    loading={availabilityLoading && selectedDate}
+                  />
                 </div>
               </div>
             )}
@@ -389,40 +379,13 @@ const Reservation = () => {
 
             {/* Price Summary */}
             {selectedTerrain && selectedTime && (
-              <div className="bg-sport-gray p-6 rounded-lg mb-8">
-                <h3 className="text-lg font-semibold mb-4">Résumé de la réservation</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Terrain:</span>
-                    <span className="font-medium">{selectedTerrain.nom}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Date:</span>
-                    <span className="font-medium">{selectedDate}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Heure:</span>
-                    <span className="font-medium">{selectedTime}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Durée:</span>
-                    <span className="font-medium">{getEffectiveDuration()}h</span>
-                  </div>
-                  <div className="border-t pt-2 mt-2">
-                    <div className="flex justify-between text-lg font-bold">
-                      <span>Prix total:</span>
-                      <span className="text-sport-green">
-                        {calculateTotalPrice().toFixed(2)} DT
-                      </span>
-                    </div>
-                    {selectedTerrain.type === 'foot' && (
-                      <div className="text-sm text-gray-600 mt-1">
-                        Tarif fixe pour 1h30 ({isNightTime(selectedTime, '19:00') ? 'nuit' : 'jour'})
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <ReservationSummary
+                terrain={selectedTerrain}
+                selectedDate={selectedDate}
+                selectedTime={selectedTime}
+                duration={getEffectiveDuration()}
+                totalPrice={calculateTotalPrice()}
+              />
             )}
 
             {/* Submit Button */}
