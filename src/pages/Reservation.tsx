@@ -29,6 +29,37 @@ const durationOptions = [
   { value: '3', label: '3 heures' },
 ];
 
+const TimeSlotButton = ({
+  time,
+  selected,
+  disabled,
+  onClick,
+}: {
+  time: string;
+  selected: boolean;
+  disabled: boolean;
+  onClick: (time: string) => void;
+}) => (
+  <button
+    type="button"
+    onClick={() => !disabled && onClick(time)}
+    disabled={disabled}
+    className={[
+      "px-4 py-2 rounded font-medium border transition-colors w-full",
+      selected
+        ? "bg-sport-green text-white border-sport-green"
+        : disabled
+        ? "bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed"
+        : "bg-white text-gray-900 border-gray-300 hover:bg-sport-green/10 hover:border-sport-green",
+    ].join(" ")}
+  >
+    {time}
+    {disabled && (
+      <span className="ml-1 text-xs align-middle">(Occupé)</span>
+    )}
+  </button>
+);
+
 const Reservation = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -241,26 +272,22 @@ const Reservation = () => {
                     <Clock className="mr-2 h-5 w-5" />
                     Heure *
                   </Label>
-                  <Select value={selectedTime} onValueChange={setSelectedTime}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionnez une heure" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timeSlots.map((time) => {
-                        const available = isTimeSlotAvailable(time);
-                        return (
-                          <SelectItem
-                            key={time}
-                            value={time}
-                            disabled={!available}
-                            className={!available ? 'text-gray-400' : ''}
-                          >
-                            {time} {!available && '(Occupé)'}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
+
+                  {/* Nouvelle grille de boutons horaires */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {timeSlots.map((time) => {
+                      const available = isTimeSlotAvailable(time);
+                      return (
+                        <TimeSlotButton
+                          key={time}
+                          time={time}
+                          selected={selectedTime === time}
+                          disabled={!available}
+                          onClick={(val) => setSelectedTime(val)}
+                        />
+                      );
+                    })}
+                  </div>
                   {availabilityLoading && selectedDate && (
                     <p className="text-sm text-gray-500 mt-1">
                       Vérification de la disponibilité...
