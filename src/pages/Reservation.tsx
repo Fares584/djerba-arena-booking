@@ -48,6 +48,14 @@ const Reservation = () => {
   const [remarks, setRemarks] = useState('');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
+  // -------- 1. Declare hooks first, so allTerrains exists! -----------
+  const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
+  const createReservation = useCreateReservation({
+    onSuccess: () => {
+      setShowSuccessDialog(true);
+    },
+  });
+
   // ------ Gestion chaînée de la sélection initiale du terrain ----------
   const [urlFieldId, setUrlFieldId] = useState<number | null>(null);
   const initialTerrainSelectedRef = useRef(false);
@@ -96,72 +104,6 @@ const Reservation = () => {
   }, [selectedType]);
 
   // Hooks
-  const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
-  const createReservation = useCreateReservation({
-    onSuccess: () => {
-      setShowSuccessDialog(true);
-    },
-  });
-
-  // Filter terrains by selected type
-  const filteredTerrains = allTerrains?.filter(terrain => 
-    selectedType === '' || terrain.type === selectedType
-  ) || [];
-
-  // Get selected terrain object
-  const selectedTerrain = allTerrains?.find(t => t.id === selectedTerrainId);
-
-  // Helper: détermine si le terrain sélectionné est Foot à 6, 7 ou 8
-  const isFoot6 = !!(selectedTerrain && selectedTerrain.type === 'foot' && selectedTerrain.nom.includes('6'));
-  const isFoot7or8 = !!(selectedTerrain && selectedTerrain.type === 'foot' && (selectedTerrain.nom.includes('7') || selectedTerrain.nom.includes('8')));
-
-  // Get effective duration - ALWAYS 1.5 for football
-  const getEffectiveDuration = (): string => {
-    if (selectedTerrain?.type === 'foot') {
-      return '1.5'; // Football always 1.5 hours
-    }
-    return duration;
-  };
-
-  // Fonction générique pour générer les slots pour foot à 6, 7 et 8
-  // Pour foot à 6 : 9:00 à 22:30, pour foot à 7/8 : 10:00 à 23:30, pas de 1h30
-  const generateTimeSlotsForFoot = (startHour: number, startMinute: number, endHour: number, endMinute: number) => {
-    const slots: string[] = [];
-    let dt = new Date(2000, 0, 1, startHour, startMinute);
-    const endDt = new Date(2000, 0, 1, endHour, endMinute);
-    while (dt <= endDt) {
-      slots.push(
-        dt.getHours().toString().padStart(2, '0') +
-        ':' +
-        dt.getMinutes().toString().padStart(2, '0')
-      );
-      dt.setMinutes(dt.getMinutes() + 90);
-    }
-    return slots;
-  };
-
-  // Détermine dynamiquement les créneaux horaires selon le type de terrain sélectionné
-  const timeSlotsForSelectedTerrain = React.useMemo(() => {
-    if (isFoot6) {
-      // Foot à 6 : de 09:00 à 22:30
-      return generateTimeSlotsForFoot(9, 0, 22, 30);
-    }
-    if (isFoot7or8) {
-      // Foot à 7/8 : de 10:00 à 23:30
-      return generateTimeSlotsForFoot(10, 0, 23, 30);
-    }
-    // Pour les autres terrains, on retourne les créneaux standards
-    return defaultTimeSlots;
-  }, [isFoot6, isFoot7or8]);
-
-  // Update duration when terrain changes
-  useEffect(() => {
-    if (selectedTerrain?.type === 'foot') {
-      setDuration('1.5');
-    }
-  }, [selectedTerrain]);
-
-  // Availability check
   const { data: availability, isLoading: availabilityLoading } = useAvailability({
     terrainId: selectedTerrainId,
     date: selectedDate,
