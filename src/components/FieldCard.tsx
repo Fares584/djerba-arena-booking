@@ -86,18 +86,18 @@ const FieldCard: React.FC<FieldCardProps> = ({ field }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
-      <div className="relative h-48">
+    <div className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow flex flex-col">
+      <div className="relative aspect-[16/9] w-full">
         <img 
-          src={field.imageUrl} 
-          alt={field.name} 
-          className="w-full h-full object-contain"
+          src={field.imageUrl}
+          alt={field.name}
+          className="w-full h-full object-cover"
         />
         <div className={`absolute top-4 right-4 ${getStatusColor(field.status)} px-3 py-1 rounded-full text-xs font-semibold`}>
           {getStatusLabel(field.status)}
         </div>
       </div>
-      <div className="p-5">
+      <div className="p-5 flex flex-col flex-1">
         <div className="flex items-center gap-2 mb-2">
           <div className="text-sport-green">
             {getTypeIcon(field.type)}
@@ -114,8 +114,8 @@ const FieldCard: React.FC<FieldCardProps> = ({ field }) => {
           </div>
         </div>
         <Link 
-          to={`/reservation?fieldId=${field.id}`} 
-          className="w-full btn-primary block text-center"
+          to={`/reservation?fieldId=${field.id}`}
+          className="w-full btn-primary block text-center mt-auto"
         >
           Réserver
         </Link>
