@@ -22,7 +22,6 @@ const timeSlots = [
 // Duration options
 const durationOptions = [
   { value: '1', label: '1 heure' },
-  { value: '1.5', label: '1 heure 30 minutes' },
   { value: '2', label: '2 heures' },
   { value: '3', label: '3 heures' },
 ];
