@@ -29,14 +29,15 @@ const TerrainSelector = ({ terrains, selectedTerrainId, onTerrainSelect }: Terra
           }`}
           onClick={() => onTerrainSelect(terrain.id)}
         >
-          <div className="relative h-32 overflow-hidden rounded-t-lg">
+          {/* Bloc image plein width, plein height, ratio 16/9 */}
+          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-t-lg">
             <img
               src={terrain.image_url || '/placeholder.svg'}
               alt={terrain.nom}
               className="w-full h-full object-cover"
             />
             {selectedTerrainId === terrain.id && (
-              <div className="absolute inset-0 bg-sport-green/20 flex items-center justify-center">
+              <div className="absolute inset-0 bg-sport-green/20 flex items-center justify-center rounded-t-lg">
                 <div className="bg-sport-green text-white rounded-full p-2">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -77,3 +78,4 @@ const TerrainSelector = ({ terrains, selectedTerrainId, onTerrainSelect }: Terra
 };
 
 export default TerrainSelector;
+
