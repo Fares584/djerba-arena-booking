@@ -51,6 +51,32 @@ const Index = () => {
     }
   };
 
+  // Mise à jour des labels de tarifs selon la spécification utilisateur
+  const getPrixParType = (type: string) => {
+    switch (type) {
+      case 'foot_6':
+        return <>50&nbsp;DT<span className="text-sm font-normal text-gray-600">/heure (jour), 60&nbsp;DT&nbsp;(nuit)</span></>;
+      case 'foot_7':
+        return <>84&nbsp;DT<span className="text-sm font-normal text-gray-600">/heure (jour), 96&nbsp;DT&nbsp;(nuit)</span></>;
+      case 'foot_8':
+        return <>96&nbsp;DT<span className="text-sm font-normal text-gray-600">/heure (jour), 110&nbsp;DT&nbsp;(nuit)</span></>;
+      case 'tennis_green_set':
+        return <>10&nbsp;DT/joueur<span className="text-sm font-normal text-gray-600"> (jour), 12.5&nbsp;DT/joueur (nuit)</span></>;
+      case 'tennis_green_set_autre':
+        return <>7.5&nbsp;DT/joueur<span className="text-sm font-normal text-gray-600"> (jour), 10&nbsp;DT/joueur (nuit)</span></>;
+      case 'padel':
+        return <>50&nbsp;DT/4 joueurs<span className="text-sm font-normal text-gray-600"> (jour), 60&nbsp;DT/4 joueurs (nuit)</span></>;
+      case 'foot':
+        return <>60&nbsp;DT<span className="text-sm font-normal text-gray-600">/heure</span></>;
+      case 'tennis':
+        return <>30&nbsp;DT<span className="text-sm font-normal text-gray-600">/heure</span></>;
+      case 'padel':
+        return <>40&nbsp;DT<span className="text-sm font-normal text-gray-600">/heure</span></>;
+      default:
+        return <>{type}</>;
+    }
+  };
+
   return (
     <>
       <Navbar />
@@ -94,17 +120,10 @@ const Index = () => {
                       </span>
                     </div>
                     <h3 className="font-bold text-xl mb-2">{terrain.nom}</h3>
-                    <div className="flex flex-col justify-between items-start mb-4">
-                      <p className="text-sm text-gray-600">Capacité: {terrain.capacite} personnes</p>
+                    <div className="flex justify-between items-center mb-4">
                       <div>
-                        <p className="text-lg font-bold text-sport-green leading-tight">
-                          {terrain.prix} DT/heure
-                        </p>
-                        {terrain.prix_nuit && (
-                          <p className="text-xs text-green-700 mt-1">
-                            {terrain.prix_nuit} DT/heure la nuit
-                          </p>
-                        )}
+                        <p className="text-sm text-gray-600">Capacité: {terrain.capacite} personnes</p>
+                        <p className="text-lg font-bold text-sport-green">{terrain.prix} DT/heure</p>
                       </div>
                     </div>
                     <Link 
@@ -164,6 +183,117 @@ const Index = () => {
               <p className="text-gray-600">
                 Que vous soyez amateur ou professionnel, seul ou en groupe, nous avons le terrain qu'il vous faut.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Section Tarifs - Mis à jour selon la grille utilisateur */}
+      <section className="section-padding bg-sport-green text-white">
+        <div className="container-custom">
+          <h2 className="text-3xl font-bold text-center mb-12">Nos tarifs</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Foot à 6 */}
+            <div className="bg-white text-sport-dark p-6 rounded-lg shadow-md">
+              <h3 className="font-bold text-xl mb-2">Football 6 vs 6</h3>
+              <p className="text-gray-600 mb-4">Terrains synthétiques</p>
+              <div className="text-3xl font-bold text-sport-green mb-6">
+                50 DT <span className="text-sm font-normal text-gray-600">/heure (jour)</span><br />
+                60 DT <span className="text-sm font-normal text-gray-600">/heure (nuit)</span>
+              </div>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>3 terrains disponibles</span></li>
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>Ballons inclus</span></li>
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>Vestiaires & douches</span></li>
+              </ul>
+              <Link to="/reservation?type=foot_6" className="btn-primary block text-center w-full">
+                Réserver maintenant
+              </Link>
+            </div>
+            {/* Foot à 7 */}
+            <div className="bg-white text-sport-dark p-6 rounded-lg shadow-md">
+              <h3 className="font-bold text-xl mb-2">Football 7 vs 7</h3>
+              <p className="text-gray-600 mb-4">Terrains synthétiques</p>
+              <div className="text-3xl font-bold text-sport-green mb-6">
+                84 DT <span className="text-sm font-normal text-gray-600">/heure (jour)</span><br />
+                96 DT <span className="text-sm font-normal text-gray-600">/heure (nuit)</span>
+              </div>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>2 terrains disponibles</span></li>
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>Ballons inclus</span></li>
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>Vestiaires & douches</span></li>
+              </ul>
+              <Link to="/reservation?type=foot_7" className="btn-primary block text-center w-full">
+                Réserver maintenant
+              </Link>
+            </div>
+            {/* Foot à 8 */}
+            <div className="bg-white text-sport-dark p-6 rounded-lg shadow-md">
+              <h3 className="font-bold text-xl mb-2">Football 8 vs 8</h3>
+              <p className="text-gray-600 mb-4">Terrains synthétiques</p>
+              <div className="text-3xl font-bold text-sport-green mb-6">
+                96 DT <span className="text-sm font-normal text-gray-600">/heure (jour)</span><br />
+                110 DT <span className="text-sm font-normal text-gray-600">/heure (nuit)</span>
+              </div>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>1 terrain disponible</span></li>
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>Ballons inclus</span></li>
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>Vestiaires & douches</span></li>
+              </ul>
+              <Link to="/reservation?type=foot_8" className="btn-primary block text-center w-full">
+                Réserver maintenant
+              </Link>
+            </div>
+            {/* Tennis green set */}
+            <div className="bg-white text-sport-dark p-6 rounded-lg shadow-md">
+              <h3 className="font-bold text-xl mb-2">Tennis Green Set</h3>
+              <p className="text-gray-600 mb-4">Courts en dur (Green Set)</p>
+              <div className="text-2xl font-bold text-sport-green mb-6">
+                10 DT/joueur <span className="text-sm font-normal text-gray-600">(jour)</span><br/>
+                12.5 DT/joueur <span className="text-sm font-normal text-gray-600">(nuit)</span>
+              </div>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>2 courts disponibles</span></li>
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>Location de raquettes</span></li>
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>Vestiaires & douches</span></li>
+              </ul>
+              <Link to="/reservation?type=tennis_green_set" className="btn-primary block text-center w-full">
+                Réserver maintenant
+              </Link>
+            </div>
+            {/* Tennis green set autre */}
+            <div className="bg-white text-sport-dark p-6 rounded-lg shadow-md">
+              <h3 className="font-bold text-xl mb-2">Tennis Green Set (Autre)</h3>
+              <p className="text-gray-600 mb-4">Court particulier</p>
+              <div className="text-2xl font-bold text-sport-green mb-6">
+                7.5 DT/joueur <span className="text-sm font-normal text-gray-600">(jour)</span><br/>
+                10 DT/joueur <span className="text-sm font-normal text-gray-600">(nuit)</span>
+              </div>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>Disponible</span></li>
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>Location de raquettes</span></li>
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>Vestiaires & douches</span></li>
+              </ul>
+              <Link to="/reservation?type=tennis_green_set_autre" className="btn-primary block text-center w-full">
+                Réserver maintenant
+              </Link>
+            </div>
+            {/* Padel */}
+            <div className="bg-white text-sport-dark p-6 rounded-lg shadow-md">
+              <h3 className="font-bold text-xl mb-2">Padel</h3>
+              <p className="text-gray-600 mb-4">Courts couverts</p>
+              <div className="text-2xl font-bold text-sport-green mb-6">
+                50 DT/4 joueurs <span className="text-sm font-normal text-gray-600">(jour)</span><br/>
+                60 DT/4 joueurs <span className="text-sm font-normal text-gray-600">(nuit)</span>
+              </div>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>2 courts disponibles</span></li>
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>Location de raquettes</span></li>
+                <li className="flex items-center"><svg className="w-5 h-5 text-sport-green mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span>Vestiaires & douches</span></li>
+              </ul>
+              <Link to="/reservation?type=padel" className="btn-primary block text-center w-full">
+                Réserver maintenant
+              </Link>
             </div>
           </div>
         </div>

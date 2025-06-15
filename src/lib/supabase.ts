@@ -83,16 +83,42 @@ export const isNightTime = (time: string, globalNightStartTime?: string): boolea
 };
 
 // Function to calculate the price based on terrain and time (using global night time setting)
+// Refactored to only use types allowed by the Terrain.type definition.
 export const calculatePrice = (terrain: Terrain, time: string, globalNightStartTime?: string): number => {
-  // Special pricing for football terrains - fixed price for 1.5h session
+  const night = isNightTime(time, globalNightStartTime);
+
+  // Specific football types based on 'nom'
   if (terrain.type === 'foot') {
-    if (isNightTime(time, globalNightStartTime)) {
-      return 65; // Fixed night price for football (1.5h)
+    if (/6/.test(terrain.nom)) {
+      return night ? 60 : 50; // 6v6
     }
-    return 60; // Fixed day price for football (1.5h)
+    if (/7/.test(terrain.nom)) {
+      return night ? 96 : 84; // 7v7
+    }
+    if (/8/.test(terrain.nom)) {
+      return night ? 110 : 96; // 8v8
+    }
+    // Default foot pricing fallback
+    return night ? 65 : 60;
   }
-  
-  // For other terrains, use hourly pricing
+
+  // Tennis Green Set types based on 'nom'
+  if (terrain.type === 'tennis') {
+    if (/green set/i.test(terrain.nom)) {
+      // Tennis Green Set distinguished by 'autre' in name
+      if (/autre/i.test(terrain.nom)) {
+        return night ? 10 : 7.5;
+      }
+      return night ? 12.5 : 10;
+    }
+    // Fallback default if needed for classic tennis
+    return night ? (terrain.prix_nuit || 30) : terrain.prix;
+  }
+
+  if (terrain.type === 'padel') {
+    return night ? 60 : 50; // 50/60 DT for 4 joueurs
+  }
+  // Fallback to generic logic
   if (isNightTime(time, globalNightStartTime) && terrain.prix_nuit) {
     return terrain.prix_nuit;
   }
