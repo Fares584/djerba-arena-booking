@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -48,8 +48,52 @@ const Reservation = () => {
   const [remarks, setRemarks] = useState('');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
-  // NEW: garder une trace si une sélection initiale a été faite via URL
-  const [initialSelectionDone, setInitialSelectionDone] = useState(false);
+  // ------ Gestion chaînée de la sélection initiale du terrain ----------
+  const [urlFieldId, setUrlFieldId] = useState<number | null>(null);
+  const initialTerrainSelectedRef = useRef(false);
+
+  // Récupère l'id terrain passé dans l'URL à l'arrivée
+  useEffect(() => {
+    const fieldId = searchParams.get('fieldId');
+    if (fieldId) {
+      setUrlFieldId(Number(fieldId));
+    }
+  }, [searchParams]);
+
+  // Si URL fieldId détecté → trouve le terrain dans la liste une fois chargée
+  useEffect(() => {
+    if (!allTerrains || !urlFieldId) return;
+    const t = allTerrains.find(tr => tr.id === urlFieldId);
+    if (t && selectedType !== t.type) {
+      setSelectedType(t.type);
+      // On attend que le type soit bien assigné avant de continuer
+    }
+  }, [allTerrains, urlFieldId]);
+
+  // Dès que le type est défini, synchronise la sélection du terrain une seule fois
+  useEffect(() => {
+    if (
+      !allTerrains ||
+      !urlFieldId ||
+      !selectedType ||
+      initialTerrainSelectedRef.current
+    )
+      return;
+    const t = allTerrains.find(
+      (tr) => tr.id === urlFieldId && tr.type === selectedType
+    );
+    if (t) {
+      setSelectedTerrainId(t.id);
+      initialTerrainSelectedRef.current = true;
+    }
+  }, [allTerrains, selectedType, urlFieldId]);
+
+  // Si l'utilisateur choisit manuellement un type, on réinitialise le terrain (sauf pour sélection auto au mount)
+  useEffect(() => {
+    if (!initialTerrainSelectedRef.current) {
+      setSelectedTerrainId(null);
+    }
+  }, [selectedType]);
 
   // Hooks
   const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
@@ -110,40 +154,12 @@ const Reservation = () => {
     return defaultTimeSlots;
   }, [isFoot6, isFoot7or8]);
 
-  // Initialize from URL params
-  useEffect(() => {
-    if (!allTerrains) return;
-    if (initialSelectionDone) return; // Ne faire qu'une fois
-    const fieldId = searchParams.get('fieldId');
-    if (fieldId) {
-      const terrain = allTerrains.find(t => t.id === parseInt(fieldId));
-      if (terrain) {
-        // On sélectionne d'abord le type correspondant (entraine re-render)
-        setSelectedType(terrain.type);
-        setSelectedTerrainId(terrain.id);
-        setInitialSelectionDone(true);
-      }
-    }
-  }, [allTerrains, searchParams, initialSelectionDone]);
-
-  // Quand le type change (par l'utilisateur)
-  useEffect(() => {
-    // Si la sélection initiale a déjà été faite (après fieldId), on ne reset pas le terrain
-    if (initialSelectionDone) return;
-    setSelectedTerrainId(null);
-  }, [selectedType, initialSelectionDone]);
-
   // Update duration when terrain changes
   useEffect(() => {
     if (selectedTerrain?.type === 'foot') {
       setDuration('1.5');
     }
   }, [selectedTerrain]);
-
-  // Reset terrain selection when type changes
-  useEffect(() => {
-    setSelectedTerrainId(null);
-  }, [selectedType]);
 
   // Availability check
   const { data: availability, isLoading: availabilityLoading } = useAvailability({
