@@ -75,7 +75,7 @@ const getTimeSlotsForTerrain = (terrain: any | undefined): string[] => {
   return timeSlots;
 };
 
-const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
+const AbonnementForm = ({ onSuccess }) => {
   const [selectedTerrainId, setSelectedTerrainId] = useState<number | null>(null);
   const [prix, setPrix] = useState('');
   const [dateDebut, setDateDebut] = useState('');
@@ -178,23 +178,54 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     (selectedTerrain.type === 'tennis' || selectedTerrain.type === 'padel');
 
   // Nouvelle logique de validation centralisée
+  // On force jourSemaineNum à être un nombre ou null
+  let jourSemaineNum: number | null = null;
+  if (typeof jourSemaine === "number") {
+    jourSemaineNum = jourSemaine;
+  } else if (typeof jourSemaine === "string" && jourSemaine.trim() !== "" && !isNaN(Number(jourSemaine))) {
+    jourSemaineNum = Number(jourSemaine);
+  }
+
   const prixNum = Number(prix);
-  const jourSemaineNum = typeof jourSemaine === "string" ? parseInt(jourSemaine as any, 10) : jourSemaine;
   const dureeSeanceNum = Number(dureeSeance);
 
+  // AJOUT DEBUG : voir les valeurs dans la console
+  console.log('DEBUG_FORM isValid check', {
+    abonnementTypeId,
+    selectedTerrainId,
+    prixNum,
+    prix,
+    dateDebut,
+    dateFin,
+    jourSemaine,
+    jourSemaineNum,
+    selectedHeure,
+    clientNom,
+    clientEmail,
+    clientTel,
+    dureeSeanceNum,
+    isTennisOrPadel,
+  });
+
   const isValid =
-    !!abonnementTypeId &&
-    !!selectedTerrainId &&
+    abonnementTypeId !== null &&
+    selectedTerrainId !== null &&
     !!prix &&
+    !isNaN(prixNum) &&
     prixNum > 0 &&
     !!dateDebut &&
     !!dateFin &&
-    jourSemaineNum !== null && !isNaN(jourSemaineNum) &&
+    jourSemaineNum !== null &&
+    !isNaN(jourSemaineNum) &&
     !!selectedHeure &&
     !!clientNom.trim() &&
     !!clientEmail.trim() &&
     !!clientTel.trim() &&
     (isTennisOrPadel ? dureeSeanceNum > 0 : true);
+
+  // Montre l'état du isValid dans la page pour aider à débugger (suppprime si tout va bien)
+  // Retire ce <div> si tu ne le veux pas en prod !
+  // <div className="text-xs text-gray-500">isValid: {isValid ? 'oui' : 'non'}</div>
 
   // Création de l’abonnement
   const handleSubmit = async (e: React.FormEvent) => {
@@ -236,7 +267,8 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <h2 className="text-xl font-semibold mb-2">Ajouter un Abonnement Mensuel</h2>
-      
+      {/* DEBUG ONLY - Retire ce block plus tard */}
+      <div className="text-xs text-gray-500">isValid: {isValid ? 'oui' : 'non'}</div>
       {formError && (
         <div className="bg-red-100 text-red-700 rounded p-2 text-sm">{formError}</div>
       )}
