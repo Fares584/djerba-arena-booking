@@ -31,6 +31,16 @@ const generateTimeSlotsForFoot = (startHour: number, startMinute: number, endHou
   return slots;
 };
 
+const weekDays = [
+  { value: 0, label: 'Dimanche' },
+  { value: 1, label: 'Lundi' },
+  { value: 2, label: 'Mardi' },
+  { value: 3, label: 'Mercredi' },
+  { value: 4, label: 'Jeudi' },
+  { value: 5, label: 'Vendredi' },
+  { value: 6, label: 'Samedi' },
+];
+
 interface AbonnementFormProps {
   onSuccess: () => void;
 }
@@ -45,6 +55,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const [clientNom, setClientNom] = useState('');
   const [clientTel, setClientTel] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const [selectedJourSemaine, setSelectedJourSemaine] = useState<number | null>(null);
 
   // Récupération des terrains actifs
   const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
@@ -126,6 +137,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     !!dateDebut &&
     !!dateFin &&
     !!heure &&
+    selectedJourSemaine !== null &&
     !!clientNom.trim() &&
     !!clientTel.trim();
 
@@ -133,7 +145,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     e.preventDefault();
     setFormError(null);
 
-    if (!isValid) {
+    if (!isValid || selectedJourSemaine === null) {
       setFormError('Merci de remplir correctement tous les champs obligatoires.');
       import('sonner').then(({ toast }) => {
         toast.error('Merci de remplir correctement tous les champs obligatoires.');
@@ -146,7 +158,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         terrain_id: selectedTerrainId!,
         date_debut: dateDebut,
         date_fin: dateFin,
-        jour_semaine: undefined,
+        jour_semaine: selectedJourSemaine,
         heure_fixe: heure,
         duree_seance: undefined,
         client_nom: clientNom.trim(),
@@ -220,6 +232,26 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
             required
           />
         </div>
+      </div>
+
+      {/* Jour de la semaine */}
+      <div>
+        <Label htmlFor="jourSemaine">Jour de la semaine *</Label>
+        <select
+          id="jourSemaine"
+          className="w-full border rounded-md p-2 h-9 mt-1"
+          value={selectedJourSemaine !== null ? selectedJourSemaine : ""}
+          onChange={e => {
+            const newVal = e.target.value === "" ? null : Number(e.target.value);
+            setSelectedJourSemaine(newVal);
+          }}
+          required
+        >
+          <option value="" disabled>Sélectionnez un jour</option>
+          {weekDays.map(day => (
+            <option key={day.value} value={day.value}>{day.label}</option>
+          ))}
+        </select>
       </div>
 
       {/* Heure */}
