@@ -58,32 +58,45 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!type || !terrainId || !prix || !dateDebut || !dateFin || jourSemaine === null || !heureFixe || !clientNom || !clientEmail || !clientTel) {
+    if (
+      !type ||
+      !terrainId ||
+      !prix ||
+      !dateDebut ||
+      !dateFin ||
+      jourSemaine === null ||
+      !heureFixe ||
+      !clientNom ||
+      !clientEmail ||
+      !clientTel
+    ) {
       return;
     }
 
-    // Utilisation d'un type id factice ou mapping si besoin
-    createAbonnement.mutate({
-      abonnement_type_id: 0, // Plus utilisé, à ignorer côté backend si possible
-      terrain_id: terrainId,
-      date_debut: dateDebut,
-      date_fin: dateFin,
-      jour_semaine: jourSemaine,
-      heure_fixe: heureFixe,
-      duree_seance: 1, // Valeur par défaut, ignorée
-      client_nom: clientNom,
-      client_email: clientEmail,
-      client_tel: clientTel,
-      statut: 'actif',
-      // + Nouveau champ montant si backend l'accepte ; 
-      // sinon à exploiter côté stats/affichage
-      montant: parseFloat(prix),
-      type_sport: type,
-    }, {
-      onSuccess: () => {
-        onSuccess();
+    // Only send fields defined in Abonnement
+    createAbonnement.mutate(
+      {
+        abonnement_type_id: 0, // still dummy, not used
+        terrain_id: terrainId,
+        date_debut: dateDebut,
+        date_fin: dateFin,
+        jour_semaine: jourSemaine,
+        heure_fixe: heureFixe,
+        duree_seance: 1, // still default, ignored
+        client_nom: clientNom,
+        client_email: clientEmail,
+        client_tel: clientTel,
+        statut: "actif",
+        // Don't send montant, only use prix value if you have a prix field, but the DB doesn't.
+        // type_sport is not part of Abonnement, so not sent
+        // Only these fields will be accepted!
+      },
+      {
+        onSuccess: () => {
+          onSuccess();
+        },
       }
-    });
+    );
   };
 
   return (
