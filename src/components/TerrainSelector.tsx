@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Terrain } from '@/lib/supabase';
+import { Image } from 'lucide-react';
 
 interface TerrainSelectorProps {
   terrains: Terrain[];
@@ -29,15 +30,31 @@ const TerrainSelector = ({ terrains, selectedTerrainId, onTerrainSelect }: Terra
           }`}
           onClick={() => onTerrainSelect(terrain.id)}
         >
-          <div className="relative h-32 overflow-hidden rounded-t-lg">
-            <img
-              src={terrain.image_url || '/placeholder.svg'}
-              alt={terrain.nom}
-              className="w-full h-full object-cover"
-            />
+          <div className="relative aspect-[16/9] w-full rounded-t-lg overflow-hidden bg-gray-100">
+            {terrain.image_url ? (
+              <img
+                src={terrain.image_url}
+                alt={terrain.nom}
+                className="w-full h-full object-cover"
+                style={{ minHeight: 110 }}
+                onError={(e) => {
+                  const img = e.target as HTMLImageElement;
+                  img.style.display = 'none';
+                  const fallback = img.nextElementSibling as HTMLElement;
+                  if (fallback) fallback.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            {/* Placeholder en cas d'absence ou d'erreur de chargement */}
+            <div
+              className="absolute inset-0 flex items-center justify-center bg-gray-100"
+              style={{ display: terrain.image_url ? 'none' : 'flex' }}
+            >
+              <Image className="h-12 w-12 text-gray-400" />
+            </div>
             {selectedTerrainId === terrain.id && (
-              <div className="absolute inset-0 bg-sport-green/20 flex items-center justify-center">
-                <div className="bg-sport-green text-white rounded-full p-2">
+              <div className="absolute inset-0 bg-sport-green/30 flex items-center justify-center rounded-t-lg">
+                <div className="bg-sport-green text-white rounded-full p-2 shadow-lg">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
@@ -57,7 +74,7 @@ const TerrainSelector = ({ terrains, selectedTerrainId, onTerrainSelect }: Terra
                 </div>
                 {terrain.prix_nuit && (
                   <div className="text-sm text-gray-600">
-                    Nuit: {terrain.prix_nuit} DT/h
+                    Nuit&nbsp;: {terrain.prix_nuit} DT/h
                   </div>
                 )}
               </div>
