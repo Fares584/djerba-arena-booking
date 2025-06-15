@@ -179,34 +179,58 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   // Création de l’abonnement
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !abonnementTypeId ||
-      !selectedTerrainId ||
-      !prix ||
-      !dateDebut ||
-      !dateFin ||
-      jourSemaine === null ||
-      !selectedHeure ||
-      !clientNom ||
-      !clientEmail ||
-      !clientTel
-    ) {
+
+    // Conversion-safe : parseInt et Number pour les valeurs éventuelles
+    const prixNum = Number(prix);
+    const jourSemaineNum = typeof jourSemaine === "string" ? parseInt(jourSemaine, 10) : jourSemaine;
+    const dureeSeanceNum = Number(dureeSeance);
+
+    // Vérifie que tous les champs sensibles sont bien remplis/valides
+    const isValid =
+      abonnementTypeId &&
+      selectedTerrainId &&
+      prixNum > 0 &&
+      dateDebut &&
+      dateFin &&
+      jourSemaineNum !== null && !isNaN(jourSemaineNum) &&
+      selectedHeure &&
+      clientNom.trim() &&
+      clientEmail.trim() &&
+      clientTel.trim() &&
+      (isTennisOrPadel ? dureeSeanceNum > 0 : true);
+
+    if (!isValid) {
+      // Pour aider au débogage, log toutes les données du formulaire :
+      console.warn("Formulaire incomplet", {
+        abonnementTypeId,
+        selectedTerrainId,
+        prixNum,
+        dateDebut,
+        dateFin,
+        jourSemaineNum,
+        selectedHeure,
+        clientNom,
+        clientEmail,
+        clientTel,
+        dureeSeanceNum,
+      });
+      // Optionnel : Afficher un toast ou un message d'erreur ici si nécessaire
       return;
     }
+
     createAbonnement.mutate(
       {
         abonnement_type_id: abonnementTypeId,
         terrain_id: selectedTerrainId,
         date_debut: dateDebut,
         date_fin: dateFin,
-        jour_semaine: jourSemaine,
+        jour_semaine: jourSemaineNum,
         heure_fixe: selectedHeure, // Toujours format HH:mm
-        duree_seance: isTennisOrPadel ? dureeSeance : 1, // Utilise la durée choisie sinon 1h
+        duree_seance: isTennisOrPadel ? dureeSeanceNum : 1, // Utilise la durée choisie sinon 1h
         client_nom: clientNom,
         client_email: clientEmail,
         client_tel: clientTel,
         statut: 'actif',
-        // Le prix est uniquement affiché, il n'est pas stocké explicitement dans abonnements.
       },
       {
         onSuccess: () => {
