@@ -21,6 +21,7 @@ export type Database = {
           heure_fixe: string | null
           id: number
           jour_semaine: number | null
+          montant: number | null
           reservations_utilisees: number | null
           statut: string
           terrain_id: number | null
@@ -37,6 +38,7 @@ export type Database = {
           heure_fixe?: string | null
           id?: number
           jour_semaine?: number | null
+          montant?: number | null
           reservations_utilisees?: number | null
           statut: string
           terrain_id?: number | null
@@ -53,6 +55,7 @@ export type Database = {
           heure_fixe?: string | null
           id?: number
           jour_semaine?: number | null
+          montant?: number | null
           reservations_utilisees?: number | null
           statut?: string
           terrain_id?: number | null

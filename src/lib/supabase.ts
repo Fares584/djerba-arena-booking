@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Define types for our database
@@ -58,6 +57,7 @@ export type Abonnement = {
   jour_semaine?: number | null; // 0=Dimanche, 1=Lundi, etc.
   heure_fixe?: string | null; // Format HH:MM
   duree_seance?: number | null; // Durée en heures
+  montant?: number | null; // Ajouté pour stocker le montant renseigné lors de la création
 };
 
 export type AdminUser = {
