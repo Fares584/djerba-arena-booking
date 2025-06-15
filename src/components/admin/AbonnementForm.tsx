@@ -64,6 +64,13 @@ const getTimeSlotsForTerrain = (terrain: any | undefined): string[] => {
   ) {
     return generateTimeSlots("10:00", "23:30", 90);
   }
+  // Tennis ou padel : 09:00 à 23:00, intervalles standards d’1h
+  if (
+    (terrain.type === "tennis") ||
+    (terrain.type === "padel")
+  ) {
+    return generateTimeSlots("09:00", "23:00", 60);
+  }
   // Par défaut les autres terrains: créneaux standards
   return timeSlots;
 };
