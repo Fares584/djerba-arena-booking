@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -88,9 +89,8 @@ const Stats = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Statistiques</h1>
-        
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2">Statistiques</h1>
         <Tabs defaultValue="week" value={timeframe} onValueChange={(v) => setTimeframe(v as 'week' | 'month')}>
           <TabsList>
             <TabsTrigger value="week">Cette semaine</TabsTrigger>
@@ -98,7 +98,6 @@ const Stats = () => {
           </TabsList>
         </Tabs>
       </div>
-      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -114,7 +113,6 @@ const Stats = () => {
             </p>
           </CardContent>
         </Card>
-        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Revenu Total</CardTitle>
@@ -129,7 +127,6 @@ const Stats = () => {
             </p>
           </CardContent>
         </Card>
-        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Taux d'occupation</CardTitle>
@@ -147,7 +144,6 @@ const Stats = () => {
             </p>
           </CardContent>
         </Card>
-        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Revenu moyen / réservation</CardTitle>
@@ -167,7 +163,6 @@ const Stats = () => {
           </CardContent>
         </Card>
       </div>
-      
     </div>
   );
 };
