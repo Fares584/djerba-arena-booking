@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useUpdateAbonnement, useAbonnements } from '@/hooks/useAbonnements';
@@ -46,7 +45,6 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
   const [dateFin, setDateFin] = useState(abonnement.date_fin);
   const [heure, setHeure] = useState(abonnement.heure_fixe || '');
   const [clientNom, setClientNom] = useState(abonnement.client_nom);
-  const [clientEmail, setClientEmail] = useState(abonnement.client_email);
   const [clientTel, setClientTel] = useState(abonnement.client_tel);
   const [statut, setStatut] = useState<Abonnement['statut']>(abonnement.statut);
   const [formError, setFormError] = useState<string | null>(null);
@@ -153,7 +151,6 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
           date_fin: dateFin,
           heure_fixe: heure,
           client_nom: clientNom.trim(),
-          client_email: clientEmail.trim(),
           client_tel: clientTel.trim(),
           statut: statut
         }
@@ -247,15 +244,6 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
             required
           />
         </div>
-      </div>
-      <div>
-        <Label htmlFor="clientEmail">Email du client</Label>
-        <Input
-          id="clientEmail"
-          type="email"
-          value={clientEmail}
-          onChange={e => setClientEmail(e.target.value)}
-        />
       </div>
 
       {/* Statut */}
