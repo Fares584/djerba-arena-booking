@@ -188,9 +188,6 @@ const About = () => {
             <a href="/reservation" className="btn-primary text-lg px-8 py-3">
               Réserver un terrain
             </a>
-            <a href="/contact" className="btn-secondary text-lg px-8 py-3">
-              Nous contacter
-            </a>
           </div>
         </div>
       </section>
