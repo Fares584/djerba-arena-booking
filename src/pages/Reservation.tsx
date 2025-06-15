@@ -50,7 +50,6 @@ const Reservation = () => {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
-  const [remarks, setRemarks] = useState('');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   // -------- 1. Declare hooks first, so allTerrains exists! -----------
@@ -220,7 +219,7 @@ const Reservation = () => {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // --- Add the missing handleSubmit function ---
+  // --- Ajout de la fonction handleSubmit MAJ ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -245,7 +244,7 @@ const Reservation = () => {
 
     const effectiveDuration = parseFloat(getEffectiveDuration());
 
-    // Créer la réservation confirmée immédiatement
+    // Créer la réservation confirmée immédiatement (SUPPRESSION DE remarque!)
     createReservation.mutate({
       nom_client: customerName,
       tel: customerPhone,
@@ -254,8 +253,8 @@ const Reservation = () => {
       date: selectedDate,
       heure: selectedTime,
       duree: effectiveDuration,
-      statut: "confirmee", // direct
-      remarque: remarks || null,
+      statut: "confirmee",
+      // remarque: remarks || null,  // suppression de la remarque ici
     });
   };
 
@@ -339,8 +338,6 @@ const Reservation = () => {
               setCustomerPhone={setCustomerPhone}
               customerEmail={customerEmail}
               setCustomerEmail={setCustomerEmail}
-              remarks={remarks}
-              setRemarks={setRemarks}
             />
             {/* Price Summary */}
             {selectedTerrain && selectedTime && (

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -12,8 +11,6 @@ interface Props {
   setCustomerPhone: (v: string) => void;
   customerEmail: string;
   setCustomerEmail: (v: string) => void;
-  remarks: string;
-  setRemarks: (v: string) => void;
 }
 
 const ReservationCustomerInfo: React.FC<Props> = ({
@@ -23,8 +20,6 @@ const ReservationCustomerInfo: React.FC<Props> = ({
   setCustomerPhone,
   customerEmail,
   setCustomerEmail,
-  remarks,
-  setRemarks,
 }) => (
   <div className="border-t pt-8">
     <h3 className="text-xl font-semibold mb-6 flex items-center">
@@ -72,17 +67,6 @@ const ReservationCustomerInfo: React.FC<Props> = ({
         onChange={(e) => setCustomerEmail(e.target.value)}
         placeholder="votre@email.com"
         required
-      />
-    </div>
-    <div className="mb-6">
-      <Label htmlFor="remarks" className="text-base font-medium mb-2 block">
-        Remarques
-      </Label>
-      <Textarea
-        id="remarks"
-        value={remarks}
-        onChange={(e) => setRemarks(e.target.value)}
-        placeholder="Ajoutez une remarque (optionnel)"
       />
     </div>
   </div>
