@@ -197,7 +197,7 @@ const Index = () => {
             <div className="bg-white p-6 rounded-lg shadow-md text-center">
               <div className="w-16 h-16 bg-sport-green/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-sport-green" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 115.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                 </svg>
               </div>
               <h3 className="font-bold text-xl mb-3">Pour tous</h3>
@@ -219,9 +219,6 @@ const Index = () => {
           <div className="flex flex-col md:flex-row gap-4 justify-center">
             <Link to="/reservation" className="btn-primary text-lg px-8 py-3">
               Réserver un terrain
-            </Link>
-            <Link to="/contact" className="btn-secondary text-lg px-8 py-3">
-              Nous contacter
             </Link>
           </div>
         </div>
