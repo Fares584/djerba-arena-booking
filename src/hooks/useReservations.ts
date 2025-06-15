@@ -70,17 +70,12 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
   return useMutation({
     mutationFn: async (newReservation: Omit<Reservation, 'id' | 'created_at' | 'updated_at'>) => {
       try {
-        // Generate confirmation token
-        const confirmation_token = generateToken(32);
-
-        // First: create reservation, statut = 'en_attente', confirmed_by_user: false
+        // Création directe avec statut "confirmee"
         const { data, error } = await supabase
           .from('reservations')
           .insert({
             ...newReservation,
-            confirmation_token,
-            confirmed_by_user: false,
-            statut: 'en_attente',
+            statut: 'confirmee' // Immédiatement confirmée !
           })
           .select(`
             *, 
@@ -91,27 +86,6 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
         if (error) {
           console.error("Error creating reservation:", error);
           throw error;
-        }
-
-        // Send confirmation email via edge function (call from frontend)
-        const confirmLink = `${window.location.origin}/confirm-reservation?token=${confirmation_token}`;
-
-        // ⚠️ Utilise supabase.functions.invoke (AU LIEU de fetch)
-        const { data: emailData, error: emailError } = await supabase.functions.invoke('send-reservation-confirmation', {
-          body: {
-            email: data.email,
-            nom_client: data.nom_client,
-            field_name: data.terrain?.nom ?? '—',
-            date: data.date,
-            heure: data.heure,
-            confirmation_link: confirmLink,
-          },
-        });
-
-        if (emailError) {
-          console.error("Error sending confirmation email via edge function:", emailError);
-        } else {
-          console.log("Confirmation email sent (edge function result):", emailData);
         }
 
         return data;
