@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
@@ -78,15 +77,15 @@ const getTimeSlotsForTerrain = (terrain: any | undefined): string[] => {
 
 const AbonnementForm = ({ onSuccess }) => {
   const [selectedTerrainId, setSelectedTerrainId] = useState<number | null>(null);
-  const [prix, setPrix] = useState<string>('');   // Explicitly string
-  const [dateDebut, setDateDebut] = useState<string>(''); // Explicitly string
-  const [dateFin, setDateFin] = useState<string>('');    // Explicitly string
+  const [prix, setPrix] = useState<string>(''); // Ensure type is string for .trim()
+  const [dateDebut, setDateDebut] = useState<string>(''); // string
+  const [dateFin, setDateFin] = useState<string>(''); // string
   const [jourSemaine, setJourSemaine] = useState<number | null>(null);
-  const [selectedHeure, setSelectedHeure] = useState<string>(''); // Explicitly string
-  const [clientNom, setClientNom] = useState<string>('');   // Explicitly string
-  const [clientEmail, setClientEmail] = useState<string>(''); // Explicitly string
-  const [clientTel, setClientTel] = useState<string>('');    // Explicitly string
-  const [dureeSeance, setDureeSeance] = useState<number>(1); // Already set as number
+  const [selectedHeure, setSelectedHeure] = useState<string>(''); // string
+  const [clientNom, setClientNom] = useState<string>(''); // string
+  const [clientEmail, setClientEmail] = useState<string>(''); // string
+  const [clientTel, setClientTel] = useState<string>(''); // string
+  const [dureeSeance, setDureeSeance] = useState<number>(1);
   const [formError, setFormError] = useState<string | null>(null);
 
   // Récupérer tous les terrains et types d’abonnement actifs
