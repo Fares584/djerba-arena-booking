@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
+import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
 import { useCreateAbonnement } from '@/hooks/useAbonnements';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,13 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2 } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 
-// Types locaux pour les sports/terrains
-const abonnementTypes = [
-  { value: 'foot', label: 'Football' },
-  { value: 'tennis', label: 'Tennis' },
-  { value: 'padel', label: 'Padel' },
-];
-
+// Types locaux pour les jours
 const joursOptions = [
   { value: 0, label: 'Dimanche' },
   { value: 1, label: 'Lundi' },
@@ -31,7 +26,7 @@ interface AbonnementFormProps {
 }
 
 const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
-  const [type, setType] = useState('');
+  const [abonnementTypeId, setAbonnementTypeId] = useState<number | null>(null);
   const [terrainId, setTerrainId] = useState<number | null>(null);
   const [prix, setPrix] = useState('');
   const [dateDebut, setDateDebut] = useState('');
@@ -43,9 +38,10 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const [clientTel, setClientTel] = useState('');
 
   const { data: terrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
+  const { data: abonnementTypes, isLoading: typesLoading } = useAbonnementTypes({ actif: true });
   const createAbonnement = useCreateAbonnement();
 
-  // Calculer date de fin automatiquement (1 mois après début)
+  // Calcul automatique de la date de fin (toujours 1 mois après)
   useEffect(() => {
     if (dateDebut) {
       const debut = new Date(dateDebut);
@@ -56,10 +52,25 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     }
   }, [dateDebut]);
 
+  // Sécuriser l'heure : toujours HH:mm même si champ AM/PM via navigateur anglais
+  function normalizeTime(input: string): string {
+    if (!input) return '';
+    if (/AM|PM/i.test(input)) {
+      // Cas bizarre si navigateur anglais (très rare)
+      const [time, ampm] = input.split(' ');
+      let [h, m] = time.split(':');
+      let hours = parseInt(h, 10);
+      if (/PM/i.test(ampm) && hours < 12) hours += 12;
+      if (/AM/i.test(ampm) && hours === 12) hours = 0;
+      return `${String(hours).padStart(2, '0')}:${m}`;
+    }
+    return input.length === 5 ? input : input.slice(0, 5); // "HH:mm"
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (
-      !type ||
+      !abonnementTypeId ||
       !terrainId ||
       !prix ||
       !dateDebut ||
@@ -73,23 +84,19 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       return;
     }
 
-    // Only send fields defined in Abonnement
     createAbonnement.mutate(
       {
-        abonnement_type_id: 0, // still dummy, not used
+        abonnement_type_id: abonnementTypeId,
         terrain_id: terrainId,
         date_debut: dateDebut,
         date_fin: dateFin,
         jour_semaine: jourSemaine,
-        heure_fixe: heureFixe,
-        duree_seance: 1, // still default, ignored
+        heure_fixe: normalizeTime(heureFixe), // format HH:mm
+        duree_seance: 1,
         client_nom: clientNom,
         client_email: clientEmail,
         client_tel: clientTel,
         statut: "actif",
-        // Don't send montant, only use prix value if you have a prix field, but the DB doesn't.
-        // type_sport is not part of Abonnement, so not sent
-        // Only these fields will be accepted!
       },
       {
         onSuccess: () => {
@@ -105,15 +112,16 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       <div>
         <Label htmlFor="type">Type d'abonnement</Label>
         <Select
-          value={type}
-          onValueChange={setType}
+          value={abonnementTypeId?.toString() || ""}
+          onValueChange={(value) => setAbonnementTypeId(Number(value))}
+          disabled={typesLoading || !abonnementTypes}
         >
           <SelectTrigger>
             <SelectValue placeholder="Sélectionnez un type (sport)" />
           </SelectTrigger>
           <SelectContent>
-            {abonnementTypes.map((t) => (
-              <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+            {abonnementTypes?.map((type) => (
+              <SelectItem key={type.id} value={type.id.toString()}>{type.nom}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -202,8 +210,11 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
             id="heureFixe"
             type="time"
             value={heureFixe}
+            step="60"
+            inputMode="numeric"
             onChange={(e) => setHeureFixe(e.target.value)}
             required
+            lang="fr"
           />
         </div>
       </div>
@@ -260,3 +271,5 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
 };
 
 export default AbonnementForm;
+
+// ... Le reste du code est inchangé
