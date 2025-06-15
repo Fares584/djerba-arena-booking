@@ -177,69 +177,6 @@ const About = () => {
         </div>
       </section>
       
-      {/* Testimonials */}
-      <section className="section-padding bg-sport-green text-white">
-        <div className="container-custom">
-          <h2 className="text-3xl font-bold mb-10 text-center">Témoignages</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Testimonial 1 */}
-            <div className="bg-white text-gray-800 p-6 rounded-lg shadow-md">
-              <div className="flex items-center mb-4">
-                <div className="mr-4">
-                  <svg className="w-12 h-12 text-sport-green" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="font-bold text-lg">Ahmed</h4>
-                  <p className="text-gray-600">Client régulier</p>
-                </div>
-              </div>
-              <p className="italic">
-                "Je joue au foot ici chaque semaine avec mes amis depuis l'ouverture. Les terrains sont impeccables et l'ambiance est toujours au rendez-vous!"
-              </p>
-            </div>
-            
-            {/* Testimonial 2 */}
-            <div className="bg-white text-gray-800 p-6 rounded-lg shadow-md">
-              <div className="flex items-center mb-4">
-                <div className="mr-4">
-                  <svg className="w-12 h-12 text-sport-green" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="font-bold text-lg">Fatma</h4>
-                  <p className="text-gray-600">Joueuse de tennis</p>
-                </div>
-              </div>
-              <p className="italic">
-                "J'ai découvert le padel grâce aux courts de Planet Sports. Les installations sont top et le système de réservation en ligne est très pratique."
-              </p>
-            </div>
-            
-            {/* Testimonial 3 */}
-            <div className="bg-white text-gray-800 p-6 rounded-lg shadow-md">
-              <div className="flex items-center mb-4">
-                <div className="mr-4">
-                  <svg className="w-12 h-12 text-sport-green" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="font-bold text-lg">Youssef</h4>
-                  <p className="text-gray-600">Entreprise locale</p>
-                </div>
-              </div>
-              <p className="italic">
-                "Nous avons organisé un tournoi d'entreprise ici et tout était parfait. L'équipe est très professionnelle et à l'écoute."
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-      
       {/* Call to Action */}
       <section className="section-padding">
         <div className="container-custom text-center">
