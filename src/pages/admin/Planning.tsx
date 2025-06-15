@@ -10,11 +10,40 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Reservation, Terrain } from '@/lib/supabase';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
-// Time slots for the planning
-const timeSlots = [
+// Utilitaire pour générer les créneaux personnalisés Foot
+function generateTimeSlotsForFoot(startHour: number, startMinute: number, endHour: number, endMinute: number) {
+  const slots: string[] = [];
+  let dt = new Date(2000, 0, 1, startHour, startMinute);
+  const endDt = new Date(2000, 0, 1, endHour, endMinute);
+  while (dt <= endDt) {
+    slots.push(
+      dt.getHours().toString().padStart(2, '0') +
+      ':' +
+      dt.getMinutes().toString().padStart(2, '0')
+    );
+    dt.setMinutes(dt.getMinutes() + 90);
+  }
+  return slots;
+}
+
+const defaultTimeSlots = [
   '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
   '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
 ];
+
+// Fonction pour calculer les slots selon le type du terrain
+function getTimeSlotsForTerrain(terrain: Terrain): string[] {
+  if (terrain.type === 'foot' && terrain.nom && terrain.nom.includes('6')) {
+    // Foot à 6 : de 09:00 à 22:30, toutes les 1h30
+    return generateTimeSlotsForFoot(9, 0, 22, 30);
+  }
+  if (terrain.type === 'foot' && terrain.nom && (terrain.nom.includes('7') || terrain.nom.includes('8'))) {
+    // Foot à 7/8 : de 10:00 à 23:30, toutes les 1h30
+    return generateTimeSlotsForFoot(10, 0, 23, 30);
+  }
+  // Autres terrains (tennis, padel…) : créneaux horaires standards
+  return defaultTimeSlots;
+}
 
 const Planning = () => {
   // Add authentication check
@@ -204,85 +233,90 @@ const Planning = () => {
         </div>
         
         {terrains && filteredTerrains && filteredTerrains.length > 0 ? (
-          filteredTerrains.map(terrain => (
-            <Card key={terrain.id} className="mb-8">
-              <CardHeader className="bg-sport-dark text-white py-3">
-                <CardTitle className="text-base md:text-lg">{terrain.nom} - {terrain.type === 'foot' ? 'Football' : terrain.type === 'tennis' ? 'Tennis' : 'Padel'}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {/* Desktop View - Table */}
-                <div className="hidden md:block overflow-x-auto">
-                  <div className="min-w-[800px]">
-                    <div className="grid grid-cols-8 bg-gray-100">
-                      <div className="p-2 border-b border-r border-gray-200 font-medium">Heure</div>
-                      {weekDays.map((day, index) => (
-                        <div key={index} className="p-2 border-b border-r border-gray-200 text-center font-medium">
-                          <div>{format(day, 'EEE', { locale: fr })}</div>
-                          <div>{format(day, 'dd/MM')}</div>
+          filteredTerrains.map(terrain => {
+            // Récupère dynamiquement la liste de créneaux selon le terrain
+            const timeSlots = getTimeSlotsForTerrain(terrain);
+
+            return (
+              <Card key={terrain.id} className="mb-8">
+                <CardHeader className="bg-sport-dark text-white py-3">
+                  <CardTitle className="text-base md:text-lg">{terrain.nom} - {terrain.type === 'foot' ? 'Football' : terrain.type === 'tennis' ? 'Tennis' : 'Padel'}</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {/* Desktop View - Table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <div className="min-w-[800px]">
+                      <div className="grid grid-cols-8 bg-gray-100">
+                        <div className="p-2 border-b border-r border-gray-200 font-medium">Heure</div>
+                        {weekDays.map((day, index) => (
+                          <div key={index} className="p-2 border-b border-r border-gray-200 text-center font-medium">
+                            <div>{format(day, 'EEE', { locale: fr })}</div>
+                            <div>{format(day, 'dd/MM')}</div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {timeSlots.map((timeSlot) => (
+                        <div key={timeSlot} className="grid grid-cols-8">
+                          <div className="p-2 border-b border-r border-gray-200 font-medium">
+                            {timeSlot}
+                          </div>
+                          
+                          {weekDays.map((day, dayIndex) => {
+                            const reservationsForSlot = getReservationsForSlot(terrain, day, timeSlot);
+                            const reservation = reservationsForSlot[0];
+                            
+                            return (
+                              <div 
+                                key={dayIndex}
+                                className={`p-2 border-b border-r ${getCellClassName(reservation)}`}
+                              >
+                                {reservation ? (
+                                  <div className="text-xs">
+                                    <div className="font-medium">{reservation.nom_client}</div>
+                                    <div>{reservation.duree}h</div>
+                                  </div>
+                                ) : null}
+                              </div>
+                            );
+                          })}
                         </div>
                       ))}
                     </div>
-                    
-                    {timeSlots.map((timeSlot) => (
-                      <div key={timeSlot} className="grid grid-cols-8">
-                        <div className="p-2 border-b border-r border-gray-200 font-medium">
-                          {timeSlot}
-                        </div>
-                        
-                        {weekDays.map((day, dayIndex) => {
-                          const reservationsForSlot = getReservationsForSlot(terrain, day, timeSlot);
-                          const reservation = reservationsForSlot[0]; // Just take the first one if multiple
-                          
-                          return (
-                            <div 
-                              key={dayIndex}
-                              className={`p-2 border-b border-r ${getCellClassName(reservation)}`}
-                            >
-                              {reservation ? (
-                                <div className="text-xs">
-                                  <div className="font-medium">{reservation.nom_client}</div>
-                                  <div>{reservation.duree}h</div>
-                                </div>
-                              ) : null}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ))}
                   </div>
-                </div>
 
-                {/* Mobile View - Cards */}
-                <div className="md:hidden p-4">
-                  <div className="space-y-3">
-                    {timeSlots.map((timeSlot) => {
-                      const reservationsForSlot = getReservationsForSlot(terrain, selectedDay, timeSlot);
-                      const reservation = reservationsForSlot[0];
-                      
-                      return (
-                        <div 
-                          key={timeSlot}
-                          className={`p-3 rounded-lg ${getCellClassName(reservation)}`}
-                        >
-                          <div className="flex justify-between items-center">
-                            <div className="font-medium text-sm">{timeSlot}</div>
-                            {reservation ? (
-                              <div className="text-right">
-                                <div className="font-medium text-sm">{reservation.nom_client}</div>
-                                <div className="text-xs opacity-75">{reservation.duree}h</div>
-                              </div>
-                            ) : (
-                              <div className="text-xs text-gray-500">Libre</div>
-                            )}
+                  {/* Mobile View - Cards */}
+                  <div className="md:hidden p-4">
+                    <div className="space-y-3">
+                      {timeSlots.map((timeSlot) => {
+                        const reservationsForSlot = getReservationsForSlot(terrain, selectedDay, timeSlot);
+                        const reservation = reservationsForSlot[0];
+                        
+                        return (
+                          <div 
+                            key={timeSlot}
+                            className={`p-3 rounded-lg ${getCellClassName(reservation)}`}
+                          >
+                            <div className="flex justify-between items-center">
+                              <div className="font-medium text-sm">{timeSlot}</div>
+                              {reservation ? (
+                                <div className="text-right">
+                                  <div className="font-medium text-sm">{reservation.nom_client}</div>
+                                  <div className="text-xs opacity-75">{reservation.duree}h</div>
+                                </div>
+                              ) : (
+                                <div className="text-xs text-gray-500">Libre</div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                </CardContent>
+              </Card>
+            )
+          })
         ) : (
           <div className="text-center py-10">
             <Calendar className="mx-auto h-12 w-12 text-gray-400" />
