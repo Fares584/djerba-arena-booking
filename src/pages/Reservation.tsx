@@ -365,7 +365,7 @@ const Reservation = () => {
                     Envoi en cours...
                   </>
                 ) : (
-                  'Envoyer la demande de réservation'
+                  'Envoyer'
                 )}
               </Button>
             </div>
