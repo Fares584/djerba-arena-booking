@@ -126,30 +126,6 @@ const Abonnements = () => {
             </div>
           </div>
         </div>
-        
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <Calendar className="h-8 w-8 text-green-500 mr-3" />
-            <div>
-              <p className="text-sm font-medium text-gray-600">Actifs</p>
-              <p className="text-2xl font-bold">
-                {abonnements?.filter(a => a.statut === 'actif').length || 0}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <CreditCard className="h-8 w-8 text-blue-500 mr-3" />
-            <div>
-              <p className="text-sm font-medium text-gray-600">Chiffre d'affaires</p>
-              <p className="text-2xl font-bold">
-                {chiffreAffaires.toLocaleString('fr-TN', { style: 'currency', currency: 'TND', minimumFractionDigits: 0 })}
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
 
       {abonnements && abonnements.length > 0 ? (
