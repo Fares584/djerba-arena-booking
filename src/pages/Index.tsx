@@ -9,12 +9,15 @@ import { Loader2 } from 'lucide-react';
 const Index = () => {
   const { data: terrains, isLoading } = useTerrains({ actif: true });
 
-  // Affiche uniquement le foot à 7, tennis pelouse, et padel 1 dans les populaires, dans cet ordre précis
+  // Affiche uniquement le foot à 7, terrain pelouse, tennis pelouse, et padel 1 dans les populaires (ordre précis)
   const featuredTerrains = React.useMemo(() => {
     if (!terrains) return [];
     // On cherche les terrains par leur nom précis (insensible à la casse)
     const foot7 = terrains.find(
       (t) => t.nom?.toLowerCase().includes("foot à 7")
+    );
+    const terrainPelouse = terrains.find(
+      (t) => t.nom?.toLowerCase().includes("terrain pelouse")
     );
     const tennisPelouse = terrains.find(
       (t) => t.nom?.toLowerCase().includes("tennis pelouse")
@@ -22,8 +25,8 @@ const Index = () => {
     const padel1 = terrains.find(
       (t) => t.nom?.toLowerCase().includes("padel 1")
     );
-    // Retourne les trois terrains (dans l'ordre), filtre les éventuels undefined/null
-    return [foot7, tennisPelouse, padel1].filter(Boolean);
+    // Retourne les quatre terrains (dans l'ordre), filtre les éventuels undefined/null
+    return [foot7, terrainPelouse, tennisPelouse, padel1].filter(Boolean);
   }, [terrains]);
 
   const getTypeLabel = (type: string) => {
