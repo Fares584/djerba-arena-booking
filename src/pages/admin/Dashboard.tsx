@@ -192,47 +192,7 @@ const Dashboard = () => {
         </Card>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Répartition des Terrains par Type</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <ChartContainer 
-              config={{
-                foot: { color: '#10b981' },
-                tennis: { color: '#3b82f6' },
-                padel: { color: '#f59e0b' },
-              }}
-              className="aspect-auto h-80"
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={typeStats}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <ChartTooltip 
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <ChartTooltipContent>
-                            <div>
-                              <span className="font-medium">{payload[0].name}: </span>
-                              <span>{payload[0].value} terrains</span>
-                            </div>
-                          </ChartTooltipContent>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Bar dataKey="count" fill="#10b981" />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-        
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
         <Card>
           <CardHeader>
             <CardTitle>Statistiques des Réservations</CardTitle>
