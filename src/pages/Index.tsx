@@ -94,10 +94,17 @@ const Index = () => {
                       </span>
                     </div>
                     <h3 className="font-bold text-xl mb-2">{terrain.nom}</h3>
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="flex flex-col justify-between items-start mb-4">
+                      <p className="text-sm text-gray-600">Capacité: {terrain.capacite} personnes</p>
                       <div>
-                        <p className="text-sm text-gray-600">Capacité: {terrain.capacite} personnes</p>
-                        <p className="text-lg font-bold text-sport-green">{terrain.prix} DT/heure</p>
+                        <p className="text-lg font-bold text-sport-green leading-tight">
+                          {terrain.prix} DT/heure
+                        </p>
+                        {terrain.prix_nuit && (
+                          <p className="text-xs text-green-700 mt-1">
+                            {terrain.prix_nuit} DT/heure la nuit
+                          </p>
+                        )}
                       </div>
                     </div>
                     <Link 
