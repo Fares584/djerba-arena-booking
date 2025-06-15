@@ -85,6 +85,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const [clientNom, setClientNom] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [clientTel, setClientTel] = useState('');
+  const [dureeSeance, setDureeSeance] = useState(1);
 
   // Récupérer tous les terrains et types d’abonnement actifs
   const { data: terrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
@@ -170,6 +171,11 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     return true;
   }
 
+  // Nouvelle logique : détection type de terrain
+  const isTennisOrPadel =
+    selectedTerrain &&
+    (selectedTerrain.type === 'tennis' || selectedTerrain.type === 'padel');
+
   // Création de l’abonnement
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,7 +201,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         date_fin: dateFin,
         jour_semaine: jourSemaine,
         heure_fixe: selectedHeure, // Toujours format HH:mm
-        duree_seance: 1,
+        duree_seance: isTennisOrPadel ? dureeSeance : 1, // Utilise la durée choisie sinon 1h
         client_nom: clientNom,
         client_email: clientEmail,
         client_tel: clientTel,
@@ -221,7 +227,10 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
           <TerrainSelector
             terrains={terrains}
             selectedTerrainId={selectedTerrainId}
-            onTerrainSelect={setSelectedTerrainId}
+            onTerrainSelect={newId => {
+              setSelectedTerrainId(newId);
+              setDureeSeance(1); // reset durée par défaut
+            }}
           />
         )}
       </div>
@@ -292,6 +301,24 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
           />
         </div>
       </div>
+
+      {/* Ajout: Champ durée UNIQUEMENT pour tennis/padel */}
+      {isTennisOrPadel && (
+        <div>
+          <Label htmlFor="dureeSeance">Durée de la séance (heures)</Label>
+          <select
+            id="dureeSeance"
+            value={dureeSeance}
+            onChange={e => setDureeSeance(Number(e.target.value))}
+            className="w-full py-2 px-3 border rounded"
+            required
+          >
+            <option value={1}>1 heure</option>
+            <option value={2}>2 heures</option>
+            <option value={3}>3 heures</option>
+          </select>
+        </div>
+      )}
 
       <div>
         <Label htmlFor="clientNom">Nom du client</Label>
