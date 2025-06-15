@@ -23,12 +23,11 @@ export const TimeSlotButton: React.FC<TimeSlotButtonProps> = ({
       selected
         ? "bg-sport-green text-white border-sport-green"
         : disabled
-        ? "bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed"
+        ? "bg-red-100 text-red-500 border-red-200 cursor-not-allowed"
         : "bg-white text-gray-900 border-gray-300 hover:bg-sport-green/10 hover:border-sport-green",
     ].join(" ")}
   >
     {time}
-    {/* Le texte "(Occupé)" a été supprimé ici */}
   </button>
 );
 
