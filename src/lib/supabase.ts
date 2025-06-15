@@ -84,15 +84,29 @@ export const isNightTime = (time: string, globalNightStartTime?: string): boolea
 
 // Function to calculate the price based on terrain and time (using global night time setting)
 export const calculatePrice = (terrain: Terrain, time: string, globalNightStartTime?: string): number => {
-  // Special pricing for football terrains - fixed price for 1.5h session
+  // Calcule du prix spécifique par type de terrain selon la demande
+  const night = isNightTime(time, globalNightStartTime);
+  switch (terrain.type) {
+    case 'foot_6':
+      return night ? 60 : 50; // 6v6
+    case 'foot_7':
+      return night ? 96 : 84; // 7v7
+    case 'foot_8':
+      return night ? 110 : 96; // 8v8
+    case 'tennis_green_set':
+      return night ? 12.5 : 10; // Par joueur, à indiquer sur l'affichage
+    case 'tennis_green_set_autre':
+      return night ? 10 : 7.5; // Par joueur
+    case 'padel':
+      return night ? 60 : 50; // Par terrain pour 4 joueurs
+  }
+  // Pour compatibilité avec l'ancien système/génériques (ex: tennis, foot, padel)
   if (terrain.type === 'foot') {
     if (isNightTime(time, globalNightStartTime)) {
-      return 65; // Fixed night price for football (1.5h)
+      return 65;
     }
-    return 60; // Fixed day price for football (1.5h)
+    return 60;
   }
-  
-  // For other terrains, use hourly pricing
   if (isNightTime(time, globalNightStartTime) && terrain.prix_nuit) {
     return terrain.prix_nuit;
   }
