@@ -9,18 +9,18 @@ import { Loader2 } from 'lucide-react';
 const Index = () => {
   const { data: terrains, isLoading } = useTerrains({ actif: true });
 
-  // Affiche uniquement le foot à 7 ("foot_7"), tennis pelouse ("tennis_pelouse"), et padel 1 ("padel_1") dans les populaires
+  // Affiche uniquement le foot à 7 ("foot à 7"), tennis pelouse ("tennis pelouse"), et padel 1 ("padel 1") dans les populaires
   const featuredTerrains = React.useMemo(() => {
     if (!terrains) return [];
-    // On sélectionne ces terrains par leur type ou nom précis
+    // On sélectionne ces terrains par leur nom précis
     const foot7 = terrains.find(
-      (t) => t.type === "foot_7" || t.nom?.toLowerCase().includes("foot à 7")
+      (t) => t.nom?.toLowerCase().includes("foot à 7")
     );
     const tennisPelouse = terrains.find(
-      (t) => t.type === "tennis_pelouse" || t.nom?.toLowerCase().includes("tennis pelouse")
+      (t) => t.nom?.toLowerCase().includes("tennis pelouse")
     );
     const padel1 = terrains.find(
-      (t) => t.type === "padel_1" || t.nom?.toLowerCase().includes("padel 1")
+      (t) => t.nom?.toLowerCase().includes("padel 1")
     );
     // On filtre les doublons et valeurs nulles
     return [foot7, tennisPelouse, padel1].filter(Boolean);
