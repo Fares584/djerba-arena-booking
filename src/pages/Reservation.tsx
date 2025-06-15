@@ -19,8 +19,8 @@ import ReservationSuccessDialog from "@/components/ReservationSuccessDialog";
 import TimeSlotSelector from "@/components/TimeSlotSelector";
 import ReservationSummary from "@/components/ReservationSummary";
 
-// Créneaux horaires
-const timeSlots = [
+// Créneaux horaires par défaut (pour terrains autres que foot à 7 ou 8)
+const defaultTimeSlots = [
   '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', 
   '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
 ];
@@ -62,6 +62,51 @@ const TimeSlotButton = ({
     )}
   </button>
 );
+
+// Nouvel algorithme pour calculer le tarif heure par heure selon jour/nuit
+const calculateTotalPrice = (): number => {
+  if (!selectedTerrain || !selectedTime) return 0;
+
+  const effectiveDuration = parseFloat(getEffectiveDuration());
+  const globalNightStartTime = '19:00'; // Peut être rendu dynamique avec un paramètre ou appSetting
+
+  let total = 0;
+  for (let i = 0; i < effectiveDuration; i++) {
+    // Pour chaque heure : calcule l'heure courante à partir de selectedTime et incrémentation
+    const startHour = parseInt(selectedTime.split(':')[0], 10) + i;
+    const timeString = `${startHour.toString().padStart(2, '0')}:00`;
+    total += calculatePrice(selectedTerrain, timeString, globalNightStartTime);
+  }
+  return total;
+};
+
+// Nouvelle fonction pour générer les time slots pour foot à 7 ou 8 (10:00 -> 23:30 de 1h30 en 1h30)
+const generateTimeSlotsForFoot7or8 = () => {
+  const slots: string[] = [];
+  let hour = 10;
+  let minute = 0;
+  while (hour < 23 || (hour === 23 && minute === 0)) {
+    slots.push(`${hour.toString().padStart(2, '0')}:${minute === 0 ? '00' : '30'}`);
+    minute += 30;
+    if (minute === 60) {
+      minute = 0;
+      hour += 1;
+    }
+    hour += 0.5; // Avance de 1h30 (1h + 0.5h)
+    if (minute === 0) hour += 0; // pour chaque tour, on recalcule
+    else hour += 0; // rien de plus à faire
+    if (hour > 23 || (hour === 23 && minute > 30)) break;
+    // Recalcule l'heure pour ajouter +1h30 à chaque slot
+    // En fait, il suffit d'utiliser Date pour être hyper safe
+    const next = new Date(2000, 0, 1, hour, minute);
+    next.setMinutes(next.getMinutes() + 90);
+    hour = next.getHours();
+    minute = next.getMinutes();
+  }
+  // Stop à 23:30 maximum
+  if (!slots.includes("23:30") && (hour === 23 && minute === 30)) slots.push("23:30");
+  return slots;
+};
 
 const Reservation = () => {
   const [searchParams] = useSearchParams();
@@ -153,6 +198,16 @@ const Reservation = () => {
       return !(endTime <= resStart || startTime >= resEnd);
     });
   };
+
+  // Détermine dynamiquement les créneaux horaires selon le type de terrain sélectionné
+  const timeSlotsForSelectedTerrain = React.useMemo(() => {
+    if (isFoot7or8) {
+      return generateTimeSlotsForFoot7or8();
+    }
+    // Pour les autres terrains, on retourne les créneaux standards
+    return defaultTimeSlots;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTerrain]);
 
   // Nouvel algorithme pour calculer le tarif heure par heure selon jour/nuit
   const calculateTotalPrice = (): number => {
@@ -278,7 +333,7 @@ const Reservation = () => {
                     Heure *
                   </Label>
                   <TimeSlotSelector
-                    timeSlots={timeSlots}
+                    timeSlots={timeSlotsForSelectedTerrain}
                     selectedTime={selectedTime}
                     isTimeSlotAvailable={isTimeSlotAvailable}
                     onTimeSelect={setSelectedTime}
