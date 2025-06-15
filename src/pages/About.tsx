@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -173,63 +172,6 @@ const About = () => {
                 <li>• Accès facile aux terrains</li>
                 <li>• Parking éclairé la nuit</li>
               </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-      
-      {/* Team Section */}
-      <section className="section-padding">
-        <div className="container-custom">
-          <h2 className="text-3xl font-bold mb-10 text-center">Notre Équipe</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Team Member 1 */}
-            <div className="text-center">
-              <div className="w-40 h-40 mx-auto mb-4 rounded-full overflow-hidden">
-                <img 
-                  src="https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&q=80" 
-                  alt="Mohamed Ben Ali" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <h3 className="text-xl font-bold mb-1">Mohamed Ben Ali</h3>
-              <p className="text-sport-green mb-3">Directeur</p>
-              <p className="text-gray-600">
-                Ancien joueur professionnel de football, Mohamed a créé Planet Sports pour partager sa passion du sport.
-              </p>
-            </div>
-            
-            {/* Team Member 2 */}
-            <div className="text-center">
-              <div className="w-40 h-40 mx-auto mb-4 rounded-full overflow-hidden">
-                <img 
-                  src="https://images.unsplash.com/photo-1500673922987-e212871fec22?auto=format&fit=crop&q=80" 
-                  alt="Sonia Mansour" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <h3 className="text-xl font-bold mb-1">Sonia Mansour</h3>
-              <p className="text-sport-green mb-3">Responsable des réservations</p>
-              <p className="text-gray-600">
-                Avec son sens de l'organisation et sa gentillesse, Sonia veille à la parfaite coordination des réservations.
-              </p>
-            </div>
-            
-            {/* Team Member 3 */}
-            <div className="text-center">
-              <div className="w-40 h-40 mx-auto mb-4 rounded-full overflow-hidden">
-                <img 
-                  src="https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&q=80" 
-                  alt="Karim Zouari" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <h3 className="text-xl font-bold mb-1">Karim Zouari</h3>
-              <p className="text-sport-green mb-3">Coach Sportif</p>
-              <p className="text-gray-600">
-                Spécialiste du tennis et du padel, Karim propose des cours pour tous les niveaux et tous les âges.
-              </p>
             </div>
           </div>
         </div>
