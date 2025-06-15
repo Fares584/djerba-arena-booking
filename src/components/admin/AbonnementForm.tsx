@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useMemo, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
-import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
 import { useCreateAbonnement } from '@/hooks/useAbonnements';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,78 +9,88 @@ import { Loader2 } from 'lucide-react';
 import ReservationTypeSelector from '@/components/reservation/ReservationTypeSelector';
 import TerrainSelector from '@/components/TerrainSelector';
 
-// Options pour la durée (pour futurs usages)
-const dureeOptions = [
-  { value: '1', label: '1 heure' },
-  { value: '1.5', label: '1h30' },
-  { value: '2', label: '2 heures' },
-  { value: '3', label: '3 heures' },
+const defaultTimeSlots = [
+  '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
+  '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
 ];
 
-// Types locaux
+// Génère les créneaux horaires dynamiques pour le football
+const generateTimeSlotsForFoot = (startHour: number, startMinute: number, endHour: number, endMinute: number) => {
+  const slots: string[] = [];
+  let dt = new Date(2000, 0, 1, startHour, startMinute);
+  const endDt = new Date(2000, 0, 1, endHour, endMinute);
+  while (dt <= endDt) {
+    slots.push(
+      dt.getHours().toString().padStart(2, '0') +
+      ':' +
+      dt.getMinutes().toString().padStart(2, '0')
+    );
+    dt.setMinutes(dt.getMinutes() + 90);
+  }
+  return slots;
+};
+
 interface AbonnementFormProps {
   onSuccess: () => void;
 }
 
 const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
-  // Nouveaux états pour suivre la logique "réservation"
-  const [selectedType, setSelectedType] = useState<string>(''); // foot, tennis, padel
+  const [selectedType, setSelectedType] = useState<string>('');
   const [selectedTerrainId, setSelectedTerrainId] = useState<number | null>(null);
   const [montant, setMontant] = useState('');
   const [dateDebut, setDateDebut] = useState('');
   const [dateFin, setDateFin] = useState('');
   const [heure, setHeure] = useState('');
-  const [duree, setDuree] = useState('1');
   const [clientNom, setClientNom] = useState('');
-  const [clientEmail, setClientEmail] = useState('');
   const [clientTel, setClientTel] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Chargement données supabase
+  // Récupération des terrains actifs
   const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
-  const { data: abonnementTypes = [] } = useAbonnementTypes({ actif: true });
   const createAbonnement = useCreateAbonnement();
 
-  // Filtrer les terrains selon le type choisi
+  // Filtrage des terrains selon le type choisi
   const filteredTerrains = selectedType
     ? allTerrains.filter(t => t.type === selectedType)
     : [];
 
-  // Sélection d'un terrain => facultatif, il est réinitialisé si le type change
+  // Reset du terrain sélectionné si on change de type
   useEffect(() => {
     setSelectedTerrainId(null);
+    setHeure('');
   }, [selectedType]);
 
-  // Trouver l'abonnementType correspondant au type de terrain
-  const abonnementTypeId: number | null = (() => {
-    const typeName =
-      selectedType === 'foot'
-        ? 'abonnement mensuel foot'
-        : selectedType === 'tennis'
-        ? 'abonnement mensuel tennis'
-        : selectedType === 'padel'
-        ? 'abonnement mensuel padel'
-        : '';
-    const found = abonnementTypes.find(t => t.nom.toLowerCase() === typeName);
-    return found ? found.id : null;
-  })();
+  // Trouver le terrain sélectionné
+  const selectedTerrain = allTerrains.find(t => t.id === selectedTerrainId);
 
-  // Validation minimale
+  // Déterminer s'il s'agit de foot à 6, 7 ou 8
+  const isFoot6 = selectedTerrain?.type === 'foot' && selectedTerrain.nom.includes('6');
+  const isFoot7or8 = selectedTerrain?.type === 'foot' && (selectedTerrain.nom.includes('7') || selectedTerrain.nom.includes('8'));
+
+  // Générer les créneaux horaires selon le terrain
+  const timeSlotsForSelectedTerrain = useMemo(() => {
+    if (!selectedTerrain) return [];
+    if (isFoot6) {
+      return generateTimeSlotsForFoot(9, 0, 22, 30);
+    }
+    if (isFoot7or8) {
+      return generateTimeSlotsForFoot(10, 0, 23, 30);
+    }
+    return defaultTimeSlots;
+  }, [selectedTerrain, isFoot6, isFoot7or8]);
+
+  // Validation
   const prixNum = Number(montant);
-  const dureeNum = Number(duree);
   const isValid =
-    abonnementTypeId !== null &&
-    selectedTerrainId !== null &&
+    selectedType &&
+    selectedTerrainId &&
     !!montant &&
-    !isNaN(prixNum) &&
-    prixNum > 0 &&
+    !isNaN(prixNum) && prixNum > 0 &&
     !!dateDebut &&
     !!dateFin &&
     !!heure &&
     !!clientNom.trim() &&
-    !!clientEmail.trim() &&
-    !!clientTel.trim() &&
-    dureeNum > 0;
+    !!clientTel.trim();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,22 +99,22 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     if (!isValid) {
       setFormError('Merci de remplir correctement tous les champs obligatoires.');
       import('sonner').then(({ toast }) => {
-        toast.error('Merci de remplir correctement tous les champs.');
+        toast.error('Merci de remplir correctement tous les champs obligatoires.');
       });
       return;
     }
 
     createAbonnement.mutate(
       {
-        abonnement_type_id: abonnementTypeId!,
+        abonnement_type_id: 0, // À modifier selon votre logique back (ex : map type to abonnement_type_id)
         terrain_id: selectedTerrainId!,
         date_debut: dateDebut,
         date_fin: dateFin,
-        jour_semaine: undefined, // à ignorer avec ce mode simple
+        jour_semaine: undefined,
         heure_fixe: heure,
-        duree_seance: dureeNum,
+        duree_seance: undefined,
         client_nom: clientNom.trim(),
-        client_email: clientEmail.trim(),
+        client_email: '', // Champ vide car plus demandé
         client_tel: clientTel.trim(),
         statut: 'actif',
       },
@@ -112,7 +122,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         onSuccess: () => {
           setFormError(null);
           onSuccess();
-        },
+        }
       }
     );
   };
@@ -120,16 +130,12 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 py-4">
       <h2 className="text-xl font-semibold mb-4">Créer un Abonnement</h2>
-
       {formError && <div className="bg-red-100 text-red-700 rounded p-2 text-sm">{formError}</div>}
 
-      {/* Etape 1: Choix du type de terrain */}
-      <ReservationTypeSelector
-        selectedType={selectedType}
-        setSelectedType={setSelectedType}
-      />
+      {/* Choix du type */}
+      <ReservationTypeSelector selectedType={selectedType} setSelectedType={setSelectedType} />
 
-      {/* Etape 2: Choix du terrain */}
+      {/* Choix du terrain */}
       {selectedType && (
         <div>
           <Label>Choisissez le terrain</Label>
@@ -141,40 +147,25 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         </div>
       )}
 
-      {/* Montant & période */}
+      {/* Montant */}
+      <div>
+        <Label htmlFor="montant">Montant (DT) *</Label>
+        <Input
+          id="montant"
+          type="number"
+          min="0"
+          step="0.1"
+          value={montant}
+          onChange={e => setMontant(e.target.value)}
+          required
+          placeholder="Montant en dinars"
+        />
+      </div>
+
+      {/* Dates */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <Label htmlFor="montant">Montant (DT)</Label>
-          <Input
-            id="montant"
-            type="number"
-            min="0"
-            step="0.1"
-            value={montant}
-            onChange={e => setMontant(e.target.value)}
-            required
-            placeholder="Montant en dinars"
-          />
-        </div>
-        <div>
-          <Label htmlFor="duree">Durée de la séance (heures)</Label>
-          <select
-            id="duree"
-            value={duree}
-            onChange={e => setDuree(e.target.value)}
-            className="w-full py-2 px-3 border rounded"
-            required
-          >
-            {dureeOptions.map(opt => (
-              <option value={opt.value} key={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-      {/* Période: dates et heure */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div>
-          <Label htmlFor="dateDebut">Date de début</Label>
+          <Label htmlFor="dateDebut">Date de début *</Label>
           <Input
             id="dateDebut"
             type="date"
@@ -184,7 +175,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
           />
         </div>
         <div>
-          <Label htmlFor="dateFin">Date de fin</Label>
+          <Label htmlFor="dateFin">Date de fin *</Label>
           <Input
             id="dateFin"
             type="date"
@@ -193,21 +184,31 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
             required
           />
         </div>
+      </div>
+
+      {/* Heure */}
+      {selectedTerrainId && (
         <div>
-          <Label htmlFor="heure">Heure de la séance</Label>
-          <Input
+          <Label htmlFor="heure">Heure de la séance *</Label>
+          <select
             id="heure"
-            type="time"
             value={heure}
+            className="w-full py-2 px-3 border rounded"
             onChange={e => setHeure(e.target.value)}
             required
-          />
+          >
+            <option value="">Sélectionnez une heure</option>
+            {timeSlotsForSelectedTerrain.map(ts => (
+              <option value={ts} key={ts}>{ts}</option>
+            ))}
+          </select>
         </div>
-      </div>
+      )}
+
       {/* Infos client */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
         <div>
-          <Label htmlFor="clientNom">Nom du client</Label>
+          <Label htmlFor="clientNom">Nom du client *</Label>
           <Input
             id="clientNom"
             type="text"
@@ -217,17 +218,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
           />
         </div>
         <div>
-          <Label htmlFor="clientEmail">Email du client</Label>
-          <Input
-            id="clientEmail"
-            type="email"
-            value={clientEmail}
-            onChange={e => setClientEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="clientTel">Téléphone du client</Label>
+          <Label htmlFor="clientTel">Téléphone du client *</Label>
           <Input
             id="clientTel"
             type="tel"
