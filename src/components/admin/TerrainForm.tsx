@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
@@ -171,6 +170,9 @@ const TerrainForm = ({ onSuccess, terrainToEdit }: TerrainFormProps) => {
           onChange={(e) => setImageUrl(e.target.value)}
           placeholder="https://"
         />
+        <p className="text-xs text-gray-500 mt-1">
+          Les images doivent idéalement mesurer au moins <span className="font-semibold text-sport-green">1200px de large</span> pour éviter toute perte de qualité ou pixelisation lors de l'affichage.
+        </p>
       </div>
       
       <div className="flex items-center space-x-2">
