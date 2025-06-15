@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import { useAbonnements, useDeleteAbonnement, useUpdateAbonnement } from '@/hooks/useAbonnements';
 import { useAbonnementExpiration } from '@/hooks/useAbonnementExpiration';
-import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
+// import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
 import { useTerrains } from '@/hooks/useTerrains';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -14,7 +13,6 @@ import AbonnementCard from '@/components/admin/AbonnementCard';
 
 const Abonnements = () => {
   const { data: abonnements, isLoading, refetch } = useAbonnements();
-  const { data: abonnementTypes } = useAbonnementTypes({ actif: true });
   const { data: terrains } = useTerrains({ actif: true });
   const deleteAbonnement = useDeleteAbonnement();
   const updateAbonnement = useUpdateAbonnement();
@@ -64,11 +62,6 @@ const Abonnements = () => {
     } catch (error) {
       console.error('Error updating status:', error);
     }
-  };
-
-  const getTypeLabel = (abonnementTypeId: number) => {
-    const type = abonnementTypes?.find(t => t.id === abonnementTypeId);
-    return type?.nom || 'Type inconnu';
   };
 
   const getTerrainLabel = (terrainId?: number) => {
@@ -136,15 +129,13 @@ const Abonnements = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Chiffre d'affaires</p>
               <p className="text-2xl font-bold">
-                {abonnementTypes && abonnements ? 
+                {
                   abonnements
-                    .filter(a => a.statut === 'actif')
-                    .reduce((total, a) => {
-                      const type = abonnementTypes.find(t => t.id === a.abonnement_type_id);
-                      return total + (type?.prix || 0);
-                    }, 0)
-                    .toFixed(0) + ' DT'
-                  : '0 DT'
+                    ? abonnements
+                        .filter(a => a.statut === 'actif')
+                        .reduce((total, a) => total + (a.montant ? a.montant : 0), 0)
+                        .toFixed(0) + ' DT'
+                    : '0 DT'
                 }
               </p>
             </div>
@@ -158,7 +149,6 @@ const Abonnements = () => {
             <AbonnementCard
               key={abonnement.id}
               abonnement={abonnement}
-              typeLabel={getTypeLabel(abonnement.abonnement_type_id)}
               terrainLabel={getTerrainLabel(abonnement.terrain_id)}
               onStatusChange={handleStatusChange}
               onEdit={handleEdit}

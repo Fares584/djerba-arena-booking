@@ -1,6 +1,4 @@
-
 import { useState, useEffect } from 'react';
-import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useUpdateAbonnement } from '@/hooks/useAbonnements';
 import { Button } from '@/components/ui/button';
@@ -49,7 +47,6 @@ interface EditAbonnementFormProps {
 }
 
 const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementFormProps) => {
-  const [typeId, setTypeId] = useState<number>(abonnement.abonnement_type_id);
   const [terrainId, setTerrainId] = useState<number>(abonnement.terrain_id || 0);
   const [dateDebut, setDateDebut] = useState(abonnement.date_debut);
   const [dateFin, setDateFin] = useState(abonnement.date_fin);
@@ -61,7 +58,6 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
   const [clientTel, setClientTel] = useState(abonnement.client_tel);
   const [statut, setStatut] = useState(abonnement.statut);
 
-  const { data: types, isLoading: typesLoading } = useAbonnementTypes({ actif: true });
   const { data: terrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
   const updateAbonnement = useUpdateAbonnement();
 
@@ -86,7 +82,7 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!typeId || !terrainId || !dateDebut || !dateFin || jourSemaine === null || !heureFixe || !clientNom || !clientEmail || !clientTel) {
+    if (!terrainId || !dateDebut || !dateFin || jourSemaine === null || !heureFixe || !clientNom || !clientEmail || !clientTel) {
       return;
     }
 
@@ -95,7 +91,6 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
     updateAbonnement.mutate({
       id: abonnement.id,
       updates: {
-        abonnement_type_id: typeId,
         terrain_id: terrainId,
         date_debut: dateDebut,
         date_fin: dateFin,
@@ -121,26 +116,6 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
   return (
     <div className="max-h-[80vh] overflow-y-auto">
       <form onSubmit={handleSubmit} className="space-y-4 p-1">
-        <div>
-          <Label htmlFor="type" className="text-sm">Type d'abonnement</Label>
-          <Select 
-            value={typeId?.toString()} 
-            onValueChange={(value) => setTypeId(parseInt(value))}
-            disabled={typesLoading}
-          >
-            <SelectTrigger className="h-9">
-              <SelectValue placeholder="Sélectionnez un type" />
-            </SelectTrigger>
-            <SelectContent>
-              {types?.map((type) => (
-                <SelectItem key={type.id} value={type.id.toString()}>
-                  {type.nom} - {type.prix} DT ({type.duree_mois} mois)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
         <div>
           <Label htmlFor="terrain" className="text-sm">Terrain</Label>
           <Select 
