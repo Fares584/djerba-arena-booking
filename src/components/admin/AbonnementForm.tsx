@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
@@ -6,9 +5,9 @@ import { useCreateAbonnement } from '@/hooks/useAbonnements';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
+import TerrainSelector from '@/components/TerrainSelector';
 
 // Types locaux pour les jours
 const joursOptions = [
@@ -26,8 +25,9 @@ interface AbonnementFormProps {
 }
 
 const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
-  const [abonnementTypeId, setAbonnementTypeId] = useState<number | null>(null);
-  const [terrainId, setTerrainId] = useState<number | null>(null);
+  // On supprime le type d’abonnement
+  // On charge les terrains et les abonnementTypes pour trouver un abonnement_type_id valide
+  const [selectedTerrainId, setSelectedTerrainId] = useState<number | null>(null);
   const [prix, setPrix] = useState('');
   const [dateDebut, setDateDebut] = useState('');
   const [dateFin, setDateFin] = useState('');
@@ -36,10 +36,12 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const [clientNom, setClientNom] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [clientTel, setClientTel] = useState('');
-
-  const { data: terrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
-  const { data: abonnementTypes, isLoading: typesLoading } = useAbonnementTypes({ actif: true });
+  const { data: terrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
+  const { data: abonnementTypes = [], isLoading: typesLoading } = useAbonnementTypes({ actif: true });
   const createAbonnement = useCreateAbonnement();
+
+  // Prendre l'abonnement_type_id du premier abonnementType dispo, obligatoire pour la BDD
+  const abonnementTypeId = abonnementTypes.length > 0 ? abonnementTypes[0].id : null;
 
   // Calcul automatique de la date de fin (toujours 1 mois après)
   useEffect(() => {
@@ -52,11 +54,10 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     }
   }, [dateDebut]);
 
-  // Sécuriser l'heure : toujours HH:mm même si champ AM/PM via navigateur anglais
+  // Sécurise le format de l'heure en HH:mm
   function normalizeTime(input: string): string {
     if (!input) return '';
     if (/AM|PM/i.test(input)) {
-      // Cas bizarre si navigateur anglais (très rare)
       const [time, ampm] = input.split(' ');
       let [h, m] = time.split(':');
       let hours = parseInt(h, 10);
@@ -64,14 +65,14 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       if (/AM/i.test(ampm) && hours === 12) hours = 0;
       return `${String(hours).padStart(2, '0')}:${m}`;
     }
-    return input.length === 5 ? input : input.slice(0, 5); // "HH:mm"
+    return input.length === 5 ? input : input.slice(0, 5);
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (
       !abonnementTypeId ||
-      !terrainId ||
+      !selectedTerrainId ||
       !prix ||
       !dateDebut ||
       !dateFin ||
@@ -83,15 +84,14 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     ) {
       return;
     }
-
     createAbonnement.mutate(
       {
         abonnement_type_id: abonnementTypeId,
-        terrain_id: terrainId,
+        terrain_id: selectedTerrainId,
         date_debut: dateDebut,
         date_fin: dateFin,
         jour_semaine: jourSemaine,
-        heure_fixe: normalizeTime(heureFixe), // format HH:mm
+        heure_fixe: normalizeTime(heureFixe),
         duree_seance: 1,
         client_nom: clientNom,
         client_email: clientEmail,
@@ -108,23 +108,18 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-xl font-semibold mb-2">Ajouter un Abonnement</h2>
+      <h2 className="text-xl font-semibold mb-2">Ajouter un Abonnement Mensuel</h2>
       <div>
-        <Label htmlFor="type">Type d'abonnement</Label>
-        <Select
-          value={abonnementTypeId?.toString() || ""}
-          onValueChange={(value) => setAbonnementTypeId(Number(value))}
-          disabled={typesLoading || !abonnementTypes}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionnez un type (sport)" />
-          </SelectTrigger>
-          <SelectContent>
-            {abonnementTypes?.map((type) => (
-              <SelectItem key={type.id} value={type.id.toString()}>{type.nom}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Label>Choisissez votre terrain</Label>
+        {terrainsLoading ? (
+          <div className="py-8 text-center text-gray-400">Chargement des terrains...</div>
+        ) : (
+          <TerrainSelector
+            terrains={terrains}
+            selectedTerrainId={selectedTerrainId}
+            onTerrainSelect={setSelectedTerrainId}
+          />
+        )}
       </div>
 
       <div>
@@ -139,26 +134,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
           required
           placeholder="Montant en dinars"
         />
-      </div>
-
-      <div>
-        <Label htmlFor="terrain">Terrain</Label>
-        <Select 
-          value={terrainId?.toString() || ""} 
-          onValueChange={(value) => setTerrainId(parseInt(value))}
-          disabled={terrainsLoading}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionnez un terrain" />
-          </SelectTrigger>
-          <SelectContent>
-            {terrains?.map((terrain) => (
-              <SelectItem key={terrain.id} value={terrain.id.toString()}>
-                {terrain.nom} - {terrain.type}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -187,23 +162,21 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="jourSemaine">Jour de la semaine</Label>
-          <Select 
-            value={jourSemaine?.toString() || ""} 
-            onValueChange={(value) => setJourSemaine(parseInt(value))}
+          <select
+            id="jourSemaine"
+            value={jourSemaine !== null ? jourSemaine : ''}
+            onChange={(e) => setJourSemaine(e.target.value !== '' ? parseInt(e.target.value) : null)}
+            className="w-full py-2 px-3 border rounded"
+            required
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionnez un jour" />
-            </SelectTrigger>
-            <SelectContent>
-              {joursOptions.map((jour) => (
-                <SelectItem key={jour.value} value={jour.value.toString()}>
-                  {jour.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <option value="">Sélectionnez un jour</option>
+            {joursOptions.map((jour) => (
+              <option key={jour.value} value={jour.value}>
+                {jour.label}
+              </option>
+            ))}
+          </select>
         </div>
-
         <div>
           <Label htmlFor="heureFixe">Heure</Label>
           <Input
@@ -229,7 +202,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
           required
         />
       </div>
-
       <div>
         <Label htmlFor="clientEmail">Email du client</Label>
         <Input
@@ -240,7 +212,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
           required
         />
       </div>
-
       <div>
         <Label htmlFor="clientTel">Téléphone du client</Label>
         <Input
@@ -255,7 +226,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       <div className="flex justify-end space-x-2 pt-4">
         <Button
           type="submit"
-          disabled={createAbonnement.isPending}
+          disabled={createAbonnement.isPending || typesLoading}
           className="bg-sport-green hover:bg-sport-dark"
         >
           {createAbonnement.isPending ? (
@@ -271,5 +242,3 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
 };
 
 export default AbonnementForm;
-
-// ... Le reste du code est inchangé
