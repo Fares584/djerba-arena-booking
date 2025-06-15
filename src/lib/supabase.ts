@@ -44,7 +44,7 @@ export type AbonnementType = {
 
 export type Abonnement = {
   id: number;
-  abonnement_type_id: number;
+  // abonnement_type_id: number; // supprimé !
   client_nom: string;
   client_email: string;
   client_tel: string;
