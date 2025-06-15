@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { useTerrains } from "@/hooks/useTerrains";
 import { useCreateAbonnement } from "@/hooks/useAbonnements";
@@ -22,6 +21,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const [selectedTerrainId, setSelectedTerrainId] = useState<number | null>(null);
   const [prix, setPrix] = useState<string>("");
   const [dateDebut, setDateDebut] = useState<string>("");
+  const [dateFin, setDateFin] = useState<string>("");
   const [heure, setHeure] = useState<string>("");
   const [duree, setDuree] = useState<string>("1");
   const [clientNom, setClientNom] = useState<string>("");
@@ -52,6 +52,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     !isNaN(Number(prix)) &&
     Number(prix) > 0 &&
     !!dateDebut &&
+    !!dateFin &&
     !!heure &&
     !!duree &&
     !!clientNom.trim() &&
@@ -73,7 +74,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         abonnement_type_id: 1, // Remplacez par une logique si plusieurs types
         terrain_id: selectedTerrainId!,
         date_debut: dateDebut,
-        date_fin: dateDebut, // À remplacer par une réelle durée si besoin
+        date_fin: dateFin, // À remplacer par une réelle durée si besoin
         jour_semaine: undefined,
         heure_fixe: heure,
         duree_seance: Number(duree),
@@ -169,6 +170,18 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
           required
         />
       </div>
+      {/* NOUVEAU CHAMP DATE DE FIN */}
+      <div>
+        <Label htmlFor="dateFin">Date de fin</Label>
+        <Input
+          id="dateFin"
+          type="date"
+          value={dateFin}
+          onChange={(e) => setDateFin(e.target.value)}
+          required
+          min={dateDebut || undefined}
+        />
+      </div>
       {/* Heure */}
       <div>
         <Label htmlFor="heure">Heure</Label>
@@ -255,4 +268,3 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
 };
 
 export default AbonnementForm;
-
