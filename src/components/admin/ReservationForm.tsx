@@ -47,6 +47,41 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   // Get selected terrain object
   const selectedTerrain = terrains?.find(t => t.id === selectedField);
 
+  // --- Ajout: génération dynamique créneaux horaires ---
+  const isFoot6 = !!(selectedTerrain && selectedTerrain.type === 'foot' && selectedTerrain.nom.includes('6'));
+  const isFoot7or8 = !!(selectedTerrain && selectedTerrain.type === 'foot' && (selectedTerrain.nom.includes('7') || selectedTerrain.nom.includes('8')));
+
+  const generateTimeSlotsForFoot = (startHour: number, startMinute: number, endHour: number, endMinute: number) => {
+    const slots: string[] = [];
+    let dt = new Date(2000, 0, 1, startHour, startMinute);
+    const endDt = new Date(2000, 0, 1, endHour, endMinute);
+    while (dt <= endDt) {
+      slots.push(
+        dt.getHours().toString().padStart(2, '0') +
+        ':' +
+        dt.getMinutes().toString().padStart(2, '0')
+      );
+      dt.setMinutes(dt.getMinutes() + 90);
+    }
+    return slots;
+  };
+
+  const timeSlotsForSelectedTerrain = React.useMemo(() => {
+    if (isFoot6) {
+      // Foot à 6 : de 09:00 à 22:30
+      return generateTimeSlotsForFoot(9, 0, 22, 30);
+    }
+    if (isFoot7or8) {
+      // Foot à 7/8 : de 10:00 à 23:30
+      return generateTimeSlotsForFoot(10, 0, 23, 30);
+    }
+    // Autres terrains : créneaux classiques
+    return [
+      '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', 
+      '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
+    ];
+  }, [isFoot6, isFoot7or8]);
+
   // Get global night start time
   const getGlobalNightStartTime = (): string => {
     return nightTimeSetting?.setting_value || '19:00';
@@ -180,7 +215,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="select-time">Choisir une heure</SelectItem>
-                  {timeSlots.map((time) => (
+                  {timeSlotsForSelectedTerrain.map((time) => (
                     <SelectItem key={time} value={time}>
                       {time} {isNightTime(time, getGlobalNightStartTime()) ? '🌙' : '☀️'}
                     </SelectItem>
@@ -199,7 +234,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
                 <Select 
                   value={selectedDuration} 
                   onValueChange={setSelectedDuration}
-                  disabled={!isDurationChangeable()}
+                  disabled={selectedTerrain?.type === 'foot'}
                 >
                   <SelectTrigger id="duration">
                     <SelectValue placeholder="Durée" />
