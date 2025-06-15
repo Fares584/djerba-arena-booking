@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
@@ -25,8 +26,7 @@ interface AbonnementFormProps {
 }
 
 const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
-  // On supprime le type d’abonnement
-  // On charge les terrains et les abonnementTypes pour trouver un abonnement_type_id valide
+  // Gestion du terrain sélectionné et des inputs du client
   const [selectedTerrainId, setSelectedTerrainId] = useState<number | null>(null);
   const [prix, setPrix] = useState('');
   const [dateDebut, setDateDebut] = useState('');
@@ -36,14 +36,34 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const [clientNom, setClientNom] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [clientTel, setClientTel] = useState('');
+
+  // Récupérer tous les terrains et types d’abonnement actifs
   const { data: terrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
   const { data: abonnementTypes = [], isLoading: typesLoading } = useAbonnementTypes({ actif: true });
   const createAbonnement = useCreateAbonnement();
 
-  // Prendre l'abonnement_type_id du premier abonnementType dispo, obligatoire pour la BDD
-  const abonnementTypeId = abonnementTypes.length > 0 ? abonnementTypes[0].id : null;
+  // Trouver le terrain sélectionné pour choisir son type automatiquement
+  const selectedTerrain = terrains.find(t => t.id === selectedTerrainId);
 
-  // Calcul automatique de la date de fin (toujours 1 mois après)
+  // Pour lier le terrain choisi au bon type d'abonnement mensuel :
+  // Chercher l'abonnementType dont le nom matche ce schéma :
+  // "Abonnement Mensuel FOOT", "Abonnement Mensuel TENNIS", "Abonnement Mensuel PADEL"
+  let abonnementTypeId: number | null = null;
+  if (selectedTerrain && abonnementTypes.length > 0) {
+    const terrainType = selectedTerrain.type?.toLowerCase();
+    const typeName =
+      terrainType === 'foot'
+        ? 'abonnement mensuel foot'
+        : terrainType === 'tennis'
+        ? 'abonnement mensuel tennis'
+        : terrainType === 'padel'
+        ? 'abonnement mensuel padel'
+        : '';
+    const typeObj = abonnementTypes.find((t) => t.nom.toLowerCase() === typeName);
+    abonnementTypeId = typeObj ? typeObj.id : null;
+  }
+
+  // Calcule la date de fin (1 mois après la date de début)
   useEffect(() => {
     if (dateDebut) {
       const debut = new Date(dateDebut);
@@ -54,7 +74,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     }
   }, [dateDebut]);
 
-  // Sécurise le format de l'heure en HH:mm
+  // Force le format HH:mm, jamais AM/PM
   function normalizeTime(input: string): string {
     if (!input) return '';
     if (/AM|PM/i.test(input)) {
@@ -68,6 +88,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     return input.length === 5 ? input : input.slice(0, 5);
   }
 
+  // Création de l’abonnement
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (
@@ -96,7 +117,8 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         client_nom: clientNom,
         client_email: clientEmail,
         client_tel: clientTel,
-        statut: "actif",
+        statut: 'actif',
+        // Le prix est uniquement affiché, il n'est pas stocké explicitement dans abonnements.
       },
       {
         onSuccess: () => {
