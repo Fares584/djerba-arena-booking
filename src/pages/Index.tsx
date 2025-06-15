@@ -9,8 +9,22 @@ import { Loader2 } from 'lucide-react';
 const Index = () => {
   const { data: terrains, isLoading } = useTerrains({ actif: true });
 
-  // Get the first 3 active terrains for the featured section
-  const featuredTerrains = terrains?.slice(0, 3) || [];
+  // Affiche uniquement le foot à 7 ("foot_7"), tennis pelouse ("tennis_pelouse"), et padel 1 ("padel_1") dans les populaires
+  const featuredTerrains = React.useMemo(() => {
+    if (!terrains) return [];
+    // On sélectionne ces terrains par leur type ou nom précis
+    const foot7 = terrains.find(
+      (t) => t.type === "foot_7" || t.nom?.toLowerCase().includes("foot à 7")
+    );
+    const tennisPelouse = terrains.find(
+      (t) => t.type === "tennis_pelouse" || t.nom?.toLowerCase().includes("tennis pelouse")
+    );
+    const padel1 = terrains.find(
+      (t) => t.type === "padel_1" || t.nom?.toLowerCase().includes("padel 1")
+    );
+    // On filtre les doublons et valeurs nulles
+    return [foot7, tennisPelouse, padel1].filter(Boolean);
+  }, [terrains]);
 
   const getTypeLabel = (type: string) => {
     switch (type) {
@@ -98,43 +112,47 @@ const Index = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {featuredTerrains.map((terrain) => (
-                <div key={terrain.id} className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
-                  <div className="relative h-48">
-                    <img 
-                      src={terrain.image_url || '/placeholder.svg'} 
-                      alt={terrain.nom} 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-4 right-4 bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">
-                      Disponible
-                    </div>
-                  </div>
-                  <div className="p-5">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="text-sport-green">
-                        {getTypeIcon(terrain.type)}
-                      </div>
-                      <span className="text-sm text-gray-600 font-medium">
-                        {getTypeLabel(terrain.type)}
-                      </span>
-                    </div>
-                    <h3 className="font-bold text-xl mb-2">{terrain.nom}</h3>
-                    <div className="flex justify-between items-center mb-4">
-                      <div>
-                        <p className="text-sm text-gray-600">Capacité: {terrain.capacite} personnes</p>
-                        <p className="text-lg font-bold text-sport-green">{terrain.prix} DT/heure</p>
+              {featuredTerrains.length === 0 ? (
+                <div className="col-span-3 text-center text-gray-500">Aucun terrain populaire trouvé.</div>
+              ) : (
+                featuredTerrains.map((terrain) => (
+                  <div key={terrain.id} className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+                    <div className="relative h-48">
+                      <img 
+                        src={terrain.image_url || '/placeholder.svg'} 
+                        alt={terrain.nom} 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-4 right-4 bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">
+                        Disponible
                       </div>
                     </div>
-                    <Link 
-                      to={`/reservation?fieldId=${terrain.id}`} 
-                      className="w-full btn-primary block text-center"
-                    >
-                      Réserver
-                    </Link>
+                    <div className="p-5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="text-sport-green">
+                          {getTypeIcon(terrain.type)}
+                        </div>
+                        <span className="text-sm text-gray-600 font-medium">
+                          {getTypeLabel(terrain.type)}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-xl mb-2">{terrain.nom}</h3>
+                      <div className="flex justify-between items-center mb-4">
+                        <div>
+                          <p className="text-sm text-gray-600">Capacité: {terrain.capacite} personnes</p>
+                          <p className="text-lg font-bold text-sport-green">{terrain.prix} DT/heure</p>
+                        </div>
+                      </div>
+                      <Link 
+                        to={`/reservation?fieldId=${terrain.id}`} 
+                        className="w-full btn-primary block text-center"
+                      >
+                        Réserver
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           )}
         </div>
