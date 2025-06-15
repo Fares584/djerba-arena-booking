@@ -1,19 +1,22 @@
+
 import { useState, useMemo, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useCreateAbonnement } from '@/hooks/useAbonnements';
+import { useReservations } from '@/hooks/useReservations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import ReservationTypeSelector from '@/components/reservation/ReservationTypeSelector';
 import TerrainSelector from '@/components/TerrainSelector';
+import TimeSlotSelector from '@/components/TimeSlotSelector';
+import { useAbonnements } from '@/hooks/useAbonnements';
 
 const defaultTimeSlots = [
   '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
   '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
 ];
 
-// Génère les créneaux horaires dynamiques pour le football
 const generateTimeSlotsForFoot = (startHour: number, startMinute: number, endHour: number, endMinute: number) => {
   const slots: string[] = [];
   let dt = new Date(2000, 0, 1, startHour, startMinute);
@@ -48,12 +51,15 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
   const createAbonnement = useCreateAbonnement();
 
+  // Récupération des réservations et abonnements existants pour disponibilité
+  const { data: reservations = [] } = useReservations();
+  const { data: abonnements = [] } = useAbonnements();
+
   // Filtrage des terrains selon le type choisi
   const filteredTerrains = selectedType
     ? allTerrains.filter(t => t.type === selectedType)
     : [];
 
-  // Reset du terrain sélectionné si on change de type
   useEffect(() => {
     setSelectedTerrainId(null);
     setHeure('');
@@ -78,7 +84,39 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     return defaultTimeSlots;
   }, [selectedTerrain, isFoot6, isFoot7or8]);
 
-  // Validation : on retire selectedAbonnementTypeId
+  // Vérifie si un créneau horaire est dispo ou non (utilise réservations & abonnements existants sur ce terrain)
+  const isTimeSlotAvailable = (time: string) => {
+    if (!selectedTerrainId || !time) return false;
+
+    // Cherche conflits avec réservations
+    const reservationConflict = reservations.some(
+      (res) =>
+        res.terrain_id === selectedTerrainId &&
+        res.heure === time &&
+        // On vérifie les dates du range abonnement, si la réservation recoupe
+        (
+          (!dateDebut || res.date >= dateDebut) &&
+          (!dateFin || res.date <= dateFin)
+        ) &&
+        res.statut !== 'annulee'
+    );
+
+    // Cherche conflits avec abonnements existants sur le même jour/heure
+    const dayInWeek = dateDebut ? new Date(dateDebut).getDay() : undefined;
+    const abonnementConflict = abonnements.some(
+      (abo) =>
+        abo.terrain_id === selectedTerrainId &&
+        abo.heure_fixe === time &&
+        abo.statut === 'actif' &&
+        // Pour la sécurité, recoupe la période
+        (
+          (!dateDebut || !abo.date_fin || abo.date_fin >= dateDebut) &&
+          (!dateFin || !abo.date_debut || abo.date_debut <= dateFin)
+        )
+    );
+    return !reservationConflict && !abonnementConflict;
+  };
+
   const prixNum = Number(montant);
   const isValid =
     selectedType &&
@@ -115,6 +153,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         client_email: '', // Toujours obligatoire dans le modèle, mais laissé vide
         client_tel: clientTel.trim(),
         statut: 'actif',
+        montant: prixNum, // Ajoute le montant pour corriger erreur table
       },
       {
         onSuccess: () => {
@@ -188,18 +227,14 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       {selectedTerrainId && (
         <div>
           <Label htmlFor="heure">Heure de la séance *</Label>
-          <select
-            id="heure"
-            value={heure}
-            className="w-full py-2 px-3 border rounded"
-            onChange={e => setHeure(e.target.value)}
-            required
-          >
-            <option value="">Sélectionnez une heure</option>
-            {timeSlotsForSelectedTerrain.map(ts => (
-              <option value={ts} key={ts}>{ts}</option>
-            ))}
-          </select>
+          {/* Utilisation du composant TimeSlotSelector comme dans la réservation */}
+          <TimeSlotSelector
+            timeSlots={timeSlotsForSelectedTerrain}
+            selectedTime={heure}
+            isTimeSlotAvailable={isTimeSlotAvailable}
+            onTimeSelect={setHeure}
+            loading={false}
+          />
         </div>
       )}
 

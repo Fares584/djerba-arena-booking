@@ -70,6 +70,12 @@ const Abonnements = () => {
     return terrain?.nom || 'Terrain inconnu';
   };
 
+  const getTypeLabel = (terrainId?: number) => {
+    if (!terrainId) return '';
+    const terrain = terrains?.find(t => t.id === terrainId);
+    return terrain?.type ? terrain.type : '';
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -148,8 +154,12 @@ const Abonnements = () => {
           {abonnements.map((abonnement: Abonnement) => (
             <AbonnementCard
               key={abonnement.id}
-              abonnement={abonnement}
+              abonnement={{
+                ...abonnement,
+                montant: abonnement.montant ?? 0, // Pour éviter erreur TS2339
+              }}
               terrainLabel={getTerrainLabel(abonnement.terrain_id)}
+              typeLabel={getTypeLabel(abonnement.terrain_id)}
               onStatusChange={handleStatusChange}
               onEdit={handleEdit}
               onDelete={handleDelete}
