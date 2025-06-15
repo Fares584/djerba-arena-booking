@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
@@ -108,7 +107,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         client_email: clientEmail.trim(),
         client_tel: clientTel.trim(),
         statut: 'actif',
-        prix: prixNum,
       },
       {
         onSuccess: () => {
