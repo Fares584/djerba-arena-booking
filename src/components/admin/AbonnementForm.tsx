@@ -42,10 +42,11 @@ const weekDays = [
 ];
 
 // DUREES DISPONIBLES pour les séances d’abonnement (en heures)
-const dureeOptions = [
+const footDuration = 1.5;
+const otherSportDurations = [
   { value: 1, label: '1 heure' },
-  { value: 1.5, label: '1h30' },
   { value: 2, label: '2 heures' },
+  { value: 3, label: '3 heures' },
 ];
 
 interface AbonnementFormProps {
@@ -135,6 +136,14 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     );
     return !reservationConflict && !abonnementConflict;
   };
+
+  useEffect(() => {
+    if (selectedType === 'foot') {
+      setDureeSeance(footDuration);
+    } else if (selectedType) {
+      setDureeSeance(1); // valeur par défaut pour autres types
+    }
+  }, [selectedType]);
 
   const prixNum = Number(montant);
   const isValid =
@@ -267,17 +276,27 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       {/* Durée de la séance */}
       <div>
         <Label htmlFor="dureeSeance">Durée de la séance *</Label>
-        <select
-          id="dureeSeance"
-          className="w-full border rounded-md p-2 h-9 mt-1"
-          value={dureeSeance}
-          onChange={e => setDureeSeance(Number(e.target.value))}
-          required
-        >
-          {dureeOptions.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+        {selectedType === 'foot' ? (
+          <Input
+            id="dureeSeance"
+            value="1h30"
+            readOnly
+            disabled
+            className="w-full border rounded-md p-2 h-9 mt-1 bg-gray-100 text-gray-800"
+          />
+        ) : (
+          <select
+            id="dureeSeance"
+            className="w-full border rounded-md p-2 h-9 mt-1"
+            value={dureeSeance}
+            onChange={e => setDureeSeance(Number(e.target.value))}
+            required
+          >
+            {otherSportDurations.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Heure */}
