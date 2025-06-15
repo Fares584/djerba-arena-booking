@@ -26,8 +26,10 @@ const Planning = () => {
   const [selectedDay, setSelectedDay] = useState<Date>(new Date());
   
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
+  // Correction ici : Récupérer toutes les réservations (ne PAS exclure les réservations d'abonnement)
   const { data: reservations, isLoading: reservationsLoading } = useReservations({
     terrain_id: selectedTerrain || undefined
+    // On ne met PAS excludeSubscriptions:true !
   });
 
   // Generate array of dates for the week (today + 7 days)
