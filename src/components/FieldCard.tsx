@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 
@@ -87,12 +86,22 @@ const FieldCard: React.FC<FieldCardProps> = ({ field }) => {
 
   return (
     <div className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow flex flex-col">
-      <div className="relative aspect-[16/9] w-full">
-        <img 
-          src={field.imageUrl}
-          alt={field.name}
-          className="w-full h-full object-cover"
-        />
+      <div className="relative aspect-[16/9] w-full overflow-hidden bg-gray-100 flex items-center justify-center">
+        {field.imageUrl ? (
+          <img 
+            src={field.imageUrl}
+            alt={field.name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            style={{ imageRendering: "auto" }}
+          />
+        ) : (
+          <img
+            src="/placeholder.svg"
+            alt="placeholder"
+            className="w-16 h-16 opacity-60"
+          />
+        )}
         <div className={`absolute top-4 right-4 ${getStatusColor(field.status)} px-3 py-1 rounded-full text-xs font-semibold`}>
           {getStatusLabel(field.status)}
         </div>

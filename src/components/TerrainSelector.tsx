@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Terrain } from '@/lib/supabase';
 
@@ -29,13 +28,22 @@ const TerrainSelector = ({ terrains, selectedTerrainId, onTerrainSelect }: Terra
           }`}
           onClick={() => onTerrainSelect(terrain.id)}
         >
-          {/* Bloc image plein width, plein height, ratio 16/9 */}
-          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-t-lg">
-            <img
-              src={terrain.image_url || '/placeholder.svg'}
-              alt={terrain.nom}
-              className="w-full h-full object-cover"
-            />
+          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-t-lg bg-gray-100 flex items-center justify-center">
+            {terrain.image_url ? (
+              <img
+                src={terrain.image_url}
+                alt={terrain.nom}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                style={{ imageRendering: "auto" }}
+              />
+            ) : (
+              <img
+                src="/placeholder.svg"
+                alt="placeholder"
+                className="w-16 h-16 opacity-60"
+              />
+            )}
             {selectedTerrainId === terrain.id && (
               <div className="absolute inset-0 bg-sport-green/20 flex items-center justify-center rounded-t-lg">
                 <div className="bg-sport-green text-white rounded-full p-2">
@@ -78,4 +86,3 @@ const TerrainSelector = ({ terrains, selectedTerrainId, onTerrainSelect }: Terra
 };
 
 export default TerrainSelector;
-

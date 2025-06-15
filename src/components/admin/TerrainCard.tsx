@@ -34,12 +34,14 @@ const TerrainCard = ({
   return (
     <Card className="hover:shadow-lg transition-shadow duration-200 flex flex-col">
       {/* Terrain Image */}
-      <div className="relative aspect-[16/9] w-full">
+      <div className="relative aspect-[16/9] w-full overflow-hidden rounded-t-lg bg-gray-100 flex items-center justify-center">
         {terrain.image_url ? (
           <img
             src={terrain.image_url}
             alt={terrain.nom}
-            className="w-full h-full object-cover rounded-t-lg"
+            className="w-full h-full object-cover"
+            loading="lazy"
+            style={{ imageRendering: "auto" }}
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.style.display = 'none';
@@ -47,13 +49,11 @@ const TerrainCard = ({
               if (fallback) fallback.style.display = 'flex';
             }}
           />
-        ) : null}
-        <div 
-          className={`w-full h-full absolute inset-0 ${terrain.image_url ? 'hidden' : 'flex'} items-center justify-center bg-gray-100 rounded-t-lg`}
-          style={{ display: terrain.image_url ? 'none' : 'flex' }}
-        >
-          <Image className="h-12 w-12 text-gray-400" />
-        </div>
+        ) : (
+          <div className="flex items-center justify-center w-full h-full">
+            <Image className="h-12 w-12 text-gray-400" />
+          </div>
+        )}
       </div>
 
       <CardHeader className="pb-3">
