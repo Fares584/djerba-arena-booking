@@ -134,13 +134,19 @@ const Reservation = () => {
     });
   };
 
-  // Calcul du prix total avec gestion jour/nuit pour toute la durée
+  // Calcul du prix total avec gestion correcte pour les terrains de foot
   const calculateTotalPrice = (): number => {
     if (!selectedTerrain || !selectedTime) return 0;
 
     const effectiveDuration = parseFloat(getEffectiveDuration());
     const globalNightStartTime = '19:00'; // peut rester statique
 
+    // Pour les terrains de football : tarif fixe pour 1h30, pas de calcul par heure
+    if (selectedTerrain.type === 'foot') {
+      return calculatePrice(selectedTerrain, selectedTime, globalNightStartTime);
+    }
+
+    // Pour les autres terrains (tennis, padel) : calcul par heure
     let total = 0;
     let timeHour = parseInt(selectedTime.split(':')[0], 10);
     let timeMinute = parseInt(selectedTime.split(':')[1], 10);
@@ -151,7 +157,7 @@ const Reservation = () => {
         timeMinute.toString().padStart(2, '0');
       total += calculatePrice(selectedTerrain, slotTime, globalNightStartTime);
 
-      // Avance de 1h pour chaque unité d'heure supplémentaire (même pour foot, où c'est par 1.5)
+      // Avance de 1h pour chaque unité d'heure supplémentaire
       let newDate = new Date(2000, 0, 1, timeHour, timeMinute);
       newDate.setHours(newDate.getHours() + 1);
       timeHour = newDate.getHours();

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useAppSetting } from '@/hooks/useAppSettings';
@@ -80,7 +79,7 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
     }
   }, [selectedTerrain]);
 
-  // Calculate total price based on selected time and duration
+  // Calculate total price based on selected time and duration - FIXED FOR FOOTBALL
   const calculateTotalPrice = (): number => {
     if (!selectedField || !selectedTime || !terrains) return 0;
     
@@ -88,9 +87,16 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
     if (!terrain) return 0;
     
     const duration = parseFloat(getEffectiveDuration());
+    const globalNightStartTime = getGlobalNightStartTime();
+    
+    // For football terrains, use fixed pricing for 1h30 - no hourly calculation
+    if (terrain.type === 'foot') {
+      return calculatePrice(terrain, selectedTime, globalNightStartTime);
+    }
+    
+    // For other terrains, calculate hourly rate × duration
     const startHour = parseInt(selectedTime.split(':')[0]);
     let totalPrice = 0;
-    const globalNightStartTime = getGlobalNightStartTime();
     
     // Calculate price for each hour based on day/night rates
     for (let i = 0; i < duration; i++) {

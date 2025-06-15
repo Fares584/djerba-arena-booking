@@ -101,7 +101,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     return selectedTerrain?.type !== 'foot';
   };
 
-  // Calculate total price based on selected time and duration
+  // Calculate total price based on selected time and duration - FIXED FOR FOOTBALL
   const calculateTotalPrice = (): number => {
     if (!selectedField || !selectedTime || !terrains) return 0;
     
@@ -111,7 +111,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     const effectiveDuration = getEffectiveDuration();
     const globalNightStartTime = getGlobalNightStartTime();
     
-    // For football terrains, use fixed pricing
+    // For football terrains, use fixed pricing for 1h30 - no hourly calculation
     if (terrain.type === 'foot') {
       return calculatePrice(terrain, selectedTime, globalNightStartTime);
     }

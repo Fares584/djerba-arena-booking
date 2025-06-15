@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Define types for our database
@@ -83,26 +84,26 @@ export const isNightTime = (time: string, globalNightStartTime?: string): boolea
 };
 
 // Function to calculate the price based on terrain and time (using global night time setting)
-// Refactored to only use types allowed by the Terrain.type definition.
+// Refactored to handle football terrains with fixed pricing for 1h30 sessions
 export const calculatePrice = (terrain: Terrain, time: string, globalNightStartTime?: string): number => {
   const night = isNightTime(time, globalNightStartTime);
 
-  // Specific football types based on 'nom'
+  // Specific football types based on 'nom' - FIXED PRICING FOR 1H30
   if (terrain.type === 'foot') {
     if (/6/.test(terrain.nom)) {
-      return night ? 60 : 50; // 6v6
+      return night ? 60 : 50; // 6v6 - tarif fixe pour 1h30
     }
     if (/7/.test(terrain.nom)) {
-      return night ? 96 : 84; // 7v7
+      return night ? 96 : 84; // 7v7 - tarif fixe pour 1h30
     }
     if (/8/.test(terrain.nom)) {
-      return night ? 110 : 96; // 8v8
+      return night ? 110 : 96; // 8v8 - tarif fixe pour 1h30
     }
-    // Default foot pricing fallback
+    // Default foot pricing fallback - tarif fixe pour 1h30
     return night ? 65 : 60;
   }
 
-  // Tennis Green Set types based on 'nom'
+  // Tennis Green Set types based on 'nom' - HOURLY PRICING
   if (terrain.type === 'tennis') {
     if (/green set/i.test(terrain.nom)) {
       // Tennis Green Set distinguished by 'autre' in name
@@ -115,9 +116,11 @@ export const calculatePrice = (terrain: Terrain, time: string, globalNightStartT
     return night ? (terrain.prix_nuit || 30) : terrain.prix;
   }
 
+  // Padel - HOURLY PRICING
   if (terrain.type === 'padel') {
-    return night ? 60 : 50; // 50/60 DT for 4 joueurs
+    return night ? 60 : 50; // 50/60 DT per hour for 4 joueurs
   }
+  
   // Fallback to generic logic
   if (isNightTime(time, globalNightStartTime) && terrain.prix_nuit) {
     return terrain.prix_nuit;
