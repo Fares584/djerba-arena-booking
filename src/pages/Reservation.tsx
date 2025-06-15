@@ -18,6 +18,11 @@ import ReservationDatePicker from "@/components/ReservationDatePicker";
 import ReservationSuccessDialog from "@/components/ReservationSuccessDialog";
 import TimeSlotSelector from "@/components/TimeSlotSelector";
 import ReservationSummary from "@/components/ReservationSummary";
+import ReservationTypeSelector from '@/components/reservation/ReservationTypeSelector';
+import ReservationFieldSelector from '@/components/reservation/ReservationFieldSelector';
+import ReservationDateTimeSelector from '@/components/reservation/ReservationDateTimeSelector';
+import ReservationDurationSelector from '@/components/reservation/ReservationDurationSelector';
+import ReservationCustomerInfo from '@/components/reservation/ReservationCustomerInfo';
 
 // Créneaux horaires par défaut (pour terrains autres que foot à 7 ou 8)
 const defaultTimeSlots = [
@@ -277,90 +282,42 @@ const Reservation = () => {
           <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8">
             
             {/* Type Selection */}
-            <div className="mb-8">
-              <Label htmlFor="type" className="text-lg font-semibold mb-4 flex items-center">
-                <MapPin className="mr-2 h-5 w-5" />
-                Type de terrain *
-              </Label>
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Sélectionnez un type de terrain" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="foot">Football</SelectItem>
-                  <SelectItem value="tennis">Tennis</SelectItem>
-                  <SelectItem value="padel">Padel</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
+            <ReservationTypeSelector
+              selectedType={selectedType}
+              setSelectedType={setSelectedType}
+            />
             {/* Terrain Selection */}
             {selectedType && (
-              <div className="mb-8">
-                <Label className="text-lg font-semibold mb-4 block">
-                  Terrain *
-                </Label>
-                {terrainsLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                  </div>
-                ) : (
-                  <TerrainSelector
-                    terrains={filteredTerrains}
-                    selectedTerrainId={selectedTerrainId}
-                    onTerrainSelect={setSelectedTerrainId}
-                  />
-                )}
-              </div>
+              <ReservationFieldSelector
+                selectedType={selectedType}
+                terrainsLoading={terrainsLoading}
+                filteredTerrains={filteredTerrains}
+                selectedTerrainId={selectedTerrainId}
+                setSelectedTerrainId={setSelectedTerrainId}
+              />
             )}
-
             {/* Date and Time Selection */}
             {selectedTerrainId && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                {/* Remplace input date par ReservationDatePicker */}
-                <div>
-                  <ReservationDatePicker
-                    value={selectedDate}
-                    onChange={setSelectedDate}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="time" className="text-lg font-semibold mb-2 flex items-center">
-                    <Clock className="mr-2 h-5 w-5" />
-                    Heure *
-                  </Label>
-                  <TimeSlotSelector
-                    timeSlots={timeSlotsForSelectedTerrain}
-                    selectedTime={selectedTime}
-                    isTimeSlotAvailable={isTimeSlotAvailable}
-                    onTimeSelect={setSelectedTime}
-                    loading={availabilityLoading && !!selectedDate}
-                  />
-                </div>
-              </div>
+              <ReservationDateTimeSelector
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                selectedTime={selectedTime}
+                setSelectedTime={setSelectedTime}
+                timeSlots={timeSlotsForSelectedTerrain}
+                isTimeSlotAvailable={isTimeSlotAvailable}
+                availabilityLoading={availabilityLoading}
+                selectedTerrainId={selectedTerrainId}
+              />
             )}
-
             {/* Duration Selection - Only for non-football terrains */}
             {selectedTerrain && selectedTerrain.type !== 'foot' && (
-              <div className="mb-8">
-                <Label htmlFor="duration" className="text-lg font-semibold mb-2 block">
-                  Durée de la réservation *
-                </Label>
-                <Select value={duration} onValueChange={setDuration}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Sélectionnez la durée" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {durationOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <ReservationDurationSelector
+                selectedTerrain={selectedTerrain}
+                duration={duration}
+                setDuration={setDuration}
+                durationOptions={durationOptions}
+              />
             )}
-
             {/* Duration Display for Football */}
             {selectedTerrain && selectedTerrain.type === 'foot' && (
               <div className="mb-8">
@@ -373,61 +330,17 @@ const Reservation = () => {
                 </div>
               </div>
             )}
-
             {/* Customer Information */}
-            <div className="border-t pt-8">
-              <h3 className="text-xl font-semibold mb-6 flex items-center">
-                <User className="mr-2 h-6 w-6" />
-                Informations personnelles
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <Label htmlFor="name" className="text-base font-medium mb-2 block">
-                    Nom complet *
-                  </Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Votre nom et prénom"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="phone" className="text-base font-medium mb-2 flex items-center">
-                    <Phone className="mr-2 h-4 w-4" />
-                    Téléphone *
-                  </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    placeholder="Votre numéro de téléphone"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <Label htmlFor="email" className="text-base font-medium mb-2 flex items-center">
-                  <Mail className="mr-2 h-4 w-4" />
-                  Adresse email *
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
-                  placeholder="votre@email.com"
-                  required
-                />
-              </div>
-            </div>
-
+            <ReservationCustomerInfo
+              customerName={customerName}
+              setCustomerName={setCustomerName}
+              customerPhone={customerPhone}
+              setCustomerPhone={setCustomerPhone}
+              customerEmail={customerEmail}
+              setCustomerEmail={setCustomerEmail}
+              remarks={remarks}
+              setRemarks={setRemarks}
+            />
             {/* Price Summary */}
             {selectedTerrain && selectedTime && (
               <ReservationSummary
@@ -438,7 +351,6 @@ const Reservation = () => {
                 totalPrice={calculateTotalPrice()}
               />
             )}
-
             {/* Submit Button */}
             <div className="mt-8 flex flex-col sm:flex-row sm:justify-end">
               <Button
