@@ -5,6 +5,7 @@ import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval } from 'da
 import { fr } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowUpRight, Loader2 } from "lucide-react";
 
 const Stats = () => {
   const [timeframe, setTimeframe] = useState<'week' | 'month'>('week');
