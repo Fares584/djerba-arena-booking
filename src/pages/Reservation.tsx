@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -48,8 +48,8 @@ const Reservation = () => {
   const [remarks, setRemarks] = useState('');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
-  // Utilisé pour empêcher le reset lors de l'init
-  const initialSelectionDone = React.useRef(false);
+  // NEW: garder une trace si une sélection initiale a été faite via URL
+  const [initialSelectionDone, setInitialSelectionDone] = useState(false);
 
   // Hooks
   const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
@@ -110,43 +110,28 @@ const Reservation = () => {
     return defaultTimeSlots;
   }, [isFoot6, isFoot7or8]);
 
-  // Init depuis l’URL, sélectionner type puis terrain
+  // Initialize from URL params
   useEffect(() => {
-    if (
-      !allTerrains ||
-      initialSelectionDone.current // déjà fait une fois...
-    )
-      return;
+    if (!allTerrains) return;
+    if (initialSelectionDone) return; // Ne faire qu'une fois
     const fieldId = searchParams.get('fieldId');
     if (fieldId) {
-      const fieldIdNum = parseInt(fieldId, 10);
-      const terrain = allTerrains.find((t) => t.id === fieldIdNum);
+      const terrain = allTerrains.find(t => t.id === parseInt(fieldId));
       if (terrain) {
-        // Étape 1 : d’abord setter le type (déclenche re-render), puis un autre effet set l’ID
+        // On sélectionne d'abord le type correspondant (entraine re-render)
         setSelectedType(terrain.type);
-        // On sauvegarde l'info pour l'effet suivant
-        initialSelectionDone.current = { terrainId: terrain.id };
+        setSelectedTerrainId(terrain.id);
+        setInitialSelectionDone(true);
       }
     }
-  }, [allTerrains, searchParams]);
+  }, [allTerrains, searchParams, initialSelectionDone]);
 
-  // Une fois le type mis à jour, appliquer la sélection terrain si demandé via URL
+  // Quand le type change (par l'utilisateur)
   useEffect(() => {
-    // Si initialSelectionDone est un objet (donc on vient de la logique fieldId), on peut setter le terrain
-    if (
-      initialSelectionDone.current &&
-      typeof initialSelectionDone.current === 'object' &&
-      selectedType
-    ) {
-      setSelectedTerrainId(initialSelectionDone.current.terrainId);
-      // Clôt, pour empêcher d'autres exécutions
-      initialSelectionDone.current = true;
-      return;
-    }
-    // Si l'utilisateur change le type à la main, reset la séléction terrain
-    if (initialSelectionDone.current === true) return;
+    // Si la sélection initiale a déjà été faite (après fieldId), on ne reset pas le terrain
+    if (initialSelectionDone) return;
     setSelectedTerrainId(null);
-  }, [selectedType]);
+  }, [selectedType, initialSelectionDone]);
 
   // Update duration when terrain changes
   useEffect(() => {
