@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Terrain } from '@/lib/supabase';
 import TerrainForm from '@/components/admin/TerrainForm';
 import TerrainCard from '@/components/admin/TerrainCard';
-import GlobalSettings from '@/components/admin/GlobalSettings';
+// SUPPRESSION: import GlobalSettings from '@/components/admin/GlobalSettings';
 
 const Terrains = () => {
   const { data: terrains, isLoading, refetch } = useTerrains();
@@ -91,8 +91,7 @@ const Terrains = () => {
         </Dialog>
       </div>
 
-      {/* Global Settings Section */}
-      <GlobalSettings />
+      {/* SUPPRIMÉ : Section des paramètres globaux */}
       
       {terrains && terrains.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -117,3 +116,4 @@ const Terrains = () => {
 };
 
 export default Terrains;
+
