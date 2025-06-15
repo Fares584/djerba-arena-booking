@@ -235,7 +235,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
                 <Select 
                   value={selectedDuration} 
                   onValueChange={setSelectedDuration}
-                  disabled={!!(selectedTerrain && selectedTerrain.type === 'foot')}
+                  disabled={selectedTerrain?.type === 'foot'}
                 >
                   <SelectTrigger id="duration">
                     <SelectValue placeholder="Durée" />
