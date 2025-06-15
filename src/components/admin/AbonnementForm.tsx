@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
@@ -11,6 +10,25 @@ import { format, addMonths, addDays } from 'date-fns';
 import TerrainSelector from '@/components/TerrainSelector';
 import TimeSlotSelector from '@/components/TimeSlotSelector';
 import { useReservations } from '@/hooks/useReservations';
+
+// Nouvelle fonction utilitaire pour lister les créneaux à partir d'une heure de début, de fin et d'un pas (en minutes)
+function generateTimeSlots(start: string, end: string, intervalMinutes: number): string[] {
+  const result: string[] = [];
+  let [h, m] = start.split(":").map(Number);
+  const [endH, endM] = end.split(":").map(Number);
+
+  while (h < endH || (h === endH && m <= endM)) {
+    result.push(
+      [h.toString().padStart(2, "0"), m.toString().padStart(2, "0")].join(":")
+    );
+    m += intervalMinutes;
+    while (m >= 60) {
+      m -= 60;
+      h += 1;
+    }
+  }
+  return result;
+}
 
 // Types locaux pour les jours
 const joursOptions = [
@@ -32,6 +50,24 @@ interface AbonnementFormProps {
   onSuccess: () => void;
 }
 
+const getTimeSlotsForTerrain = (terrain: any | undefined): string[] => {
+  if (!terrain) return timeSlots; // fallback: créneaux standards
+  const nom = terrain.nom?.toLowerCase() || "";
+  // Foot à 6
+  if (terrain.type === "foot" && /6/.test(nom)) {
+    return generateTimeSlots("09:00", "22:30", 90);
+  }
+  // Foot à 7 ou 8
+  if (
+    terrain.type === "foot" &&
+    (/7/.test(nom) || /8/.test(nom))
+  ) {
+    return generateTimeSlots("10:00", "23:30", 90);
+  }
+  // Par défaut les autres terrains: créneaux standards
+  return timeSlots;
+};
+
 const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const [selectedTerrainId, setSelectedTerrainId] = useState<number | null>(null);
   const [prix, setPrix] = useState('');
@@ -50,6 +86,9 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
 
   // Pour la récursivité, on charge toutes les réservations de ce terrain pour la période (mois) concernée
   const selectedTerrain = terrains.find(t => t.id === selectedTerrainId);
+
+  // Définir dynamiquement les slots selon le terrain sélectionné
+  const dynamicTimeSlots = getTimeSlotsForTerrain(selectedTerrain);
 
   // Calcule la première date correspondante au jour de la semaine (répétition hebdomadaire)
   function getRecurringDates(debut: string, fin: string, dayOfWeek: number): string[] {
@@ -238,7 +277,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         <div>
           <Label htmlFor="heureFixe">Heure</Label>
           <TimeSlotSelector
-            timeSlots={timeSlots}
+            timeSlots={dynamicTimeSlots}
             selectedTime={selectedHeure}
             isTimeSlotAvailable={isTimeSlotFullyAvailable}
             onTimeSelect={setSelectedHeure}
