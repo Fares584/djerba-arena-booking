@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import ReservationTypeSelector from '@/components/reservation/ReservationTypeSelector';
 import TerrainSelector from '@/components/TerrainSelector';
-import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
 
 const defaultTimeSlots = [
   '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
@@ -35,8 +34,6 @@ interface AbonnementFormProps {
 }
 
 const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
-  const { data: abonnementTypes = [], isLoading: abonnementTypesLoading } = useAbonnementTypes({ actif: true });
-  const [selectedAbonnementTypeId, setSelectedAbonnementTypeId] = useState<number | null>(null);
   const [selectedType, setSelectedType] = useState<string>('');
   const [selectedTerrainId, setSelectedTerrainId] = useState<number | null>(null);
   const [montant, setMontant] = useState('');
@@ -81,10 +78,9 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     return defaultTimeSlots;
   }, [selectedTerrain, isFoot6, isFoot7or8]);
 
-  // Validation (ajouter selectedAbonnementTypeId)
+  // Validation : on retire selectedAbonnementTypeId
   const prixNum = Number(montant);
   const isValid =
-    selectedAbonnementTypeId &&
     selectedType &&
     selectedTerrainId &&
     !!montant &&
@@ -109,7 +105,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
 
     createAbonnement.mutate(
       {
-        abonnement_type_id: selectedAbonnementTypeId!, // Correction importante
         terrain_id: selectedTerrainId!,
         date_debut: dateDebut,
         date_fin: dateFin,
@@ -117,7 +112,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         heure_fixe: heure,
         duree_seance: undefined,
         client_nom: clientNom.trim(),
-        client_email: '', // Champ vide car plus demandé
+        client_email: '', // Toujours obligatoire dans le modèle, mais laissé vide
         client_tel: clientTel.trim(),
         statut: 'actif',
       },
@@ -134,26 +129,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     <form onSubmit={handleSubmit} className="space-y-6 py-4">
       <h2 className="text-xl font-semibold mb-4">Créer un Abonnement</h2>
       {formError && <div className="bg-red-100 text-red-700 rounded p-2 text-sm">{formError}</div>}
-
-      {/* AJOUT: Sélection du type d'abonnement */}
-      <div>
-        <Label htmlFor="abonnementType">Type d'abonnement *</Label>
-        <select
-          id="abonnementType"
-          value={selectedAbonnementTypeId ?? ''}
-          onChange={e => setSelectedAbonnementTypeId(e.target.value ? Number(e.target.value) : null)}
-          required
-          className="w-full py-2 px-3 border rounded"
-          disabled={abonnementTypesLoading}
-        >
-          <option value="">Sélectionnez un type d'abonnement</option>
-          {abonnementTypes.map((type: any) => (
-            <option key={type.id} value={type.id}>
-              {type.nom}
-            </option>
-          ))}
-        </select>
-      </div>
 
       {/* Choix du type */}
       <ReservationTypeSelector selectedType={selectedType} setSelectedType={setSelectedType} />
