@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useCreateAbonnement } from '@/hooks/useAbonnements';
@@ -122,7 +121,8 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     selectedType &&
     selectedTerrainId &&
     !!montant &&
-    !isNaN(prixNum) && prixNum > 0 &&
+    !isNaN(prixNum) &&
+    prixNum > 0 &&
     !!dateDebut &&
     !!dateFin &&
     !!heure &&
@@ -152,8 +152,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         client_nom: clientNom.trim(),
         client_email: '', // Toujours obligatoire dans le modèle, mais laissé vide
         client_tel: clientTel.trim(),
-        statut: 'actif',
-        montant: prixNum, // Ajoute le montant pour corriger erreur table
+        statut: 'actif'
       },
       {
         onSuccess: () => {

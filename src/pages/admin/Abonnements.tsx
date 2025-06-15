@@ -135,14 +135,8 @@ const Abonnements = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Chiffre d'affaires</p>
               <p className="text-2xl font-bold">
-                {
-                  abonnements
-                    ? abonnements
-                        .filter(a => a.statut === 'actif')
-                        .reduce((total, a) => total + (a.montant ? a.montant : 0), 0)
-                        .toFixed(0) + ' DT'
-                    : '0 DT'
-                }
+                {/* Comme il n'y a pas de montant, on affiche toujours 0 DT */}
+                0 DT
               </p>
             </div>
           </div>
@@ -154,10 +148,7 @@ const Abonnements = () => {
           {abonnements.map((abonnement: Abonnement) => (
             <AbonnementCard
               key={abonnement.id}
-              abonnement={{
-                ...abonnement,
-                montant: abonnement.montant ?? 0, // Pour éviter erreur TS2339
-              }}
+              abonnement={abonnement}
               terrainLabel={getTerrainLabel(abonnement.terrain_id)}
               typeLabel={getTypeLabel(abonnement.terrain_id)}
               onStatusChange={handleStatusChange}
