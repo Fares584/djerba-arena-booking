@@ -215,10 +215,42 @@ const Reservation = () => {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // Quand l'utilisateur clique sur "OK", fermer la popup et rediriger vers l'accueil
-  const handleDialogOk = () => {
-    setShowSuccessDialog(false);
-    navigate('/');
+  // --- Add the missing handleSubmit function ---
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Ensure required fields are filled
+    if (
+      !selectedTerrainId ||
+      !selectedDate ||
+      !selectedTime ||
+      !customerName ||
+      !customerPhone ||
+      !customerEmail
+    ) {
+      toast.error("Veuillez remplir tous les champs obligatoires.");
+      return;
+    }
+
+    // Check slot availability
+    if (!isTimeSlotAvailable(selectedTime)) {
+      toast.error("Ce créneau horaire n'est pas disponible.");
+      return;
+    }
+
+    const effectiveDuration = parseFloat(getEffectiveDuration());
+
+    createReservation.mutate({
+      nom_client: customerName,
+      tel: customerPhone,
+      email: customerEmail,
+      terrain_id: selectedTerrainId,
+      date: selectedDate,
+      heure: selectedTime,
+      duree: effectiveDuration,
+      statut: "en_attente",
+      remarque: remarks || null,
+    });
   };
 
   return (
