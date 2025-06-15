@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 
@@ -33,28 +32,6 @@ const Footer = () => {
                 </svg>
               </a>
             </div>
-          </div>
-          
-          {/* Navigation */}
-          <div>
-            <h3 className="text-lg font-bold mb-4">Navigation</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/" className="text-gray-300 hover:text-sport-green transition-colors">Accueil</Link>
-              </li>
-              <li>
-                <Link to="/fields" className="text-gray-300 hover:text-sport-green transition-colors">Nos Terrains</Link>
-              </li>
-              <li>
-                <Link to="/reservation" className="text-gray-300 hover:text-sport-green transition-colors">Réservation</Link>
-              </li>
-              <li>
-                <Link to="/about" className="text-gray-300 hover:text-sport-green transition-colors">À Propos</Link>
-              </li>
-              <li>
-                <Link to="/contact" className="text-gray-300 hover:text-sport-green transition-colors">Contact</Link>
-              </li>
-            </ul>
           </div>
           
           {/* Contact */}
