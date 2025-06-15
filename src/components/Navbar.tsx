@@ -9,11 +9,16 @@ const Navbar = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const handleLinkClick = () => {
+    setIsMenuOpen(false);
+    window.scrollTo(0, 0);
+  };
+
   return (
     <nav className="bg-white shadow-sm sticky top-0 z-50">
       <div className="container-custom py-4">
         <div className="flex justify-between items-center">
-          <Link to="/" className="flex items-center">
+          <Link to="/" className="flex items-center" onClick={handleLinkClick}>
             <span className="text-sport-green font-bold text-2xl">Planet</span>
             <span className="text-sport-dark font-bold text-2xl">Sports</span>
           </Link>
@@ -30,19 +35,19 @@ const Navbar = () => {
           
           {/* Desktop menu */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-sport-dark hover:text-sport-green font-medium transition-colors">
+            <Link to="/" className="text-sport-dark hover:text-sport-green font-medium transition-colors" onClick={handleLinkClick}>
               Accueil
             </Link>
-            <Link to="/fields" className="text-sport-dark hover:text-sport-green font-medium transition-colors">
+            <Link to="/fields" className="text-sport-dark hover:text-sport-green font-medium transition-colors" onClick={handleLinkClick}>
               Nos Terrains
             </Link>
-            <Link to="/reservation" className="text-sport-dark hover:text-sport-green font-medium transition-colors">
+            <Link to="/reservation" className="text-sport-dark hover:text-sport-green font-medium transition-colors" onClick={handleLinkClick}>
               Réservation
             </Link>
-            <Link to="/about" className="text-sport-dark hover:text-sport-green font-medium transition-colors">
+            <Link to="/about" className="text-sport-dark hover:text-sport-green font-medium transition-colors" onClick={handleLinkClick}>
               À Propos
             </Link>
-            <Link to="/login" className="btn-primary">
+            <Link to="/login" className="btn-primary" onClick={handleLinkClick}>
               Admin
             </Link>
           </div>
@@ -54,35 +59,35 @@ const Navbar = () => {
             <Link 
               to="/" 
               className="block text-sport-dark hover:text-sport-green font-medium transition-colors"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={handleLinkClick}
             >
               Accueil
             </Link>
             <Link 
               to="/fields" 
               className="block text-sport-dark hover:text-sport-green font-medium transition-colors"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={handleLinkClick}
             >
               Nos Terrains
             </Link>
             <Link 
               to="/reservation" 
               className="block text-sport-dark hover:text-sport-green font-medium transition-colors"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={handleLinkClick}
             >
               Réservation
             </Link>
             <Link 
               to="/about" 
               className="block text-sport-dark hover:text-sport-green font-medium transition-colors"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={handleLinkClick}
             >
               À Propos
             </Link>
             <Link 
               to="/login" 
               className="block btn-primary inline-block"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={handleLinkClick}
             >
               Admin
             </Link>
