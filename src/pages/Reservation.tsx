@@ -48,6 +48,9 @@ const Reservation = () => {
   const [remarks, setRemarks] = useState('');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
+  // NEW: garder une trace si une sélection initiale a été faite via URL
+  const [initialSelectionDone, setInitialSelectionDone] = useState(false);
+
   // Hooks
   const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
   const createReservation = useCreateReservation({
@@ -109,15 +112,26 @@ const Reservation = () => {
 
   // Initialize from URL params
   useEffect(() => {
+    if (!allTerrains) return;
+    if (initialSelectionDone) return; // Ne faire qu'une fois
     const fieldId = searchParams.get('fieldId');
-    if (fieldId && allTerrains) {
+    if (fieldId) {
       const terrain = allTerrains.find(t => t.id === parseInt(fieldId));
       if (terrain) {
+        // On sélectionne d'abord le type correspondant (entraine re-render)
         setSelectedType(terrain.type);
         setSelectedTerrainId(terrain.id);
+        setInitialSelectionDone(true);
       }
     }
-  }, [searchParams, allTerrains]);
+  }, [allTerrains, searchParams, initialSelectionDone]);
+
+  // Quand le type change (par l'utilisateur)
+  useEffect(() => {
+    // Si la sélection initiale a déjà été faite (après fieldId), on ne reset pas le terrain
+    if (initialSelectionDone) return;
+    setSelectedTerrainId(null);
+  }, [selectedType, initialSelectionDone]);
 
   // Update duration when terrain changes
   useEffect(() => {
