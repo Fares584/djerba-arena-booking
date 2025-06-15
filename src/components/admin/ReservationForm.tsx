@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useAppSetting } from '@/hooks/useAppSettings';
@@ -234,7 +235,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
                 <Select 
                   value={selectedDuration} 
                   onValueChange={setSelectedDuration}
-                  disabled={selectedTerrain?.type === 'foot'}
+                  disabled={!!(selectedTerrain && selectedTerrain.type === 'foot')}
                 >
                   <SelectTrigger id="duration">
                     <SelectValue placeholder="Durée" />
