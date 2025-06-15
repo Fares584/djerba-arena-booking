@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 
@@ -16,7 +17,6 @@ const Hero = () => {
             type="video/mp4"/>
           Your browser does not support the video tag.
       </video>
-
 
       {/* Optional: Overlay for better contrast */}
       <div className="absolute inset-0 bg-black/50 z-0" />
@@ -37,9 +37,7 @@ const Hero = () => {
             <Link to="/fields" className="btn-secondary text-center text-lg">
               Voir les disponibilités
             </Link>
-            <Link to="/contact" className="bg-white text-sport-dark hover:bg-gray-100 py-2 px-6 rounded-md transition-all font-medium text-center text-lg">
-              Nous contacter
-            </Link>
+            {/* Le bouton "Nous contacter" a été supprimé */}
           </div>
 
           {/* Reservation promo */}
@@ -55,3 +53,4 @@ const Hero = () => {
 };
 
 export default Hero;
+
