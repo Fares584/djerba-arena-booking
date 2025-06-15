@@ -1,0 +1,54 @@
+
+import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { 
+  BarChart3, 
+  Calendar, 
+  MapPin, 
+  Users, 
+  Settings, 
+  History,
+  Home 
+} from 'lucide-react';
+
+const AdminNavigation = () => {
+  const location = useLocation();
+
+  const navItems = [
+    { path: '/admin', label: 'Dashboard', icon: Home, exact: true },
+    { path: '/admin/reservations', label: 'Réservations', icon: Calendar },
+    { path: '/admin/historique', label: 'Historique', icon: History },
+    { path: '/admin/terrains', label: 'Terrains', icon: MapPin },
+    { path: '/admin/planning', label: 'Planning', icon: Calendar },
+    { path: '/admin/abonnements', label: 'Abonnements', icon: Users },
+    { path: '/admin/stats', label: 'Statistiques', icon: BarChart3 },
+  ];
+
+  return (
+    <nav className="space-y-1">
+      {navItems.map((item) => {
+        const isActive = item.exact 
+          ? location.pathname === item.path 
+          : location.pathname.startsWith(item.path);
+        
+        return (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+              isActive
+                ? "bg-sport-green text-white"
+                : "text-gray-600 hover:text-sport-green hover:bg-green-50"
+            )}
+          >
+            <item.icon className="h-4 w-4" />
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+};
+
+export default AdminNavigation;

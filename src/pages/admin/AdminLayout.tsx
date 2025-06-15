@@ -1,116 +1,78 @@
 
+import { Outlet } from 'react-router-dom';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { LogOut, LayoutDashboard, CalendarCheck, Users, Settings, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/sonner';
+import { LogOut, Menu, X } from 'lucide-react';
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+import AdminNavigation from '@/components/admin/AdminNavigation';
 
 const AdminLayout = () => {
-  const { loading } = useRequireAuth();
-  const { signOut } = useAuth();
+  useRequireAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
-  
+
   const handleLogout = async () => {
     try {
-      await signOut();
+      await supabase.auth.signOut();
       toast.success('Déconnexion réussie');
-      navigate('/login');
+      navigate('/');
     } catch (error) {
-      console.error('Logout error:', error);
       toast.error('Erreur lors de la déconnexion');
     }
   };
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-sport-gray">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sport-green"></div>
-      </div>
-    );
-  }
-  
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      
-      <div className="flex-grow flex flex-col md:flex-row bg-sport-gray">
-        {/* Sidebar */}
-        <div className="md:w-64 bg-white shadow-md p-4">
-          <div className="space-y-1 mb-8">
-            <h1 className="text-xl font-bold text-sport-green px-4 py-2">Dashboard Admin</h1>
-          </div>
-          
-          <nav className="space-y-2">
-            <NavLink
-              to="/admin"
-              end
-              className={({ isActive }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-sport-green text-white' : 'hover:bg-sport-gray text-gray-700'}`}
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              <LayoutDashboard className="mr-2 h-5 w-5" />
-              <span>Tableau de bord</span>
-            </NavLink>
-            
-            <NavLink
-              to="/admin/reservations"
-              className={({ isActive }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-sport-green text-white' : 'hover:bg-sport-gray text-gray-700'}`}
-            >
-              <CalendarCheck className="mr-2 h-5 w-5" />
-              <span>Réservations</span>
-            </NavLink>
-            
-            <NavLink
-              to="/admin/terrains"
-              className={({ isActive }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-sport-green text-white' : 'hover:bg-sport-gray text-gray-700'}`}
-            >
-              <Users className="mr-2 h-5 w-5" />
-              <span>Terrains</span>
-            </NavLink>
-            
-            <NavLink
-              to="/admin/abonnements"
-              className={({ isActive }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-sport-green text-white' : 'hover:bg-sport-gray text-gray-700'}`}
-            >
-              <CreditCard className="mr-2 h-5 w-5" />
-              <span>Abonnements</span>
-            </NavLink>
-            
-            <NavLink
-              to="/admin/planning"
-              className={({ isActive }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-sport-green text-white' : 'hover:bg-sport-gray text-gray-700'}`}
-            >
-              <CalendarCheck className="mr-2 h-5 w-5" />
-              <span>Planning</span>
-            </NavLink>
-            
-            <NavLink
-              to="/admin/stats"
-              className={({ isActive }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-sport-green text-white' : 'hover:bg-sport-gray text-gray-700'}`}
-            >
-              <Settings className="mr-2 h-5 w-5" />
-              <span>Statistiques</span>
-            </NavLink>
-            
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-50 px-4 py-2 mt-8" 
-              onClick={handleLogout}
-            >
-              <LogOut className="mr-2 h-5 w-5" />
-              <span>Déconnexion</span>
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
-          </nav>
+            <h1 className="text-xl font-semibold text-gray-900">Administration</h1>
+          </div>
+          <Button onClick={handleLogout} variant="outline" size="sm">
+            <LogOut className="h-4 w-4 mr-2" />
+            Déconnexion
+          </Button>
         </div>
-        
+      </header>
+
+      <div className="flex">
+        {/* Sidebar */}
+        <aside className={`
+          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r
+          transition-transform duration-200 ease-in-out lg:transition-none
+          flex flex-col h-[calc(100vh-73px)] lg:h-auto
+        `}>
+          <div className="p-6 flex-1">
+            <AdminNavigation />
+          </div>
+        </aside>
+
+        {/* Mobile overlay */}
+        {isMobileMenuOpen && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+        )}
+
         {/* Main content */}
-        <div className="flex-grow p-4 md:p-8">
+        <main className="flex-1 p-6">
           <Outlet />
-        </div>
+        </main>
       </div>
-      
-      <Footer />
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +21,7 @@ import Terrains from "./pages/admin/Terrains";
 import Planning from "./pages/admin/Planning";
 import Stats from "./pages/admin/Stats";
 import Abonnements from "./pages/admin/Abonnements";
+import HistoriqueReservations from "./pages/admin/HistoriqueReservations";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -63,6 +63,7 @@ function App() {
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="reservations" element={<Reservations />} />
+              <Route path="historique" element={<HistoriqueReservations />} />
               <Route path="terrains" element={<Terrains />} />
               <Route path="planning" element={<Planning />} />
               <Route path="stats" element={<Stats />} />

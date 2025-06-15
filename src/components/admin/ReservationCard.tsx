@@ -14,6 +14,7 @@ interface ReservationCardProps {
   onEdit: (reservation: Reservation) => void;
   onDelete: (id: number) => void;
   isUpdating: boolean;
+  isHistoryView?: boolean; // Nouvelle prop pour la vue historique
 }
 
 const ReservationCard = ({
@@ -22,7 +23,8 @@ const ReservationCard = ({
   onStatusChange,
   onEdit,
   onDelete,
-  isUpdating
+  isUpdating,
+  isHistoryView = false
 }: ReservationCardProps) => {
   const getStatusClass = (status: string) => {
     switch (status) {
@@ -56,11 +58,12 @@ const ReservationCard = ({
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-200">
+    <Card className={`hover:shadow-lg transition-shadow duration-200 ${isHistoryView ? 'opacity-90' : ''}`}>
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg font-semibold text-gray-900">
             Réservation #{reservation.id}
+            {isHistoryView && <span className="text-sm font-normal text-gray-500 ml-2">(Passée)</span>}
           </CardTitle>
           <Badge className={getStatusClass(reservation.statut)}>
             {getStatusLabel(reservation.statut)}
@@ -105,54 +108,63 @@ const ReservationCard = ({
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="border-t pt-3 flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className="text-blue-600 border-blue-600 hover:bg-blue-50"
-            onClick={() => onEdit(reservation)}
-          >
-            <Edit className="h-4 w-4 mr-1" />
-            Modifier
-          </Button>
-          
-          {reservation.statut === 'en_attente' && (
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-green-600 border-green-600 hover:bg-green-50"
-                disabled={isUpdating}
-                onClick={() => onStatusChange(reservation.id, 'confirmee')}
-              >
-                <Check className="h-4 w-4 mr-1" />
-                Confirmer
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-red-600 border-red-600 hover:bg-red-50"
-                disabled={isUpdating}
-                onClick={() => onStatusChange(reservation.id, 'annulee')}
-              >
-                <X className="h-4 w-4 mr-1" />
-                Annuler
-              </Button>
-            </>
-          )}
-          
-          <Button
-            size="sm"
-            variant="outline"
-            className="text-red-600 border-red-600 hover:bg-red-50"
-            disabled={isUpdating}
-            onClick={() => onDelete(reservation.id)}
-          >
-            <Trash2 className="h-4 w-4 mr-1" />
-            Supprimer
-          </Button>
-        </div>
+        {/* Actions - Masquer pour la vue historique */}
+        {!isHistoryView && (
+          <div className="border-t pt-3 flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-blue-600 border-blue-600 hover:bg-blue-50"
+              onClick={() => onEdit(reservation)}
+            >
+              <Edit className="h-4 w-4 mr-1" />
+              Modifier
+            </Button>
+            
+            {reservation.statut === 'en_attente' && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-green-600 border-green-600 hover:bg-green-50"
+                  disabled={isUpdating}
+                  onClick={() => onStatusChange(reservation.id, 'confirmee')}
+                >
+                  <Check className="h-4 w-4 mr-1" />
+                  Confirmer
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-red-600 border-red-600 hover:bg-red-50"
+                  disabled={isUpdating}
+                  onClick={() => onStatusChange(reservation.id, 'annulee')}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Annuler
+                </Button>
+              </>
+            )}
+            
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-red-600 border-red-600 hover:bg-red-50"
+              disabled={isUpdating}
+              onClick={() => onDelete(reservation.id)}
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Supprimer
+            </Button>
+          </div>
+        )}
+
+        {/* Message pour la vue historique */}
+        {isHistoryView && (
+          <div className="border-t pt-3 text-center text-sm text-gray-500">
+            Réservation terminée
+          </div>
+        )}
       </CardContent>
     </Card>
   );
