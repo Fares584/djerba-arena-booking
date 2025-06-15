@@ -1,44 +1,36 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useMemo } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
-import { useUpdateAbonnement } from '@/hooks/useAbonnements';
+import { useUpdateAbonnement, useAbonnements } from '@/hooks/useAbonnements';
+import { useReservations } from '@/hooks/useReservations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import ReservationTypeSelector from '@/components/reservation/ReservationTypeSelector';
+import TerrainSelector from '@/components/TerrainSelector';
+import TimeSlotSelector from '@/components/TimeSlotSelector';
 import { Abonnement } from '@/lib/supabase';
 
-// Jours de la semaine
-const joursOptions = [
-  { value: 0, label: 'Dimanche' },
-  { value: 1, label: 'Lundi' },
-  { value: 2, label: 'Mardi' },
-  { value: 3, label: 'Mercredi' },
-  { value: 4, label: 'Jeudi' },
-  { value: 5, label: 'Vendredi' },
-  { value: 6, label: 'Samedi' },
-];
-
-// Créneaux horaires
-const timeSlots = [
-  '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', 
+const defaultTimeSlots = [
+  '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
   '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
 ];
 
-// Options de durée pour les terrains non-football
-const durationOptions = [
-  { value: '1', label: '1 heure' },
-  { value: '1.5', label: '1 heure 30 minutes' },
-  { value: '2', label: '2 heures' },
-  { value: '3', label: '3 heures' },
-];
-
-// Options de statut
-const statusOptions = [
-  { value: 'actif', label: 'Actif' },
-  { value: 'expire', label: 'Expiré' },
-  { value: 'annule', label: 'Annulé' },
-];
+const generateTimeSlotsForFoot = (startHour: number, startMinute: number, endHour: number, endMinute: number) => {
+  const slots: string[] = [];
+  let dt = new Date(2000, 0, 1, startHour, startMinute);
+  const endDt = new Date(2000, 0, 1, endHour, endMinute);
+  while (dt <= endDt) {
+    slots.push(
+      dt.getHours().toString().padStart(2, '0') +
+      ':' +
+      dt.getMinutes().toString().padStart(2, '0')
+    );
+    dt.setMinutes(dt.getMinutes() + 90);
+  }
+  return slots;
+};
 
 interface EditAbonnementFormProps {
   abonnement: Abonnement;
@@ -47,265 +39,263 @@ interface EditAbonnementFormProps {
 }
 
 const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementFormProps) => {
-  const [terrainId, setTerrainId] = useState<number>(abonnement.terrain_id || 0);
+  // Ajout state choix type
+  const [selectedType, setSelectedType] = useState<string>('');
+  const [selectedTerrainId, setSelectedTerrainId] = useState<number | null>(abonnement.terrain_id || null);
   const [dateDebut, setDateDebut] = useState(abonnement.date_debut);
   const [dateFin, setDateFin] = useState(abonnement.date_fin);
-  const [jourSemaine, setJourSemaine] = useState<number>(abonnement.jour_semaine || 0);
-  const [heureFixe, setHeureFixe] = useState(abonnement.heure_fixe || '');
-  const [dureeSeance, setDureeSeance] = useState(abonnement.duree_seance?.toString() || '1');
+  const [heure, setHeure] = useState(abonnement.heure_fixe || '');
   const [clientNom, setClientNom] = useState(abonnement.client_nom);
   const [clientEmail, setClientEmail] = useState(abonnement.client_email);
   const [clientTel, setClientTel] = useState(abonnement.client_tel);
-  const [statut, setStatut] = useState(abonnement.statut);
+  const [statut, setStatut] = useState<Abonnement['statut']>(abonnement.statut);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const { data: terrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
+  const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
   const updateAbonnement = useUpdateAbonnement();
+  const { data: reservations = [] } = useReservations();
+  const { data: abonnements = [] } = useAbonnements();
 
-  // Get selected terrain object
-  const selectedTerrain = terrains?.find(t => t.id === terrainId);
-
-  // Get effective duration - ALWAYS 1.5 for football
-  const getEffectiveDuration = (): string => {
-    if (selectedTerrain?.type === 'foot') {
-      return '1.5'; // Football always 1.5 hours
+  // Sélection automatique du type à partir du terrain_id au montage
+  useEffect(() => {
+    if (abonnement.terrain_id) {
+      const foundTerrain = allTerrains.find(t => t.id === abonnement.terrain_id);
+      if (foundTerrain) setSelectedType(foundTerrain.type);
     }
-    return dureeSeance;
+  }, [abonnement.terrain_id, allTerrains]);
+
+  // Filtrage terrains selon type
+  const filteredTerrains = selectedType
+    ? allTerrains.filter(t => t.type === selectedType)
+    : [];
+
+  useEffect(() => {
+    setSelectedTerrainId(null);
+    setHeure('');
+  }, [selectedType]);
+
+  // Trouver le terrain sélectionné
+  const selectedTerrain = allTerrains.find(t => t.id === selectedTerrainId);
+
+  // Déterminer s'il s'agit de foot à 6, 7 ou 8
+  const isFoot6 = selectedTerrain?.type === 'foot' && selectedTerrain.nom.includes('6');
+  const isFoot7or8 = selectedTerrain?.type === 'foot' && (selectedTerrain.nom.includes('7') || selectedTerrain.nom.includes('8'));
+
+  // Générer les créneaux horaires
+  const timeSlotsForSelectedTerrain = useMemo(() => {
+    if (!selectedTerrain) return [];
+    if (isFoot6) {
+      return generateTimeSlotsForFoot(9, 0, 22, 30);
+    }
+    if (isFoot7or8) {
+      return generateTimeSlotsForFoot(10, 0, 23, 30);
+    }
+    return defaultTimeSlots;
+  }, [selectedTerrain, isFoot6, isFoot7or8]);
+
+  // Vérifie si un créneau horaire est dispo ou non
+  const isTimeSlotAvailable = (time: string) => {
+    if (!selectedTerrainId || !time) return false;
+
+    const reservationConflict = reservations.some(
+      (res) =>
+        res.terrain_id === selectedTerrainId &&
+        res.heure === time &&
+        (
+          (!dateDebut || res.date >= dateDebut) &&
+          (!dateFin || res.date <= dateFin)
+        ) &&
+        res.statut !== 'annulee'
+    );
+
+    const dayInWeek = dateDebut ? new Date(dateDebut).getDay() : undefined;
+    const abonnementConflict = abonnements.some(
+      (abo) =>
+        abo.id !== abonnement.id && // ne pas se bloquer soi-même
+        abo.terrain_id === selectedTerrainId &&
+        abo.heure_fixe === time &&
+        abo.statut === 'actif' &&
+        (
+          (!dateDebut || !abo.date_fin || abo.date_fin >= dateDebut) &&
+          (!dateFin || !abo.date_debut || abo.date_debut <= dateFin)
+        )
+    );
+    return !reservationConflict && !abonnementConflict;
   };
 
-  // Update duration when terrain changes
-  useEffect(() => {
-    if (selectedTerrain?.type === 'foot') {
-      setDureeSeance('1.5');
-    }
-  }, [selectedTerrain]);
+  const isValid =
+    selectedType &&
+    selectedTerrainId &&
+    !!dateDebut &&
+    !!dateFin &&
+    !!heure &&
+    !!clientNom.trim() &&
+    !!clientTel.trim();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!terrainId || !dateDebut || !dateFin || jourSemaine === null || !heureFixe || !clientNom || !clientEmail || !clientTel) {
+    setFormError(null);
+
+    if (!isValid) {
+      setFormError('Merci de remplir correctement tous les champs obligatoires.');
+      import('sonner').then(({ toast }) => {
+        toast.error('Merci de remplir correctement tous les champs obligatoires.');
+      });
       return;
     }
 
-    const effectiveDuration = getEffectiveDuration();
-
-    updateAbonnement.mutate({
-      id: abonnement.id,
-      updates: {
-        terrain_id: terrainId,
-        date_debut: dateDebut,
-        date_fin: dateFin,
-        jour_semaine: jourSemaine,
-        heure_fixe: heureFixe,
-        duree_seance: parseFloat(effectiveDuration),
-        client_nom: clientNom,
-        client_email: clientEmail,
-        client_tel: clientTel,
-        statut: statut as 'actif' | 'expire' | 'annule'
+    updateAbonnement.mutate(
+      {
+        id: abonnement.id,
+        updates: {
+          terrain_id: selectedTerrainId!,
+          date_debut: dateDebut,
+          date_fin: dateFin,
+          heure_fixe: heure,
+          client_nom: clientNom.trim(),
+          client_email: clientEmail.trim(),
+          client_tel: clientTel.trim(),
+          statut: statut
+        }
+      },
+      {
+        onSuccess: () => {
+          setFormError(null);
+          onSuccess();
+        }
       }
-    }, {
-      onSuccess: () => {
-        onSuccess();
-      }
-    });
-  };
-
-  const handleStatusChange = (value: string) => {
-    setStatut(value as 'actif' | 'expire' | 'annule');
+    );
   };
 
   return (
-    <div className="max-h-[80vh] overflow-y-auto">
-      <form onSubmit={handleSubmit} className="space-y-4 p-1">
+    <form onSubmit={handleSubmit} className="space-y-6 py-4">
+      <h2 className="text-xl font-semibold mb-4">Modifier l'Abonnement</h2>
+      {formError && <div className="bg-red-100 text-red-700 rounded p-2 text-sm">{formError}</div>}
+
+      {/* Choix du type */}
+      <ReservationTypeSelector selectedType={selectedType} setSelectedType={setSelectedType} />
+
+      {/* Choix du terrain */}
+      {selectedType && (
         <div>
-          <Label htmlFor="terrain" className="text-sm">Terrain</Label>
-          <Select 
-            value={terrainId?.toString()} 
-            onValueChange={(value) => setTerrainId(parseInt(value))}
-            disabled={terrainsLoading}
-          >
-            <SelectTrigger className="h-9">
-              <SelectValue placeholder="Sélectionnez un terrain" />
-            </SelectTrigger>
-            <SelectContent>
-              {terrains?.map((terrain) => (
-                <SelectItem key={terrain.id} value={terrain.id.toString()}>
-                  {terrain.nom} - {terrain.type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label>Choisissez le terrain</Label>
+          <TerrainSelector
+            terrains={filteredTerrains}
+            selectedTerrainId={selectedTerrainId}
+            onTerrainSelect={setSelectedTerrainId}
+          />
         </div>
+      )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label htmlFor="dateDebut" className="text-sm">Date de début</Label>
-            <Input
-              id="dateDebut"
-              type="date"
-              value={dateDebut}
-              onChange={(e) => setDateDebut(e.target.value)}
-              required
-              className="h-9"
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="dateFin" className="text-sm">Date de fin</Label>
-            <Input
-              id="dateFin"
-              type="date"
-              value={dateFin}
-              onChange={(e) => setDateFin(e.target.value)}
-              required
-              className="h-9"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label htmlFor="jour" className="text-sm">Jour de la semaine</Label>
-            <Select 
-              value={jourSemaine?.toString()} 
-              onValueChange={(value) => setJourSemaine(parseInt(value))}
-            >
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Sélectionnez un jour" />
-              </SelectTrigger>
-              <SelectContent>
-                {joursOptions.map((jour) => (
-                  <SelectItem key={jour.value} value={jour.value.toString()}>
-                    {jour.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="heure" className="text-sm">Heure</Label>
-            <Select 
-              value={heureFixe} 
-              onValueChange={setHeureFixe}
-            >
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Sélectionnez une heure" />
-              </SelectTrigger>
-              <SelectContent>
-                {timeSlots.map((time) => (
-                  <SelectItem key={time} value={time}>
-                    {time}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
+      {/* Dates */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <Label htmlFor="duree" className="text-sm">Durée de séance</Label>
-          {selectedTerrain?.type === 'foot' ? (
-            <div className="w-full border rounded-md p-2 bg-gray-100 text-gray-700 text-sm flex items-center h-9">
-              1h30 (fixe pour football)
-            </div>
-          ) : (
-            <Select 
-              value={dureeSeance} 
-              onValueChange={setDureeSeance}
-            >
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Sélectionnez une durée" />
-              </SelectTrigger>
-              <SelectContent>
-                {durationOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+          <Label htmlFor="dateDebut">Date de début *</Label>
+          <Input
+            id="dateDebut"
+            type="date"
+            value={dateDebut}
+            onChange={e => setDateDebut(e.target.value)}
+            required
+          />
         </div>
-
         <div>
-          <Label htmlFor="statut" className="text-sm">Statut</Label>
-          <Select 
-            value={statut} 
-            onValueChange={handleStatusChange}
-          >
-            <SelectTrigger className="h-9">
-              <SelectValue placeholder="Sélectionnez un statut" />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="dateFin">Date de fin *</Label>
+          <Input
+            id="dateFin"
+            type="date"
+            value={dateFin}
+            onChange={e => setDateFin(e.target.value)}
+            required
+          />
         </div>
+      </div>
 
+      {/* Heure */}
+      {selectedTerrainId && (
         <div>
-          <Label htmlFor="clientNom" className="text-sm">Nom du client</Label>
+          <Label htmlFor="heure">Heure de la séance *</Label>
+          <TimeSlotSelector
+            timeSlots={timeSlotsForSelectedTerrain}
+            selectedTime={heure}
+            isTimeSlotAvailable={isTimeSlotAvailable}
+            onTimeSelect={setHeure}
+            loading={false}
+          />
+        </div>
+      )}
+
+      {/* Infos client */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+        <div>
+          <Label htmlFor="clientNom">Nom du client *</Label>
           <Input
             id="clientNom"
             type="text"
             value={clientNom}
-            onChange={(e) => setClientNom(e.target.value)}
+            onChange={e => setClientNom(e.target.value)}
             required
-            className="h-9"
           />
         </div>
-
         <div>
-          <Label htmlFor="clientEmail" className="text-sm">Email du client</Label>
-          <Input
-            id="clientEmail"
-            type="email"
-            value={clientEmail}
-            onChange={(e) => setClientEmail(e.target.value)}
-            required
-            className="h-9"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="clientTel" className="text-sm">Téléphone du client</Label>
+          <Label htmlFor="clientTel">Téléphone du client *</Label>
           <Input
             id="clientTel"
             type="tel"
             value={clientTel}
-            onChange={(e) => setClientTel(e.target.value)}
+            onChange={e => setClientTel(e.target.value)}
             required
-            className="h-9"
           />
         </div>
+      </div>
+      <div>
+        <Label htmlFor="clientEmail">Email du client</Label>
+        <Input
+          id="clientEmail"
+          type="email"
+          value={clientEmail}
+          onChange={e => setClientEmail(e.target.value)}
+        />
+      </div>
 
-        <div className="flex justify-end space-x-2 pt-4 border-t">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onCancel}
-            disabled={updateAbonnement.isPending}
-          >
-            Annuler
-          </Button>
-          <Button 
-            type="submit" 
-            disabled={updateAbonnement.isPending}
-            className="bg-sport-green hover:bg-sport-dark"
-          >
-            {updateAbonnement.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Modification...
-              </>
-            ) : 'Valider les modifications'}
-          </Button>
-        </div>
-      </form>
-    </div>
+      {/* Statut */}
+      <div>
+        <Label htmlFor="statut" className="text-sm">Statut</Label>
+        <select
+          id="statut"
+          value={statut}
+          onChange={e => setStatut(e.target.value as Abonnement['statut'])}
+          className="w-full border rounded-md p-2 h-9"
+        >
+          <option value="actif">Actif</option>
+          <option value="expire">Expiré</option>
+          <option value="annule">Annulé</option>
+        </select>
+      </div>
+
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onCancel}
+          disabled={updateAbonnement.isPending}
+        >
+          Annuler
+        </Button>
+        <Button
+          type="submit"
+          disabled={updateAbonnement.isPending || !isValid}
+          className="bg-sport-green hover:bg-sport-dark"
+        >
+          {updateAbonnement.isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Modification...
+            </>
+          ) : "Valider les modifications"}
+        </Button>
+      </div>
+    </form>
   );
 };
 
