@@ -154,21 +154,21 @@ const Reservation = () => {
     });
   };
 
-  // Calculate total price based on selected time and terrain
+  // Nouvel algorithme pour calculer le tarif heure par heure selon jour/nuit
   const calculateTotalPrice = (): number => {
     if (!selectedTerrain || !selectedTime) return 0;
-    
-    const duration = parseFloat(getEffectiveDuration());
-    
-    // For football terrains, use fixed pricing regardless of duration
-    if (selectedTerrain.type === 'foot') {
-      const globalNightStartTime = '19:00'; // Default night start time
-      return calculatePrice(selectedTerrain, selectedTime, globalNightStartTime);
+
+    const effectiveDuration = parseFloat(getEffectiveDuration());
+    const globalNightStartTime = '19:00'; // Peut être rendu dynamique avec un paramètre ou appSetting
+
+    let total = 0;
+    for (let i = 0; i < effectiveDuration; i++) {
+      // Pour chaque heure : calcule l'heure courante à partir de selectedTime et incrémentation
+      const startHour = parseInt(selectedTime.split(':')[0], 10) + i;
+      const timeString = `${startHour.toString().padStart(2, '0')}:00`;
+      total += calculatePrice(selectedTerrain, timeString, globalNightStartTime);
     }
-    
-    // For other terrains, calculate based on hourly rate × duration
-    const hourlyRate = selectedTerrain.prix; // Using day rate for simplicity in public form
-    return hourlyRate * duration;
+    return total;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
