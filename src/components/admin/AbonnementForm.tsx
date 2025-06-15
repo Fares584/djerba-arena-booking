@@ -56,7 +56,6 @@ interface AbonnementFormProps {
 const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const [selectedType, setSelectedType] = useState<string>('');
   const [selectedTerrainId, setSelectedTerrainId] = useState<number | null>(null);
-  const [montant, setMontant] = useState('');
   const [dateDebut, setDateDebut] = useState('');
   const [dateFin, setDateFin] = useState('');
   const [heure, setHeure] = useState('');
@@ -64,7 +63,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const [clientTel, setClientTel] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [selectedJourSemaine, setSelectedJourSemaine] = useState<number | null>(null);
-  // Ajouter ici la gestion du champ de durée
   const [dureeSeance, setDureeSeance] = useState<number>(1);
 
   // Récupération des terrains actifs
@@ -145,13 +143,10 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     }
   }, [selectedType]);
 
-  const prixNum = Number(montant);
+  // Retirer toute logique liée au montant/validation montant
   const isValid =
     selectedType &&
     selectedTerrainId &&
-    !!montant &&
-    !isNaN(prixNum) &&
-    prixNum > 0 &&
     !!dateDebut &&
     !!dateFin &&
     !!heure &&
@@ -214,7 +209,8 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         </div>
       )}
 
-      {/* Montant */}
+      {/* CHAMP montant SUPPRIMÉ */}
+      {/* 
       <div>
         <Label htmlFor="montant">Montant (DT) *</Label>
         <Input
@@ -228,6 +224,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
           placeholder="Montant en dinars"
         />
       </div>
+      */}
 
       {/* Dates */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -303,7 +300,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       {selectedTerrainId && (
         <div>
           <Label htmlFor="heure">Heure de la séance *</Label>
-          {/* Utilisation du composant TimeSlotSelector comme dans la réservation */}
           <TimeSlotSelector
             timeSlots={timeSlotsForSelectedTerrain}
             selectedTime={heure}
