@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -32,82 +33,6 @@ const durationOptions = [
   { value: '3', label: '3 heures' },
 ];
 
-const TimeSlotButton = ({
-  time,
-  selected,
-  disabled,
-  onClick,
-}: {
-  time: string;
-  selected: boolean;
-  disabled: boolean;
-  onClick: (time: string) => void;
-}) => (
-  <button
-    type="button"
-    onClick={() => !disabled && onClick(time)}
-    disabled={disabled}
-    className={[
-      "px-4 py-2 rounded font-medium border transition-colors w-full",
-      selected
-        ? "bg-sport-green text-white border-sport-green"
-        : disabled
-        ? "bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed"
-        : "bg-white text-gray-900 border-gray-300 hover:bg-sport-green/10 hover:border-sport-green",
-    ].join(" ")}
-  >
-    {time}
-    {disabled && (
-      <span className="ml-1 text-xs align-middle">(Occupé)</span>
-    )}
-  </button>
-);
-
-// Nouvel algorithme pour calculer le tarif heure par heure selon jour/nuit
-const calculateTotalPrice = (): number => {
-  if (!selectedTerrain || !selectedTime) return 0;
-
-  const effectiveDuration = parseFloat(getEffectiveDuration());
-  const globalNightStartTime = '19:00'; // Peut être rendu dynamique avec un paramètre ou appSetting
-
-  let total = 0;
-  for (let i = 0; i < effectiveDuration; i++) {
-    // Pour chaque heure : calcule l'heure courante à partir de selectedTime et incrémentation
-    const startHour = parseInt(selectedTime.split(':')[0], 10) + i;
-    const timeString = `${startHour.toString().padStart(2, '0')}:00`;
-    total += calculatePrice(selectedTerrain, timeString, globalNightStartTime);
-  }
-  return total;
-};
-
-// Nouvelle fonction pour générer les time slots pour foot à 7 ou 8 (10:00 -> 23:30 de 1h30 en 1h30)
-const generateTimeSlotsForFoot7or8 = () => {
-  const slots: string[] = [];
-  let hour = 10;
-  let minute = 0;
-  while (hour < 23 || (hour === 23 && minute === 0)) {
-    slots.push(`${hour.toString().padStart(2, '0')}:${minute === 0 ? '00' : '30'}`);
-    minute += 30;
-    if (minute === 60) {
-      minute = 0;
-      hour += 1;
-    }
-    hour += 0.5; // Avance de 1h30 (1h + 0.5h)
-    if (minute === 0) hour += 0; // pour chaque tour, on recalcule
-    else hour += 0; // rien de plus à faire
-    if (hour > 23 || (hour === 23 && minute > 30)) break;
-    // Recalcule l'heure pour ajouter +1h30 à chaque slot
-    // En fait, il suffit d'utiliser Date pour être hyper safe
-    const next = new Date(2000, 0, 1, hour, minute);
-    next.setMinutes(next.getMinutes() + 90);
-    hour = next.getHours();
-    minute = next.getMinutes();
-  }
-  // Stop à 23:30 maximum
-  if (!slots.includes("23:30") && (hour === 23 && minute === 30)) slots.push("23:30");
-  return slots;
-};
-
 const Reservation = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -140,6 +65,11 @@ const Reservation = () => {
   // Get selected terrain object
   const selectedTerrain = allTerrains?.find(t => t.id === selectedTerrainId);
 
+  // Helper: détermine si le terrain sélectionné est Foot à 7 ou Foot à 8
+  const isFoot7or8 = !!(selectedTerrain && selectedTerrain.type === 'foot' && 
+    (selectedTerrain.nom.includes('7') || selectedTerrain.nom.includes('8'))
+  );
+
   // Get effective duration - ALWAYS 1.5 for football
   const getEffectiveDuration = (): string => {
     if (selectedTerrain?.type === 'foot') {
@@ -147,6 +77,32 @@ const Reservation = () => {
     }
     return duration;
   };
+
+  // Nouvelle fonction pour générer les time slots pour foot à 7 ou 8 (10:00 -> 23:30 de 1h30 en 1h30)
+  const generateTimeSlotsForFoot7or8 = () => {
+    const slots: string[] = [];
+    let dt = new Date(2000, 0, 1, 10, 0); // Start at 10:00
+    const endDt = new Date(2000, 0, 1, 23, 30); // End at 23:30
+
+    while (dt <= endDt) {
+      slots.push(
+        dt.getHours().toString().padStart(2, '0') +
+          ':' +
+          dt.getMinutes().toString().padStart(2, '0')
+      );
+      dt.setMinutes(dt.getMinutes() + 90);
+    }
+    return slots;
+  };
+  
+  // Détermine dynamiquement les créneaux horaires selon le type de terrain sélectionné
+  const timeSlotsForSelectedTerrain = React.useMemo(() => {
+    if (isFoot7or8) {
+      return generateTimeSlotsForFoot7or8();
+    }
+    // Pour les autres terrains, on retourne les créneaux standards
+    return defaultTimeSlots;
+  }, [isFoot7or8]);
 
   // Initialize from URL params
   useEffect(() => {
@@ -199,29 +155,28 @@ const Reservation = () => {
     });
   };
 
-  // Détermine dynamiquement les créneaux horaires selon le type de terrain sélectionné
-  const timeSlotsForSelectedTerrain = React.useMemo(() => {
-    if (isFoot7or8) {
-      return generateTimeSlotsForFoot7or8();
-    }
-    // Pour les autres terrains, on retourne les créneaux standards
-    return defaultTimeSlots;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTerrain]);
-
-  // Nouvel algorithme pour calculer le tarif heure par heure selon jour/nuit
+  // Calcul du prix total avec gestion jour/nuit pour toute la durée
   const calculateTotalPrice = (): number => {
     if (!selectedTerrain || !selectedTime) return 0;
 
     const effectiveDuration = parseFloat(getEffectiveDuration());
-    const globalNightStartTime = '19:00'; // Peut être rendu dynamique avec un paramètre ou appSetting
+    const globalNightStartTime = '19:00'; // peut rester statique
 
     let total = 0;
+    let timeHour = parseInt(selectedTime.split(':')[0], 10);
+    let timeMinute = parseInt(selectedTime.split(':')[1], 10);
+
     for (let i = 0; i < effectiveDuration; i++) {
-      // Pour chaque heure : calcule l'heure courante à partir de selectedTime et incrémentation
-      const startHour = parseInt(selectedTime.split(':')[0], 10) + i;
-      const timeString = `${startHour.toString().padStart(2, '0')}:00`;
-      total += calculatePrice(selectedTerrain, timeString, globalNightStartTime);
+      const slotTime = 
+        timeHour.toString().padStart(2, '0') + ':' + 
+        timeMinute.toString().padStart(2, '0');
+      total += calculatePrice(selectedTerrain, slotTime, globalNightStartTime);
+
+      // Avance de 1h pour chaque unité d'heure supplémentaire (même pour foot, où c'est par 1.5)
+      let newDate = new Date(2000, 0, 1, timeHour, timeMinute);
+      newDate.setHours(newDate.getHours() + 1);
+      timeHour = newDate.getHours();
+      timeMinute = newDate.getMinutes();
     }
     return total;
   };
