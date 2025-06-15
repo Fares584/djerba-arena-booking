@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -7,16 +6,14 @@ import { useTerrains } from '@/hooks/useTerrains';
 
 const Fields = () => {
   const [selectedType, setSelectedType] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<boolean | 'all'>('all');
 
   // Fetch terrains from Supabase
   const { data: terrains, isLoading, error } = useTerrains();
 
-  // Apply client-side filters
+  // Appliquer seulement le filtre sur le type de terrain
   const filteredFields = terrains?.filter((field) => {
     const matchesType = selectedType === 'all' || field.type === selectedType;
-    const matchesStatus = selectedStatus === 'all' || field.actif === selectedStatus;
-    return matchesType && matchesStatus;
+    return matchesType;
   }) || [];
 
   return (
@@ -52,22 +49,6 @@ const Fields = () => {
                   <option value="foot">Football</option>
                   <option value="tennis">Tennis</option>
                   <option value="padel">Padel</option>
-                </select>
-              </div>
-              
-              <div className="w-full md:w-auto">
-                <label className="block text-sm font-medium text-gray-600 mb-2">Statut</label>
-                <select 
-                  className="w-full md:w-48 border rounded-md p-2"
-                  value={String(selectedStatus)}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setSelectedStatus(value === 'all' ? 'all' : value === 'true');
-                  }}
-                >
-                  <option value="all">Tous les statuts</option>
-                  <option value="true">Disponible</option>
-                  <option value="false">Non disponible</option>
                 </select>
               </div>
             </div>
