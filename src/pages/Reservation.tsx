@@ -253,6 +253,12 @@ const Reservation = () => {
     });
   };
 
+  // Quand l'utilisateur clique sur "OK", fermer la popup et rediriger vers l'accueil
+  const handleDialogOk = () => {
+    setShowSuccessDialog(false);
+    navigate('/');
+  };
+
   return (
     <>
       <Navbar />
