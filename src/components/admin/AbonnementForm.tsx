@@ -41,6 +41,13 @@ const weekDays = [
   { value: 6, label: 'Samedi' },
 ];
 
+// DUREES DISPONIBLES pour les séances d’abonnement (en heures)
+const dureeOptions = [
+  { value: 1, label: '1 heure' },
+  { value: 1.5, label: '1h30' },
+  { value: 2, label: '2 heures' },
+];
+
 interface AbonnementFormProps {
   onSuccess: () => void;
 }
@@ -56,6 +63,8 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const [clientTel, setClientTel] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [selectedJourSemaine, setSelectedJourSemaine] = useState<number | null>(null);
+  // Ajouter ici la gestion du champ de durée
+  const [dureeSeance, setDureeSeance] = useState<number>(1);
 
   // Récupération des terrains actifs
   const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
@@ -139,7 +148,8 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     !!heure &&
     selectedJourSemaine !== null &&
     !!clientNom.trim() &&
-    !!clientTel.trim();
+    !!clientTel.trim() &&
+    dureeSeance > 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,7 +170,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         date_fin: dateFin,
         jour_semaine: selectedJourSemaine,
         heure_fixe: heure,
-        duree_seance: undefined,
+        duree_seance: dureeSeance, // Correction ICI !
         client_nom: clientNom.trim(),
         client_email: '', // Toujours obligatoire dans le modèle, mais laissé vide
         client_tel: clientTel.trim(),
@@ -250,6 +260,22 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
           <option value="" disabled>Sélectionnez un jour</option>
           {weekDays.map(day => (
             <option key={day.value} value={day.value}>{day.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Durée de la séance */}
+      <div>
+        <Label htmlFor="dureeSeance">Durée de la séance *</Label>
+        <select
+          id="dureeSeance"
+          className="w-full border rounded-md p-2 h-9 mt-1"
+          value={dureeSeance}
+          onChange={e => setDureeSeance(Number(e.target.value))}
+          required
+        >
+          {dureeOptions.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
       </div>
