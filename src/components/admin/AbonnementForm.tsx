@@ -266,8 +266,8 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
             id="dateFin"
             type="date"
             value={dateFin}
-            readOnly
-            className="bg-gray-100"
+            onChange={(e) => setDateFin(e.target.value)}
+            required
           />
         </div>
       </div>
