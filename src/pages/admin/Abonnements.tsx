@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { useAbonnements, useDeleteAbonnement, useUpdateAbonnement } from '@/hooks/useAbonnements';
 import { useAbonnementExpiration } from '@/hooks/useAbonnementExpiration';
@@ -77,21 +76,15 @@ const Abonnements = () => {
     return terrain?.type ? terrain.type : '';
   };
 
-  // Calcul du chiffre d'affaires à partir des abonnements "actifs"
+  // Calcul du chiffre d'affaires à partir des abonnements "actifs" (somme des montants renseignés)
   const chiffreAffaires = useMemo(() => {
-    if (!abonnements || !terrains) return 0;
-    // Additionner le prix du terrain pour chaque abonnement actif attaché à un terrain
+    if (!abonnements) return 0;
     return abonnements
-      .filter(a => a.statut === 'actif' && !!a.terrain_id)
+      .filter(a => a.statut === 'actif' && a.montant !== undefined && a.montant !== null && !isNaN(Number(a.montant)))
       .reduce((total, abn) => {
-        const terrain = terrains.find(t => t.id === abn.terrain_id);
-        if (terrain && !isNaN(Number(terrain.prix))) {
-          // Distinguer la période ? Ici on additionne le prix de base du terrain par abonnement
-          return total + Number(terrain.prix);
-        }
-        return total;
+        return total + Number(abn.montant);
       }, 0);
-  }, [abonnements, terrains]);
+  }, [abonnements]);
 
   if (isLoading) {
     return (
