@@ -28,9 +28,7 @@ export const TimeSlotButton: React.FC<TimeSlotButtonProps> = ({
     ].join(" ")}
   >
     {time}
-    {disabled && (
-      <span className="ml-1 text-xs align-middle">(Occupé)</span>
-    )}
+    {/* Le texte "(Occupé)" a été supprimé ici */}
   </button>
 );
 
@@ -73,4 +71,3 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
 );
 
 export default TimeSlotSelector;
-
