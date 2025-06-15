@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
 import { useCreateAbonnement } from '@/hooks/useAbonnements';
@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
-import { format, addMonths } from 'date-fns';
+import { format, addMonths, addDays } from 'date-fns';
 import TerrainSelector from '@/components/TerrainSelector';
+import TimeSlotSelector from '@/components/TimeSlotSelector';
+import { useReservations } from '@/hooks/useReservations';
 
 // Types locaux pour les jours
 const joursOptions = [
@@ -21,18 +23,22 @@ const joursOptions = [
   { value: 6, label: 'Samedi' },
 ];
 
+// Créneaux horaires standards
+const timeSlots = [
+  '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
+];
+
 interface AbonnementFormProps {
   onSuccess: () => void;
 }
 
 const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
-  // Gestion du terrain sélectionné et des inputs du client
   const [selectedTerrainId, setSelectedTerrainId] = useState<number | null>(null);
   const [prix, setPrix] = useState('');
   const [dateDebut, setDateDebut] = useState('');
   const [dateFin, setDateFin] = useState('');
   const [jourSemaine, setJourSemaine] = useState<number | null>(null);
-  const [heureFixe, setHeureFixe] = useState('');
+  const [selectedHeure, setSelectedHeure] = useState<string>('');
   const [clientNom, setClientNom] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [clientTel, setClientTel] = useState('');
@@ -42,12 +48,26 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const { data: abonnementTypes = [], isLoading: typesLoading } = useAbonnementTypes({ actif: true });
   const createAbonnement = useCreateAbonnement();
 
-  // Trouver le terrain sélectionné pour choisir son type automatiquement
+  // Pour la récursivité, on charge toutes les réservations de ce terrain pour la période (mois) concernée
   const selectedTerrain = terrains.find(t => t.id === selectedTerrainId);
 
-  // Pour lier le terrain choisi au bon type d'abonnement mensuel :
-  // Chercher l'abonnementType dont le nom matche ce schéma :
-  // "Abonnement Mensuel FOOT", "Abonnement Mensuel TENNIS", "Abonnement Mensuel PADEL"
+  // Calcule la première date correspondante au jour de la semaine (répétition hebdomadaire)
+  function getRecurringDates(debut: string, fin: string, dayOfWeek: number): string[] {
+    if (!debut || !fin || dayOfWeek == null) return [];
+    let dates: string[] = [];
+    let current = new Date(debut);
+    // Avancer jusqu'au premier jour correspondant
+    while (current.getDay() !== dayOfWeek) {
+      current = addDays(current, 1);
+    }
+    while (current <= new Date(fin)) {
+      dates.push(format(current, 'yyyy-MM-dd'));
+      current = addDays(current, 7);
+    }
+    return dates;
+  }
+
+  // Trouver l'abonnementType mensuel correspondant au terrain choisi (foot, tennis, padel)
   let abonnementTypeId: number | null = null;
   if (selectedTerrain && abonnementTypes.length > 0) {
     const terrainType = selectedTerrain.type?.toLowerCase();
@@ -63,7 +83,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     abonnementTypeId = typeObj ? typeObj.id : null;
   }
 
-  // Calcule la date de fin (1 mois après la date de début)
+  // Calcul automatique de la date de fin (toujours 1 mois après)
   useEffect(() => {
     if (dateDebut) {
       const debut = new Date(dateDebut);
@@ -74,18 +94,34 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     }
   }, [dateDebut]);
 
-  // Force le format HH:mm, jamais AM/PM
-  function normalizeTime(input: string): string {
-    if (!input) return '';
-    if (/AM|PM/i.test(input)) {
-      const [time, ampm] = input.split(' ');
-      let [h, m] = time.split(':');
-      let hours = parseInt(h, 10);
-      if (/PM/i.test(ampm) && hours < 12) hours += 12;
-      if (/AM/i.test(ampm) && hours === 12) hours = 0;
-      return `${String(hours).padStart(2, '0')}:${m}`;
+  // Get toutes les réservations existantes sur ce terrain pour les jours (récurrence) qui nous intéressent
+  // On charge les réservations pour la période du mois
+  const recurringDates = useMemo(() => {
+    if (!dateDebut || !dateFin || jourSemaine == null) return [];
+    return getRecurringDates(dateDebut, dateFin, jourSemaine);
+  }, [dateDebut, dateFin, jourSemaine]);
+
+  // Filtre performant : on charge les réservations de ce terrain pendant la période du mois sélectionné
+  const { data: reservations = [] } = useReservations({
+    terrain_id: selectedTerrainId ?? undefined,
+    // On ne filtre pas par date pour tout avoir sur le mois et pouvoir checker la disponibilité pour chaque date
+  });
+
+  // Détermine si un créneau horaire est disponible pour TOUTES les occurrences de l'abonnement sur le mois
+  function isTimeSlotFullyAvailable(time: string): boolean {
+    if (!selectedTerrainId || !recurringDates.length) return true;
+    // Pour chaque date concernée, vérifier que ce créneau n'est PAS déjà réservé
+    for (const date of recurringDates) {
+      const overlap = reservations.find(
+        (r) =>
+          r.terrain_id === selectedTerrainId &&
+          r.date === date &&
+          r.heure === time &&
+          (r.statut === 'en_attente' || r.statut === 'confirmee')
+      );
+      if (overlap) return false;
     }
-    return input.length === 5 ? input : input.slice(0, 5);
+    return true;
   }
 
   // Création de l’abonnement
@@ -98,7 +134,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       !dateDebut ||
       !dateFin ||
       jourSemaine === null ||
-      !heureFixe ||
+      !selectedHeure ||
       !clientNom ||
       !clientEmail ||
       !clientTel
@@ -112,7 +148,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         date_debut: dateDebut,
         date_fin: dateFin,
         jour_semaine: jourSemaine,
-        heure_fixe: normalizeTime(heureFixe),
+        heure_fixe: selectedHeure, // Toujours format HH:mm
         duree_seance: 1,
         client_nom: clientNom,
         client_email: clientEmail,
@@ -201,15 +237,12 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         </div>
         <div>
           <Label htmlFor="heureFixe">Heure</Label>
-          <Input
-            id="heureFixe"
-            type="time"
-            value={heureFixe}
-            step="60"
-            inputMode="numeric"
-            onChange={(e) => setHeureFixe(e.target.value)}
-            required
-            lang="fr"
+          <TimeSlotSelector
+            timeSlots={timeSlots}
+            selectedTime={selectedHeure}
+            isTimeSlotAvailable={isTimeSlotFullyAvailable}
+            onTimeSelect={setSelectedHeure}
+            loading={false}
           />
         </div>
       </div>
