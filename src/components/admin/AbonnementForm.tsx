@@ -86,6 +86,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const [clientEmail, setClientEmail] = useState('');
   const [clientTel, setClientTel] = useState('');
   const [dureeSeance, setDureeSeance] = useState(1);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Récupérer tous les terrains et types d’abonnement actifs
   const { data: terrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
@@ -176,64 +177,56 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     selectedTerrain &&
     (selectedTerrain.type === 'tennis' || selectedTerrain.type === 'padel');
 
+  // Nouvelle logique de validation centralisée
+  const prixNum = Number(prix);
+  const jourSemaineNum = typeof jourSemaine === "string" ? parseInt(jourSemaine as any, 10) : jourSemaine;
+  const dureeSeanceNum = Number(dureeSeance);
+
+  const isValid =
+    !!abonnementTypeId &&
+    !!selectedTerrainId &&
+    !!prix &&
+    prixNum > 0 &&
+    !!dateDebut &&
+    !!dateFin &&
+    jourSemaineNum !== null && !isNaN(jourSemaineNum) &&
+    !!selectedHeure &&
+    !!clientNom.trim() &&
+    !!clientEmail.trim() &&
+    !!clientTel.trim() &&
+    (isTennisOrPadel ? dureeSeanceNum > 0 : true);
+
   // Création de l’abonnement
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Conversion-safe : parseInt et Number pour les valeurs éventuelles
-    const prixNum = Number(prix);
-    const jourSemaineNum = typeof jourSemaine === "string" ? parseInt(jourSemaine, 10) : jourSemaine;
-    const dureeSeanceNum = Number(dureeSeance);
-
-    // Vérifie que tous les champs sensibles sont bien remplis/valides
-    const isValid =
-      abonnementTypeId &&
-      selectedTerrainId &&
-      prixNum > 0 &&
-      dateDebut &&
-      dateFin &&
-      jourSemaineNum !== null && !isNaN(jourSemaineNum) &&
-      selectedHeure &&
-      clientNom.trim() &&
-      clientEmail.trim() &&
-      clientTel.trim() &&
-      (isTennisOrPadel ? dureeSeanceNum > 0 : true);
+    setFormError(null);
 
     if (!isValid) {
-      // Pour aider au débogage, log toutes les données du formulaire :
-      console.warn("Formulaire incomplet", {
-        abonnementTypeId,
-        selectedTerrainId,
-        prixNum,
-        dateDebut,
-        dateFin,
-        jourSemaineNum,
-        selectedHeure,
-        clientNom,
-        clientEmail,
-        clientTel,
-        dureeSeanceNum,
+      setFormError("Merci de remplir correctement tous les champs obligatoires.");
+      // Affichage d'un toast (avec la lib shadcn/sonner déjà dispo)
+      import('sonner').then(({ toast }) => {
+        toast.error("Merci de remplir correctement tous les champs du formulaire.");
       });
-      // Optionnel : Afficher un toast ou un message d'erreur ici si nécessaire
       return;
     }
 
     createAbonnement.mutate(
       {
-        abonnement_type_id: abonnementTypeId,
-        terrain_id: selectedTerrainId,
+        abonnement_type_id: abonnementTypeId!,
+        terrain_id: selectedTerrainId!,
         date_debut: dateDebut,
         date_fin: dateFin,
-        jour_semaine: jourSemaineNum,
-        heure_fixe: selectedHeure, // Toujours format HH:mm
-        duree_seance: isTennisOrPadel ? dureeSeanceNum : 1, // Utilise la durée choisie sinon 1h
-        client_nom: clientNom,
-        client_email: clientEmail,
-        client_tel: clientTel,
+        jour_semaine: jourSemaineNum!,
+        heure_fixe: selectedHeure,
+        duree_seance: isTennisOrPadel ? dureeSeanceNum : 1,
+        client_nom: clientNom.trim(),
+        client_email: clientEmail.trim(),
+        client_tel: clientTel.trim(),
         statut: 'actif',
       },
       {
         onSuccess: () => {
+          setFormError(null);
           onSuccess();
         },
       }
@@ -243,6 +236,11 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <h2 className="text-xl font-semibold mb-2">Ajouter un Abonnement Mensuel</h2>
+      
+      {formError && (
+        <div className="bg-red-100 text-red-700 rounded p-2 text-sm">{formError}</div>
+      )}
+
       <div>
         <Label>Choisissez votre terrain</Label>
         {terrainsLoading ? (
@@ -378,7 +376,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       <div className="flex justify-end space-x-2 pt-4">
         <Button
           type="submit"
-          disabled={createAbonnement.isPending || typesLoading}
+          disabled={createAbonnement.isPending || !isValid || typesLoading}
           className="bg-sport-green hover:bg-sport-dark"
         >
           {createAbonnement.isPending ? (
