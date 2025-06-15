@@ -41,7 +41,7 @@ const TerrainCard = ({
             <img
               src={terrain.image_url}
               alt={terrain.nom}
-              className="w-full h-full object-cover rounded-t-lg"
+              className="w-full h-full object-contain rounded-t-lg"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';

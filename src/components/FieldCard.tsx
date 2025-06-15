@@ -91,7 +91,7 @@ const FieldCard: React.FC<FieldCardProps> = ({ field }) => {
         <img 
           src={field.imageUrl} 
           alt={field.name} 
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
         />
         <div className={`absolute top-4 right-4 ${getStatusColor(field.status)} px-3 py-1 rounded-full text-xs font-semibold`}>
           {getStatusLabel(field.status)}
