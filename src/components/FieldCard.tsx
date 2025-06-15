@@ -1,6 +1,6 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 
 export type FieldType = 'foot' | 'tennis' | 'padel';
 export type FieldStatus = 'available' | 'reserved' | 'pending';
@@ -20,6 +20,8 @@ interface FieldCardProps {
 }
 
 const FieldCard: React.FC<FieldCardProps> = ({ field }) => {
+  const [open, setOpen] = useState(false);
+
   const getStatusColor = (status: FieldStatus) => {
     switch (status) {
       case 'available':
@@ -87,16 +89,34 @@ const FieldCard: React.FC<FieldCardProps> = ({ field }) => {
 
   return (
     <div className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow flex flex-col">
-      <div className="relative aspect-[16/9] w-full">
-        <img 
-          src={field.imageUrl}
-          alt={field.name}
-          className="w-full h-full object-cover"
-        />
-        <div className={`absolute top-4 right-4 ${getStatusColor(field.status)} px-3 py-1 rounded-full text-xs font-semibold`}>
-          {getStatusLabel(field.status)}
-        </div>
-      </div>
+      {/* Photo cliquable -> ouvre un Dialog */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <div className="relative aspect-[16/9] w-full cursor-zoom-in">
+            <img
+              src={field.imageUrl}
+              alt={field.name}
+              className="w-full h-full object-cover"
+              onClick={() => setOpen(true)}
+              draggable={false}
+              style={{ userSelect: 'none' }}
+            />
+            <div className={`absolute top-4 right-4 ${getStatusColor(field.status)} px-3 py-1 rounded-full text-xs font-semibold`}>
+              {getStatusLabel(field.status)}
+            </div>
+          </div>
+        </DialogTrigger>
+        <DialogContent className="max-w-2xl bg-transparent border-none shadow-none p-0 flex items-center justify-center">
+          <img
+            src={field.imageUrl}
+            alt={field.name}
+            className="w-full max-w-3xl max-h-[80vh] object-contain rounded-lg bg-black"
+            draggable={false}
+            style={{ background: 'black' }}
+          />
+        </DialogContent>
+      </Dialog>
+      {/* ... keep existing code (le reste de la carte/infos/bouton réserver) */}
       <div className="p-5 flex flex-col flex-1">
         <div className="flex items-center gap-2 mb-2">
           <div className="text-sport-green">
