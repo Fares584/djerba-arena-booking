@@ -1,6 +1,7 @@
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { ParkingMeter } from 'lucide-react';
 
 const About = () => {
   return (
@@ -152,6 +153,21 @@ const About = () => {
                 <li>• Toutes tailles disponibles</li>
                 <li>• Matériel désinfecté après chaque utilisation</li>
                 <li>• Facilité de location sur place</li>
+              </ul>
+            </div>
+            {/* Facility 7: Parking sécurisé */}
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="mb-4 flex items-center justify-center">
+                <ParkingMeter className="h-12 w-12 text-sport-green" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">Parking sécurisé</h3>
+              <p className="text-gray-700 mb-4">
+                Garez votre véhicule en toute sérénité grâce à notre parking sécurisé, réservé à notre clientèle.
+              </p>
+              <ul className="text-gray-700 space-y-1">
+                <li>• Vidéosurveillance et accès contrôlé</li>
+                <li>• Accès facile aux terrains</li>
+                <li>• Parking éclairé la nuit</li>
               </ul>
             </div>
           </div>
