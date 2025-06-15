@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,30 +32,28 @@ const TerrainCard = ({
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-200">
+    <Card className="hover:shadow-lg transition-shadow duration-200 flex flex-col">
       {/* Terrain Image */}
-      <div className="relative">
-        <AspectRatio ratio={16 / 9} className="bg-muted">
-          {terrain.image_url ? (
-            <img
-              src={terrain.image_url}
-              alt={terrain.nom}
-              className="w-full h-full object-contain rounded-t-lg"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-                const fallback = target.nextElementSibling as HTMLElement;
-                if (fallback) fallback.style.display = 'flex';
-              }}
-            />
-          ) : null}
-          <div 
-            className={`w-full h-full ${terrain.image_url ? 'hidden' : 'flex'} items-center justify-center bg-gray-100 rounded-t-lg`}
-            style={{ display: terrain.image_url ? 'none' : 'flex' }}
-          >
-            <Image className="h-12 w-12 text-gray-400" />
-          </div>
-        </AspectRatio>
+      <div className="relative aspect-[16/9] w-full">
+        {terrain.image_url ? (
+          <img
+            src={terrain.image_url}
+            alt={terrain.nom}
+            className="w-full h-full object-cover rounded-t-lg"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              const fallback = target.nextElementSibling as HTMLElement;
+              if (fallback) fallback.style.display = 'flex';
+            }}
+          />
+        ) : null}
+        <div 
+          className={`w-full h-full absolute inset-0 ${terrain.image_url ? 'hidden' : 'flex'} items-center justify-center bg-gray-100 rounded-t-lg`}
+          style={{ display: terrain.image_url ? 'none' : 'flex' }}
+        >
+          <Image className="h-12 w-12 text-gray-400" />
+        </div>
       </div>
 
       <CardHeader className="pb-3">
