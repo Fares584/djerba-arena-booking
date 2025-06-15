@@ -415,11 +415,11 @@ const Reservation = () => {
             )}
 
             {/* Submit Button */}
-            <div className="flex justify-end">
+            <div className="mt-8 flex flex-col sm:flex-row sm:justify-end">
               <Button
                 type="submit"
                 disabled={createReservation.isPending || !selectedTerrainId}
-                className="bg-sport-green hover:bg-sport-dark text-white px-8 py-3 text-lg"
+                className="w-full sm:w-auto bg-sport-green hover:bg-sport-dark text-white px-8 py-3 text-lg"
               >
                 {createReservation.isPending ? (
                   <>
