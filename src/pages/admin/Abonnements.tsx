@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useMemo } from 'react';
 import { useAbonnements, useDeleteAbonnement, useUpdateAbonnement } from '@/hooks/useAbonnements';
 import { useAbonnementExpiration } from '@/hooks/useAbonnementExpiration';
 // import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
@@ -76,6 +77,22 @@ const Abonnements = () => {
     return terrain?.type ? terrain.type : '';
   };
 
+  // Calcul du chiffre d'affaires à partir des abonnements "actifs"
+  const chiffreAffaires = useMemo(() => {
+    if (!abonnements || !terrains) return 0;
+    // Additionner le prix du terrain pour chaque abonnement actif attaché à un terrain
+    return abonnements
+      .filter(a => a.statut === 'actif' && !!a.terrain_id)
+      .reduce((total, abn) => {
+        const terrain = terrains.find(t => t.id === abn.terrain_id);
+        if (terrain && !isNaN(Number(terrain.prix))) {
+          // Distinguer la période ? Ici on additionne le prix de base du terrain par abonnement
+          return total + Number(terrain.prix);
+        }
+        return total;
+      }, 0);
+  }, [abonnements, terrains]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -135,8 +152,7 @@ const Abonnements = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Chiffre d'affaires</p>
               <p className="text-2xl font-bold">
-                {/* Comme il n'y a pas de montant, on affiche toujours 0 DT */}
-                0 DT
+                {chiffreAffaires.toLocaleString('fr-TN', { style: 'currency', currency: 'TND', minimumFractionDigits: 0 })}
               </p>
             </div>
           </div>
