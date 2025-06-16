@@ -24,7 +24,7 @@ export const useTerrains = (options: UseTerrainsOptions = {}) => {
       return data as Terrain[];
     },
     staleTime: 0, // Toujours considérer les données comme périmées
-    gcTime: 1000 * 60 * 5, // Garder en cache 5 minutes (anciennement cacheTime)
+    gcTime: 0, // Ne pas garder en cache du tout pour forcer la récupération
   });
 };
 
@@ -34,5 +34,6 @@ export const useInvalidateTerrains = () => {
   
   return () => {
     queryClient.invalidateQueries({ queryKey: ['terrains'] });
+    queryClient.removeQueries({ queryKey: ['terrains'] }); // Supprimer complètement le cache
   };
 };
