@@ -8,7 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Phone } from "lucide-react";
 
 interface ReservationSuccessDialogProps {
   open: boolean;
@@ -20,23 +20,49 @@ const ReservationSuccessDialog: React.FC<ReservationSuccessDialogProps> = ({
   onOk,
 }) => (
   <Dialog open={open}>
-    <DialogContent>
+    <DialogContent className="max-w-md">
       <DialogHeader className="mb-2">
         <CheckCircle2
-          className="text-sport-green w-10 h-10 mx-auto mb-3"
+          className="text-sport-green w-12 h-12 mx-auto mb-3"
           strokeWidth={1.5}
         />
-        <DialogTitle className="text-center">
-          Réservation enregistrée !
+        <DialogTitle className="text-center text-xl">
+          Réservation Validée !
         </DialogTitle>
       </DialogHeader>
-      <div className="text-center mb-4 text-base text-gray-800">
-        Merci pour votre réservation.<br />
-        <b>Confirmez-la via l’email reçu sous 15 minutes,</b> sinon votre créneau sera libéré et la réservation annulée.
+      <div className="text-center space-y-4 text-gray-800">
+        <p className="text-lg font-semibold text-sport-green">
+          ✅ Votre réservation a été confirmée avec succès !
+        </p>
+        
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <div className="flex items-start space-x-2">
+            <Phone className="text-orange-600 w-5 h-5 mt-0.5 flex-shrink-0" />
+            <div className="text-left">
+              <p className="font-semibold text-orange-800 mb-2">
+                Important - Annulation :
+              </p>
+              <p className="text-sm text-orange-700">
+                En cas d'annulation, veuillez nous contacter <strong>au moins 48h à l'avance</strong> au :
+              </p>
+              <p className="text-lg font-bold text-orange-800 mt-1">
+                📞 29 612 809
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <p className="text-sm text-gray-600">
+          Merci de votre confiance ! Nous vous attendons pour votre séance.
+        </p>
       </div>
       <DialogFooter>
-        <Button className="mx-auto min-w-[120px]" onClick={onOk} autoFocus>
-          OK
+        <Button 
+          className="mx-auto min-w-[120px] bg-sport-green hover:bg-sport-dark" 
+          onClick={onOk} 
+          autoFocus
+        >
+          Parfait !
         </Button>
       </DialogFooter>
     </DialogContent>
