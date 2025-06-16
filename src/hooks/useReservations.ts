@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 export function useReservations(filters?: { 
   terrain_id?: number; 
@@ -104,6 +105,7 @@ export function useReservationsHistory(filters?: {
 
 export function useCreateReservation(options?: { onSuccess?: () => void }) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   return useMutation({
     mutationFn: async (newReservation: Omit<Reservation, 'id' | 'created_at' | 'updated_at'>) => {
@@ -138,82 +140,10 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
       }
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
       queryClient.invalidateQueries({ queryKey: ['reservations-history'] });
-      toast.success("Réservation créée avec succès");
     },
     onError: (error) => {
       toast.error("Erreur lors de la création de la réservation");
       console.error("Reservation creation error:", error);
-    },
-  });
-}
-
-export function useUpdateReservationStatus() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: 'confirmee' | 'annulee' }) => {
-      console.log('Updating reservation status:', { id, status });
-      
-      const { data, error } = await supabase
-        .from('reservations')
-        .update({ statut: status })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error updating reservation status:', error);
-        throw error;
-      }
-
-      console.log('Reservation status updated successfully:', data);
-      return data;
-    },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['reservations'] });
-      queryClient.invalidateQueries({ queryKey: ['reservations-history'] });
-      
-      const message = variables.status === 'confirmee' 
-        ? 'Réservation confirmée avec succès' 
-        : 'Réservation annulée avec succès';
-      
-      toast.success(message);
-    },
-    onError: (error) => {
-      console.error('Error in updateReservationStatus mutation:', error);
-      toast.error('Erreur lors de la mise à jour du statut');
-    },
-  });
-}
-
-export function useDeleteReservation() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: number) => {
-      console.log('Deleting reservation:', id);
-      
-      const { error } = await supabase
-        .from('reservations')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error('Error deleting reservation:', error);
-        throw error;
-      }
-
-      console.log('Reservation deleted successfully');
-      return id;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reservations'] });
-      queryClient.invalidateQueries({ queryKey: ['reservations-history'] });
-      toast.success('Réservation supprimée avec succès');
-    },
-    onError: (error) => {
-      console.error('Error in deleteReservation mutation:', error);
-      toast.error('Erreur lors de la suppression de la réservation');
     },
   });
 }
