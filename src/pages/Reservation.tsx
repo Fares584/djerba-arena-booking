@@ -250,7 +250,7 @@ const Reservation = () => {
 
     const effectiveDuration = parseFloat(getEffectiveDuration());
 
-    // Créer la réservation confirmée immédiatement (SUPPRESSION DE remarque!)
+    // Créer la réservation en attente (retour au système original)
     createReservation.mutate({
       nom_client: customerName,
       tel: customerPhone,
@@ -259,8 +259,7 @@ const Reservation = () => {
       date: selectedDate,
       heure: selectedTime,
       duree: effectiveDuration,
-      statut: "confirmee",
-      // remarque: remarks || null,  // suppression de la remarque ici
+      statut: "en_attente", // Retour au statut en attente
     });
   };
 

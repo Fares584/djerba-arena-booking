@@ -123,12 +123,12 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
   return useMutation({
     mutationFn: async (newReservation: Omit<Reservation, 'id' | 'created_at' | 'updated_at'>) => {
       try {
-        // Création directe avec statut "confirmee"
+        // Créer avec statut "en_attente" qui nécessite confirmation admin
         const { data, error } = await supabase
           .from('reservations')
           .insert({
             ...newReservation,
-            statut: 'confirmee' // Immédiatement confirmée !
+            statut: 'en_attente' // Retour au système d'attente
           })
           .select(`
             *, 
