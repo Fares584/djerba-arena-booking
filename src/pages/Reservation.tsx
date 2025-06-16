@@ -52,20 +52,13 @@ const Reservation = () => {
   const [customerEmail, setCustomerEmail] = useState('');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
-  // Hooks avec données toujours fraîches - force refresh
-  const { data: allTerrains, isLoading: terrainsLoading, refetch: refetchTerrains } = useTerrains({ actif: true });
+  // -------- 1. Declare hooks first, so allTerrains exists! -----------
+  const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
   const createReservation = useCreateReservation({
     onSuccess: () => {
       setShowSuccessDialog(true);
     },
   });
-
-  // Force refresh terrain data whenever selectedTerrainId changes
-  useEffect(() => {
-    if (selectedTerrainId) {
-      refetchTerrains();
-    }
-  }, [selectedTerrainId, refetchTerrains]);
 
   // ------ Gestion chaînée de la sélection initiale du terrain ----------
   const [urlFieldId, setUrlFieldId] = useState<number | null>(null);
@@ -146,14 +139,14 @@ const Reservation = () => {
     if (!selectedTerrain || !selectedTime) return 0;
 
     const effectiveDuration = parseFloat(getEffectiveDuration());
-    const globalNightStartTime = '19:00';
+    const globalNightStartTime = '19:00'; // peut rester statique
 
     // Pour les terrains de football : tarif fixe pour 1h30, pas de calcul par heure
     if (selectedTerrain.type === 'foot') {
       return calculatePrice(selectedTerrain, selectedTime, globalNightStartTime);
     }
 
-    // Pour les autres terrains (tennis, padel) : calcul par heure avec les prix actuels
+    // Pour les autres terrains (tennis, padel) : calcul par heure
     let total = 0;
     let timeHour = parseInt(selectedTime.split(':')[0], 10);
     let timeMinute = parseInt(selectedTime.split(':')[1], 10);
@@ -178,11 +171,7 @@ const Reservation = () => {
     selectedType === '' || terrain.type === selectedType
   ) || [];
 
-  // Get the most up-to-date terrain data
-  const selectedTerrain = React.useMemo(() => {
-    if (!allTerrains || !selectedTerrainId) return null;
-    return allTerrains.find(t => t.id === selectedTerrainId);
-  }, [allTerrains, selectedTerrainId]);
+  const selectedTerrain = allTerrains?.find(t => t.id === selectedTerrainId);
 
   // Helper: détermine si le terrain sélectionné est Foot à 6, 7 ou 8
   const isFoot6 = !!(selectedTerrain && selectedTerrain.type === 'foot' && selectedTerrain.nom.includes('6'));
@@ -356,16 +345,10 @@ const Reservation = () => {
               customerEmail={customerEmail}
               setCustomerEmail={setCustomerEmail}
             />
-            {/* Price Summary - Force complete refresh with terrain data */}
+            {/* Price Summary */}
             {selectedTerrain && selectedTime && (
               <ReservationSummary
-                key={`${selectedTerrain.id}-${selectedTerrain.prix}-${selectedTerrain.prix_nuit}-${Date.now()}`}
-                terrain={{
-                  nom: selectedTerrain.nom,
-                  type: selectedTerrain.type,
-                  prix: selectedTerrain.prix,
-                  prix_nuit: selectedTerrain.prix_nuit
-                }}
+                terrain={selectedTerrain}
                 selectedDate={selectedDate}
                 selectedTime={selectedTime}
                 duration={getEffectiveDuration()}

@@ -1,39 +1,69 @@
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Terrain } from '@/lib/supabase';
+import { Terrain } from '@/lib/supabase';
+import { toast } from 'sonner';
 
-interface UseTerrainsOptions {
-  actif?: boolean;
+export function useTerrains(filters?: { type?: string; actif?: boolean }) {
+  return useQuery({
+    queryKey: ['terrains', filters],
+    queryFn: async () => {
+      try {
+        console.log('Fetching terrains with filters:', filters);
+        let query = supabase.from('terrains').select('*');
+        
+        if (filters?.type && filters.type !== 'all') {
+          query = query.eq('type', filters.type);
+        }
+        
+        if (filters?.actif !== undefined) {
+          query = query.eq('actif', filters.actif);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error("Error fetching terrains:", error);
+          throw error;
+        }
+        
+        console.log('Terrains fetched successfully:', data);
+        return data as Terrain[];
+      } catch (error) {
+        console.error("Error in useTerrains hook:", error);
+        toast.error("Erreur lors du chargement des terrains");
+        throw error;
+      }
+    },
+    retry: 1,
+  });
 }
 
-export const useTerrains = (options: UseTerrainsOptions = {}) => {
+export function useTerrain(id?: number) {
   return useQuery({
-    queryKey: ['terrains', options],
+    queryKey: ['terrain', id],
     queryFn: async () => {
-      let query = supabase.from('terrains').select('*');
+      if (!id) return null;
       
-      if (options.actif !== undefined) {
-        query = query.eq('actif', options.actif);
+      try {
+        const { data, error } = await supabase
+          .from('terrains')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (error) {
+          console.error("Error fetching terrain:", error);
+          throw error;
+        }
+        
+        return data as Terrain;
+      } catch (error) {
+        console.error("Error in useTerrain hook:", error);
+        toast.error("Erreur lors du chargement du terrain");
+        throw error;
       }
-      
-      const { data, error } = await query.order('nom');
-      
-      if (error) throw error;
-      
-      return data as Terrain[];
     },
-    staleTime: 0, // Toujours considérer les données comme périmées
-    gcTime: 0, // Ne pas garder en cache du tout pour forcer la récupération
+    enabled: !!id,
   });
-};
-
-// Hook pour invalider le cache des terrains
-export const useInvalidateTerrains = () => {
-  const queryClient = useQueryClient();
-  
-  return () => {
-    queryClient.invalidateQueries({ queryKey: ['terrains'] });
-    queryClient.removeQueries({ queryKey: ['terrains'] }); // Supprimer complètement le cache
-  };
-};
+}
