@@ -24,7 +24,7 @@ export const useTerrains = (options: UseTerrainsOptions = {}) => {
       return data as Terrain[];
     },
     staleTime: 0, // Toujours considérer les données comme périmées
-    cacheTime: 1000 * 60 * 5, // Garder en cache 5 minutes
+    gcTime: 1000 * 60 * 5, // Garder en cache 5 minutes (anciennement cacheTime)
   });
 };
 
