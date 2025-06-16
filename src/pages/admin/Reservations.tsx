@@ -1,13 +1,11 @@
 
 import { useState } from 'react';
-import { useReservations } from '@/hooks/useReservations';
+import { useReservations, useUpdateReservationStatus, useDeleteReservation } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Loader2, Plus, Calendar, Search } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
 import ReservationForm from '@/components/admin/ReservationForm';
 import EditReservationForm from '@/components/admin/EditReservationForm';
@@ -17,36 +15,17 @@ const Reservations = () => {
   // Afficher toutes les réservations (en_attente, confirmée, etc.) sauf abonnements
   const { data: reservations, isLoading, refetch } = useReservations({ excludeSubscriptions: true });
   const { data: terrains } = useTerrains();
+  const updateStatusMutation = useUpdateReservationStatus();
+  const deleteReservationMutation = useDeleteReservation();
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
   const handleStatusChange = async (id: number, newStatus: 'confirmee' | 'annulee') => {
-    setIsUpdating(true);
-    
-    try {
-      const { error } = await supabase
-        .from('reservations')
-        .update({ statut: newStatus })
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      toast.success(
-        newStatus === 'confirmee'
-          ? 'Réservation confirmée avec succès'
-          : 'Réservation annulée avec succès'
-      );
-      
-      refetch();
-    } catch (error) {
-      console.error('Error updating reservation status:', error);
-      toast.error('Erreur lors de la mise à jour du statut');
-    } finally {
-      setIsUpdating(false);
-    }
+    console.log('Handling status change:', { id, newStatus });
+    updateStatusMutation.mutate({ id, status: newStatus });
   };
 
   const handleEdit = (reservation: Reservation) => {
@@ -61,25 +40,8 @@ const Reservations = () => {
   };
 
   const handleDelete = async (id: number) => {
-    setIsUpdating(true);
-    
-    try {
-      const { error } = await supabase
-        .from('reservations')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      toast.success('Réservation supprimée avec succès');
-      
-      refetch();
-    } catch (error) {
-      console.error('Error deleting reservation:', error);
-      toast.error('Erreur lors de la suppression de la réservation');
-    } finally {
-      setIsUpdating(false);
-    }
+    console.log('Handling delete:', id);
+    deleteReservationMutation.mutate(id);
   };
 
   const getTerrainName = (terrainId: number) => {
@@ -104,6 +66,8 @@ const Reservations = () => {
     const dateB = new Date(b.created_at || 0);
     return dateB.getTime() - dateA.getTime();
   });
+
+  const isUpdating = updateStatusMutation.isPending || deleteReservationMutation.isPending;
 
   if (isLoading) {
     return (
