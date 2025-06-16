@@ -52,7 +52,7 @@ const Reservation = () => {
   const [customerEmail, setCustomerEmail] = useState('');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
-  // -------- 1. Declare hooks first, so allTerrains exists! -----------
+  // Hooks avec données toujours fraîches
   const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
   const createReservation = useCreateReservation({
     onSuccess: () => {
@@ -171,7 +171,10 @@ const Reservation = () => {
     selectedType === '' || terrain.type === selectedType
   ) || [];
 
-  const selectedTerrain = allTerrains?.find(t => t.id === selectedTerrainId);
+  // Forcer la re-récupération des données terrain quand selectedTerrainId change
+  const selectedTerrain = React.useMemo(() => {
+    return allTerrains?.find(t => t.id === selectedTerrainId);
+  }, [allTerrains, selectedTerrainId]);
 
   // Helper: détermine si le terrain sélectionné est Foot à 6, 7 ou 8
   const isFoot6 = !!(selectedTerrain && selectedTerrain.type === 'foot' && selectedTerrain.nom.includes('6'));
@@ -345,9 +348,10 @@ const Reservation = () => {
               customerEmail={customerEmail}
               setCustomerEmail={setCustomerEmail}
             />
-            {/* Price Summary */}
+            {/* Price Summary - Force refresh with key */}
             {selectedTerrain && selectedTime && (
               <ReservationSummary
+                key={`${selectedTerrain.id}-${selectedTerrain.prix}-${selectedTerrain.prix_nuit}`}
                 terrain={selectedTerrain}
                 selectedDate={selectedDate}
                 selectedTime={selectedTime}
