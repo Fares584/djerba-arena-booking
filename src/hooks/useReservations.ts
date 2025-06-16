@@ -5,19 +5,6 @@ import { Reservation } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
-function generateToken(length = 48) {
-  // crypto for browsers; fallback if not available
-  if ('crypto' in window) {
-    return Array.from(window.crypto.getRandomValues(new Uint8Array(length)))
-      .map(x => ('00' + x.toString(16)).slice(-2)).join('');
-  } else {
-    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let res = "";
-    for (let i = 0; i < length; ++i) res += chars.charAt(Math.floor(Math.random() * chars.length));
-    return res;
-  }
-}
-
 export function useReservations(filters?: { 
   terrain_id?: number; 
   date?: string;
@@ -128,7 +115,7 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
           .from('reservations')
           .insert({
             ...newReservation,
-            statut: 'en_attente' // Retour au système d'attente
+            statut: 'en_attente'
           })
           .select(`
             *, 
