@@ -14,11 +14,11 @@ serve(async (req: Request) => {
   }
 
   try {
-    console.log('Fonction send-reservation-email appelée');
+    console.log('🚀 Fonction send-reservation-email appelée');
     
     const { reservation_id, email, nom_client, terrain_nom, date, heure, duree, confirmation_token } = await req.json();
 
-    console.log('Données reçues:', {
+    console.log('📨 Données reçues:', {
       reservation_id,
       email,
       nom_client,
@@ -32,24 +32,21 @@ serve(async (req: Request) => {
     // Vérifier que la clé API Resend est configurée
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     if (!resendApiKey) {
-      console.error('RESEND_API_KEY non configurée');
+      console.error('❌ RESEND_API_KEY non configurée');
       throw new Error('Configuration Resend manquante');
     }
 
-    console.log('Initialisation de Resend...');
+    console.log('✅ Initialisation de Resend...');
     const resend = new Resend(resendApiKey);
 
     // URL de confirmation (utilisation du domaine Lovable)
     const confirmationUrl = `https://gentle-pony-e6a7e4.lovableproject.com/confirm-reservation?token=${confirmation_token}`;
-    console.log('URL de confirmation générée:', confirmationUrl);
+    console.log('🔗 URL de confirmation générée:', confirmationUrl);
 
-    // Logo du site
-    const logoUrl = "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=200&h=80&fit=crop&auto=format";
-
-    console.log('Tentative d\'envoi d\'email vers:', email);
+    console.log('📧 Tentative d\'envoi d\'email vers:', email);
 
     const result = await resend.emails.send({
-      from: "Sport Center <noreply@resend.dev>",
+      from: "Sport Center <onboarding@resend.dev>",
       to: [email],
       subject: "🏟️ Confirmez votre réservation de stade - Sport Center",
       html: `
@@ -63,10 +60,9 @@ serve(async (req: Request) => {
         <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fdf8;">
           <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             
-            <!-- Header avec logo -->
+            <!-- Header -->
             <div style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); padding: 30px 20px; text-align: center;">
-              <img src="${logoUrl}" alt="Sport Center Logo" style="max-height: 60px; margin-bottom: 15px; border-radius: 8px;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">
                 Sport Center
               </h1>
               <p style="color: #f0fdf4; margin: 5px 0 0 0; font-size: 16px; opacity: 0.9;">
@@ -245,10 +241,10 @@ serve(async (req: Request) => {
       `,
     });
 
-    console.log('Réponse de Resend:', result);
+    console.log('📬 Réponse de Resend:', result);
 
     if (result.error) {
-      console.error('Erreur Resend:', result.error);
+      console.error('❌ Erreur Resend:', result.error);
       throw new Error(`Erreur Resend: ${result.error.message}`);
     }
     
@@ -265,7 +261,7 @@ serve(async (req: Request) => {
     );
 
   } catch (error) {
-    console.error('Erreur dans send-reservation-email:', error);
+    console.error('💥 Erreur dans send-reservation-email:', error);
     return new Response(
       JSON.stringify({ 
         success: false,

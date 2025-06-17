@@ -11,59 +11,50 @@ const ConfirmReservation = () => {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
   const [reservationData, setReservationData] = useState<any>(null);
-  const [debugInfo, setDebugInfo] = useState<any[]>([]);
   const token = searchParams.get('token');
-
-  const addDebug = (msg: string, data?: any) => {
-    console.log(msg, data);
-    setDebugInfo(prev => [...prev, { msg, data, time: new Date().toISOString() }]);
-  };
 
   const confirmReservation = async () => {
     if (!token) {
-      addDebug('❌ Pas de token dans l\'URL');
       setStatus('error');
       setMessage('Token de confirmation manquant dans l\'URL');
       return;
     }
 
-    addDebug('🚀 Début de la confirmation', { token });
-    
     try {
-      addDebug('📡 Appel de la fonction Edge confirm-reservation...');
+      console.log('🚀 Tentative de confirmation avec token:', token);
       
       const { data, error } = await supabase.functions.invoke('confirm-reservation', {
         body: { token }
       });
 
-      addDebug('📨 Réponse reçue', { data, error });
+      console.log('📨 Réponse de la fonction Edge:', { data, error });
 
       if (error) {
-        addDebug('❌ Erreur de la fonction Edge', error);
+        console.error('❌ Erreur de la fonction Edge:', error);
         setStatus('error');
         setMessage(`Erreur: ${error.message}`);
         return;
       }
 
       if (data?.success) {
-        addDebug('✅ Confirmation réussie', data);
+        console.log('✅ Confirmation réussie', data);
         setStatus('success');
         setReservationData(data);
         setMessage('Votre réservation a été confirmée avec succès !');
       } else {
-        addDebug('❌ Échec de la confirmation', data);
+        console.log('❌ Échec de la confirmation', data);
         setStatus('error');
         setMessage(data?.error || 'Erreur lors de la confirmation');
       }
     } catch (error: any) {
-      addDebug('💥 Erreur catch', error);
+      console.error('💥 Erreur catch:', error);
       setStatus('error');
       setMessage('Une erreur inattendue s\'est produite');
     }
   };
 
   useEffect(() => {
-    addDebug('🔧 Component monté', { url: window.location.href, token });
+    console.log('🔧 Component monté, token:', token);
     confirmReservation();
   }, [token]);
 
@@ -180,20 +171,12 @@ const ConfirmReservation = () => {
             </>
           )}
 
-          {/* Informations de débogage */}
+          {/* Debug info */}
           <details className="text-left bg-gray-50 p-3 rounded-lg">
             <summary className="text-sm text-gray-600 cursor-pointer">Informations de débogage</summary>
             <div className="mt-2 space-y-1">
               <p className="text-xs text-gray-500">Token: {token || 'non fourni'}</p>
               <p className="text-xs text-gray-500">URL: {window.location.href}</p>
-              <div className="max-h-40 overflow-y-auto">
-                {debugInfo.map((info, index) => (
-                  <div key={index} className="text-xs text-gray-500 border-b pb-1 mb-1">
-                    <strong>{info.time}:</strong> {info.msg}
-                    {info.data && <pre className="mt-1 text-xs">{JSON.stringify(info.data, null, 2)}</pre>}
-                  </div>
-                ))}
-              </div>
             </div>
           </details>
         </CardContent>
