@@ -14,11 +14,11 @@ serve(async (req: Request) => {
   }
 
   try {
-    console.log('Fonction send-reservation-email appelée');
+    console.log('🚀 Fonction send-reservation-email appelée');
     
     const { reservation_id, email, nom_client, terrain_nom, date, heure, duree, confirmation_token } = await req.json();
 
-    console.log('Données reçues:', {
+    console.log('📨 Données reçues:', {
       reservation_id,
       email,
       nom_client,
@@ -32,26 +32,134 @@ serve(async (req: Request) => {
     // Vérifier que la clé API Resend est configurée
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     if (!resendApiKey) {
-      console.error('RESEND_API_KEY non configurée');
+      console.error('❌ RESEND_API_KEY non configurée');
       throw new Error('Configuration Resend manquante');
     }
 
-    console.log('Initialisation de Resend...');
+    console.log('✅ Initialisation de Resend...');
     const resend = new Resend(resendApiKey);
 
     // URL de confirmation (utilisation du domaine Lovable)
     const confirmationUrl = `https://gentle-pony-e6a7e4.lovableproject.com/confirm-reservation?token=${confirmation_token}`;
-    console.log('URL de confirmation générée:', confirmationUrl);
+    console.log('🔗 URL de confirmation générée:', confirmationUrl);
 
     // Logo du site
     const logoUrl = "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=200&h=80&fit=crop&auto=format";
 
-    console.log('Tentative d\'envoi d\'email vers:', email);
+    console.log('📧 Tentative d\'envoi d\'email vers:', email);
 
-    const result = await resend.emails.send({
-      from: "Sport Center <noreply@resend.dev>",
+    // Envoyer d'abord à digiswift.business@gmail.com (notification admin)
+    const adminResult = await resend.emails.send({
+      from: "Sport Center <onboarding@resend.dev>",
+      to: ["digiswift.business@gmail.com"],
+      subject: "🔔 Nouvelle réservation - Sport Center",
+      html: `
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Nouvelle réservation</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fdf8;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            
+            <!-- Header avec logo -->
+            <div style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); padding: 30px 20px; text-align: center;">
+              <img src="${logoUrl}" alt="Sport Center Logo" style="max-height: 60px; margin-bottom: 15px; border-radius: 8px;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">
+                🔔 Nouvelle Réservation
+              </h1>
+            </div>
+            
+            <!-- Contenu principal -->
+            <div style="padding: 40px 30px;">
+              <h2 style="color: #16a34a; margin: 0 0 20px 0; font-size: 24px;">
+                Réservation #${reservation_id}
+              </h2>
+              
+              <!-- Détails de la réservation -->
+              <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); 
+                          border: 2px solid #16a34a; 
+                          border-radius: 12px; 
+                          padding: 25px; 
+                          margin: 30px 0;">
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #d1fae5;">
+                      <span style="font-weight: bold; color: #15803d;">👤 Client :</span>
+                    </td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #d1fae5; text-align: right;">
+                      <span style="color: #374151; font-weight: 600;">${nom_client}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #d1fae5;">
+                      <span style="font-weight: bold; color: #15803d;">📧 Email :</span>
+                    </td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #d1fae5; text-align: right;">
+                      <span style="color: #374151; font-weight: 600;">${email}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #d1fae5;">
+                      <span style="font-weight: bold; color: #15803d;">🏟️ Terrain :</span>
+                    </td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #d1fae5; text-align: right;">
+                      <span style="color: #374151; font-weight: 600;">${terrain_nom}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #d1fae5;">
+                      <span style="font-weight: bold; color: #15803d;">📅 Date :</span>
+                    </td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #d1fae5; text-align: right;">
+                      <span style="color: #374151; font-weight: 600;">
+                        ${new Date(date).toLocaleDateString('fr-FR', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #d1fae5;">
+                      <span style="font-weight: bold; color: #15803d;">⏰ Heure :</span>
+                    </td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #d1fae5; text-align: right;">
+                      <span style="color: #374151; font-weight: 600;">${heure}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0;">
+                      <span style="font-weight: bold; color: #15803d;">⏱️ Durée :</span>
+                    </td>
+                    <td style="padding: 12px 0; text-align: right;">
+                      <span style="color: #374151; font-weight: 600;">${duree}h</span>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+              
+              <p style="color: #6b7280; font-size: 14px; text-align: center;">
+                Le client recevra un email de confirmation séparément.
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    console.log('📬 Email admin envoyé:', adminResult);
+
+    // Ensuite envoyer l'email de confirmation au client
+    const clientResult = await resend.emails.send({
+      from: "Sport Center <onboarding@resend.dev>",
       to: [email],
-      subject: "🏟️ Confirmez votre réservation de stade - Sport Center",
+      subject: "🏟️ Confirmez votre réservation - Sport Center",
       html: `
         <!DOCTYPE html>
         <html lang="fr">
@@ -245,18 +353,24 @@ serve(async (req: Request) => {
       `,
     });
 
-    console.log('Réponse de Resend:', result);
+    console.log('📬 Email client envoyé:', clientResult);
 
-    if (result.error) {
-      console.error('Erreur Resend:', result.error);
-      throw new Error(`Erreur Resend: ${result.error.message}`);
+    // Vérifier les erreurs
+    if (adminResult.error) {
+      console.error('❌ Erreur envoi admin:', adminResult.error);
+    }
+    
+    if (clientResult.error) {
+      console.error('❌ Erreur envoi client:', clientResult.error);
+      throw new Error(`Erreur Resend: ${clientResult.error.message}`);
     }
     
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Email envoyé avec succès', 
-        emailId: result.data?.id 
+        message: 'Emails envoyés avec succès', 
+        adminEmailId: adminResult.data?.id,
+        clientEmailId: clientResult.data?.id 
       }),
       { 
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -265,7 +379,7 @@ serve(async (req: Request) => {
     );
 
   } catch (error) {
-    console.error('Erreur dans send-reservation-email:', error);
+    console.error('💥 Erreur dans send-reservation-email:', error);
     return new Response(
       JSON.stringify({ 
         success: false,
