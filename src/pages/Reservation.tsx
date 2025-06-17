@@ -23,6 +23,7 @@ import ReservationFieldSelector from '@/components/reservation/ReservationFieldS
 import ReservationDateTimeSelector from '@/components/reservation/ReservationDateTimeSelector';
 import ReservationDurationSelector from '@/components/reservation/ReservationDurationSelector';
 import ReservationCustomerInfo from '@/components/reservation/ReservationCustomerInfo';
+import { validateName, validateTunisianPhone, validateEmail } from '@/lib/validation';
 
 // Créneaux horaires par défaut (pour terrains autres que foot à 7 ou 8)
 const defaultTimeSlots = [
@@ -225,9 +226,21 @@ const Reservation = () => {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // --- Ajout de la fonction handleSubmit MAJ ---
+  // --- Modification de handleSubmit avec validation ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validation des champs
+    const nameError = validateName(customerName);
+    const phoneError = validateTunisianPhone(customerPhone);
+    const emailError = validateEmail(customerEmail);
+
+    if (nameError || phoneError || emailError) {
+      if (nameError) toast.error(`Nom: ${nameError}`);
+      if (phoneError) toast.error(`Téléphone: ${phoneError}`);
+      if (emailError) toast.error(`Email: ${emailError}`);
+      return;
+    }
 
     // Ensure required fields are filled
     if (

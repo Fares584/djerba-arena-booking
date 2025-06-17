@@ -1,8 +1,9 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { User, Phone, Mail } from "lucide-react";
+import { validateName, validateTunisianPhone, validateEmail } from "@/lib/validation";
 
 interface Props {
   customerName: string;
@@ -20,56 +21,99 @@ const ReservationCustomerInfo: React.FC<Props> = ({
   setCustomerPhone,
   customerEmail,
   setCustomerEmail,
-}) => (
-  <div className="border-t pt-8">
-    <h3 className="text-xl font-semibold mb-6 flex items-center">
-      <User className="mr-2 h-6 w-6" />
-      Informations personnelles
-    </h3>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-      <div>
-        <Label htmlFor="name" className="text-base font-medium mb-2 block">
-          Nom complet *
+}) => {
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  const handleNameChange = (value: string) => {
+    setCustomerName(value);
+    const error = validateName(value);
+    setNameError(error);
+  };
+
+  const handlePhoneChange = (value: string) => {
+    setCustomerPhone(value);
+    const error = validateTunisianPhone(value);
+    setPhoneError(error);
+  };
+
+  const handleEmailChange = (value: string) => {
+    setCustomerEmail(value);
+    const error = validateEmail(value);
+    setEmailError(error);
+  };
+
+  return (
+    <div className="border-t pt-8">
+      <h3 className="text-xl font-semibold mb-6 flex items-center">
+        <User className="mr-2 h-6 w-6" />
+        Informations personnelles
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div>
+          <Label htmlFor="name" className="text-base font-medium mb-2 block">
+            Nom complet *
+          </Label>
+          <Input
+            id="name"
+            type="text"
+            value={customerName}
+            onChange={(e) => handleNameChange(e.target.value)}
+            placeholder="Votre nom et prénom"
+            maxLength={40}
+            className={nameError ? "border-red-500" : ""}
+            required
+          />
+          {nameError && (
+            <p className="text-red-500 text-sm mt-1">{nameError}</p>
+          )}
+          <p className="text-gray-500 text-xs mt-1">
+            {customerName.length}/40 caractères (lettres uniquement)
+          </p>
+        </div>
+        <div>
+          <Label htmlFor="phone" className="text-base font-medium mb-2 flex items-center">
+            <Phone className="mr-2 h-4 w-4" />
+            Téléphone *
+          </Label>
+          <Input
+            id="phone"
+            type="tel"
+            value={customerPhone}
+            onChange={(e) => handlePhoneChange(e.target.value)}
+            placeholder="Ex: 12345678 ou +21612345678"
+            className={phoneError ? "border-red-500" : ""}
+            required
+          />
+          {phoneError && (
+            <p className="text-red-500 text-sm mt-1">{phoneError}</p>
+          )}
+          <p className="text-gray-500 text-xs mt-1">
+            Numéro tunisien (8 chiffres)
+          </p>
+        </div>
+      </div>
+      <div className="mb-6">
+        <Label htmlFor="email" className="text-base font-medium mb-2 flex items-center">
+          <Mail className="mr-2 h-4 w-4" />
+          Adresse email *
         </Label>
         <Input
-          id="name"
-          type="text"
-          value={customerName}
-          onChange={(e) => setCustomerName(e.target.value)}
-          placeholder="Votre nom et prénom"
+          id="email"
+          type="email"
+          value={customerEmail}
+          onChange={(e) => handleEmailChange(e.target.value)}
+          placeholder="votre@email.com"
+          className={emailError ? "border-red-500" : ""}
           required
         />
-      </div>
-      <div>
-        <Label htmlFor="phone" className="text-base font-medium mb-2 flex items-center">
-          <Phone className="mr-2 h-4 w-4" />
-          Téléphone *
-        </Label>
-        <Input
-          id="phone"
-          type="tel"
-          value={customerPhone}
-          onChange={(e) => setCustomerPhone(e.target.value)}
-          placeholder="Votre numéro de téléphone"
-          required
-        />
+        {emailError && (
+          <p className="text-red-500 text-sm mt-1">{emailError}</p>
+        )}
       </div>
     </div>
-    <div className="mb-6">
-      <Label htmlFor="email" className="text-base font-medium mb-2 flex items-center">
-        <Mail className="mr-2 h-4 w-4" />
-        Adresse email *
-      </Label>
-      <Input
-        id="email"
-        type="email"
-        value={customerEmail}
-        onChange={(e) => setCustomerEmail(e.target.value)}
-        placeholder="votre@email.com"
-        required
-      />
-    </div>
-  </div>
-);
+  );
+};
 
 export default ReservationCustomerInfo;

@@ -14,6 +14,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { isNightTime, calculatePrice } from '@/lib/supabase';
+import { validateName, validateTunisianPhone, validateEmail } from '@/lib/validation';
+import { toast } from 'sonner';
 
 // Available time slots
 const timeSlots = [
@@ -143,7 +145,20 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validation des champs
+    const nameError = validateName(name);
+    const phoneError = validateTunisianPhone(phone);
+    const emailError = validateEmail(email);
+
+    if (nameError || phoneError || emailError) {
+      if (nameError) toast.error(`Nom: ${nameError}`);
+      if (phoneError) toast.error(`Téléphone: ${phoneError}`);
+      if (emailError) toast.error(`Email: ${emailError}`);
+      return;
+    }
+    
     if (!selectedField || !selectedDate || !selectedTime || !name || !email || !phone) {
+      toast.error("Veuillez remplir tous les champs obligatoires.");
       return;
     }
     
@@ -270,7 +285,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
           </div>
         </div>
         
-        {/* Right Column - Client Information */}
+        {/* Right Column - Client Information with validation */}
         <div className="space-y-4">
           <div>
             <Label htmlFor="clientName">Nom du client</Label>
@@ -279,8 +294,13 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              maxLength={40}
+              placeholder="Nom et prénom (lettres uniquement)"
               required
             />
+            <p className="text-gray-500 text-xs mt-1">
+              {name.length}/40 caractères (lettres uniquement)
+            </p>
           </div>
           
           <div>
@@ -290,6 +310,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="votre@email.com"
               required
             />
           </div>
@@ -301,8 +322,12 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
+              placeholder="Ex: 12345678 ou +21612345678"
               required
             />
+            <p className="text-gray-500 text-xs mt-1">
+              Numéro tunisien (8 chiffres)
+            </p>
           </div>
           
           <div>
