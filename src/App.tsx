@@ -12,7 +12,7 @@ import Reservation from "./pages/Reservation";
 import About from "./pages/About";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
-import ConfirmReservation from "./pages/ConfirmReservation";
+import ConfirmReservation from "./pages/confirm-reservation";
 
 // Admin pages
 import AdminLayout from "./pages/admin/AdminLayout";

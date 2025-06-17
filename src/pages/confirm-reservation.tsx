@@ -13,11 +13,11 @@ const ConfirmReservation = () => {
   const token = searchParams.get('token');
 
   useEffect(() => {
-    console.log('ConfirmReservation component mounted');
-    console.log('Token from URL:', token);
+    console.log('Page confirm-reservation chargée');
+    console.log('Token depuis l\'URL:', token);
     
     if (!token) {
-      console.error('No token found in URL');
+      console.error('Aucun token trouvé dans l\'URL');
       setStatus('error');
       setMessage('Token de confirmation manquant dans l\'URL');
       return;
