@@ -98,16 +98,16 @@ const ReservationCard = ({
                 {getClientInitials(reservation.nom_client)}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">{reservation.nom_client}</h3>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-xl font-bold text-gray-900 mb-2 truncate">{reservation.nom_client}</h3>
               <div className="grid grid-cols-1 gap-2">
                 <div className="flex items-center gap-2 text-gray-600">
-                  <Phone className="h-4 w-4 text-blue-500" />
+                  <Phone className="h-4 w-4 text-blue-500 flex-shrink-0" />
                   <span className="font-medium text-lg">{reservation.tel}</span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Mail className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm">{reservation.email}</span>
+                <div className="flex items-center gap-2 text-gray-600 min-w-0">
+                  <Mail className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                  <span className="text-sm truncate" title={reservation.email}>{reservation.email}</span>
                 </div>
               </div>
             </div>
@@ -121,9 +121,9 @@ const ReservationCard = ({
               <div className="bg-sport-green p-2 rounded-full">
                 <MapPin className="h-5 w-5 text-white" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <span className="text-sm text-gray-500 block">Terrain</span>
-                <span className="text-lg font-bold text-gray-900">{terrainName}</span>
+                <span className="text-lg font-bold text-gray-900 truncate block">{terrainName}</span>
               </div>
             </div>
             
@@ -131,7 +131,7 @@ const ReservationCard = ({
               <div className="bg-sport-green p-2 rounded-full">
                 <Calendar className="h-5 w-5 text-white" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <span className="text-sm text-gray-500 block">Date</span>
                 <span className="text-lg font-bold text-gray-900">
                   {format(new Date(reservation.date), 'EEEE dd MMMM yyyy', { locale: fr })}

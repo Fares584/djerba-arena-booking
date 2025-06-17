@@ -115,16 +115,16 @@ const AbonnementCard = ({
                 {getClientInitials(abonnement.client_nom)}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">{abonnement.client_nom}</h3>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-xl font-bold text-gray-900 mb-2 truncate">{abonnement.client_nom}</h3>
               <div className="grid grid-cols-1 gap-2">
                 <div className="flex items-center gap-2 text-gray-600">
-                  <Phone className="h-4 w-4 text-blue-500" />
+                  <Phone className="h-4 w-4 text-blue-500 flex-shrink-0" />
                   <span className="font-medium text-lg">{abonnement.client_tel}</span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Mail className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm">{abonnement.client_email}</span>
+                <div className="flex items-center gap-2 text-gray-600 min-w-0">
+                  <Mail className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                  <span className="text-sm truncate" title={abonnement.client_email}>{abonnement.client_email}</span>
                 </div>
               </div>
             </div>
@@ -138,10 +138,10 @@ const AbonnementCard = ({
               <div className="bg-sport-green p-2 rounded-full">
                 <MapPin className="h-5 w-5 text-white" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <span className="text-sm text-gray-500 block">Terrain & Type</span>
-                <span className="text-lg font-bold text-gray-900">{terrainLabel}</span>
-                <span className="text-sm text-gray-600 block">{typeLabel}</span>
+                <span className="text-lg font-bold text-gray-900 truncate block">{terrainLabel}</span>
+                <span className="text-sm text-gray-600 block truncate">{typeLabel}</span>
               </div>
             </div>
             
@@ -149,7 +149,7 @@ const AbonnementCard = ({
               <div className="bg-sport-green p-2 rounded-full">
                 <CalendarDays className="h-5 w-5 text-white" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <span className="text-sm text-gray-500 block">Période</span>
                 <span className="text-lg font-bold text-gray-900">
                   {new Date(abonnement.date_debut).toLocaleDateString('fr-FR')} au {new Date(abonnement.date_fin).toLocaleDateString('fr-FR')}
@@ -162,7 +162,7 @@ const AbonnementCard = ({
                 <div className="bg-sport-green p-2 rounded-full">
                   <Clock className="h-5 w-5 text-white" />
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <span className="text-sm text-gray-500 block">Horaire fixe</span>
                   <span className="text-lg font-bold text-gray-900">
                     {getDayName(abonnement.jour_semaine)} à {abonnement.heure_fixe} ({abonnement.duree_seance || 1}h)
