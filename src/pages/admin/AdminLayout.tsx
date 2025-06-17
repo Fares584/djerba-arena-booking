@@ -58,9 +58,9 @@ const AdminLayout = () => {
         {/* Sidebar */}
         <aside className={`
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-          lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r
+          lg:translate-x-0 fixed lg:static top-[73px] left-0 z-50 w-64 bg-white border-r
           transition-transform duration-200 ease-in-out lg:transition-none
-          flex flex-col h-[calc(100vh-73px)] lg:h-auto
+          flex flex-col h-[calc(100vh-73px)]
         `}>
           <div className="p-6 flex-1">
             <AdminNavigation />
@@ -70,7 +70,7 @@ const AdminLayout = () => {
         {/* Mobile overlay */}
         {isMobileMenuOpen && (
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden top-[73px]"
             onClick={() => setIsMobileMenuOpen(false)}
           />
         )}
