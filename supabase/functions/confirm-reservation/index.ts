@@ -8,41 +8,25 @@ const corsHeaders = {
 };
 
 serve(async (req: Request) => {
-  console.log('=== FONCTION CONFIRM-RESERVATION DÉMARRÉE ===');
+  console.log('🚀 Fonction confirm-reservation démarrée');
   console.log('Method:', req.method);
   console.log('URL:', req.url);
-  console.log('Headers:', Object.fromEntries(req.headers.entries()));
   
   if (req.method === 'OPTIONS') {
-    console.log('Handling CORS preflight request');
+    console.log('Handling CORS preflight');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('=== TRAITEMENT DE LA REQUÊTE ===');
+    const requestBody = await req.json();
+    console.log('Body reçu:', requestBody);
     
-    let requestBody;
-    try {
-      requestBody = await req.json();
-      console.log('Body reçu:', requestBody);
-    } catch (jsonError) {
-      console.error('Erreur parsing JSON:', jsonError);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Body JSON invalide' }),
-        { 
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
-          status: 400 
-        }
-      );
-    }
-
     const { token } = requestBody;
-    console.log('Token extrait:', token);
-
+    
     if (!token) {
-      console.error('Token manquant');
+      console.error('❌ Token manquant');
       return new Response(
-        JSON.stringify({ success: false, error: 'Token de confirmation manquant' }),
+        JSON.stringify({ success: false, error: 'Token manquant' }),
         { 
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
           status: 400 
@@ -50,24 +34,23 @@ serve(async (req: Request) => {
       );
     }
 
-    // Vérifier les variables d'environnement
+    console.log('🔍 Token reçu:', token);
+
+    // Configuration Supabase
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    console.log('=== CONFIGURATION SUPABASE ===');
-    console.log('SUPABASE_URL présente:', !!supabaseUrl);
-    console.log('SERVICE_KEY présente:', !!supabaseServiceKey);
+    console.log('Configuration Supabase:', {
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseServiceKey
+    });
     
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('Variables d\'environnement manquantes');
+      console.error('❌ Variables d\'environnement manquantes');
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Configuration serveur manquante',
-          debug: {
-            hasUrl: !!supabaseUrl,
-            hasKey: !!supabaseServiceKey
-          }
+          error: 'Configuration serveur incorrecte' 
         }),
         { 
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -76,15 +59,11 @@ serve(async (req: Request) => {
       );
     }
 
-    // Initialiser le client Supabase
-    console.log('=== INITIALISATION CLIENT SUPABASE ===');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    console.log('Client Supabase créé');
+    console.log('✅ Client Supabase créé');
 
     // Rechercher la réservation
-    console.log('=== RECHERCHE RÉSERVATION ===');
-    console.log('Recherche avec token:', token);
-    
+    console.log('🔍 Recherche de la réservation...');
     const { data: reservation, error: findError } = await supabase
       .from('reservations')
       .select(`
@@ -98,15 +77,12 @@ serve(async (req: Request) => {
     console.log('Résultat recherche:', { reservation, findError });
 
     if (findError) {
-      console.error('Erreur lors de la recherche:', findError);
+      console.error('❌ Erreur recherche:', findError);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Erreur lors de la recherche de la réservation',
-          debug: {
-            supabaseError: findError.message,
-            token: token
-          }
+          error: 'Erreur lors de la recherche',
+          details: findError.message 
         }),
         { 
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -116,15 +92,11 @@ serve(async (req: Request) => {
     }
 
     if (!reservation) {
-      console.error('Réservation non trouvée pour le token:', token);
+      console.error('❌ Réservation non trouvée');
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Token invalide ou réservation déjà confirmée',
-          debug: {
-            token: token,
-            foundReservation: false
-          }
+          error: 'Token invalide ou réservation déjà confirmée' 
         }),
         { 
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -133,40 +105,27 @@ serve(async (req: Request) => {
       );
     }
 
-    console.log('=== RÉSERVATION TROUVÉE ===');
-    console.log('ID réservation:', reservation.id);
-    console.log('Statut actuel:', reservation.statut);
-    console.log('Créée le:', reservation.created_at);
+    console.log('✅ Réservation trouvée:', reservation.id);
 
     // Vérifier l'expiration (15 minutes)
     const createdAt = new Date(reservation.created_at);
     const now = new Date();
     const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
 
-    console.log('=== VÉRIFICATION EXPIRATION ===');
-    console.log('Âge en minutes:', diffMinutes);
-    console.log('Limite:', 15);
+    console.log('⏱️ Âge de la réservation:', diffMinutes, 'minutes');
 
     if (diffMinutes > 15) {
-      console.log('Réservation expirée, annulation...');
+      console.log('⚠️ Réservation expirée, annulation...');
       
-      const { error: cancelError } = await supabase
+      await supabase
         .from('reservations')
         .update({ statut: 'annulee' })
         .eq('id', reservation.id);
 
-      if (cancelError) {
-        console.error('Erreur lors de l\'annulation:', cancelError);
-      }
-
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'La réservation a expiré (plus de 15 minutes)',
-          debug: {
-            ageMinutes: diffMinutes,
-            expired: true
-          }
+          error: 'La réservation a expiré (plus de 15 minutes)' 
         }),
         { 
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -176,7 +135,7 @@ serve(async (req: Request) => {
     }
 
     // Confirmer la réservation
-    console.log('=== CONFIRMATION RÉSERVATION ===');
+    console.log('✅ Confirmation de la réservation...');
     const { error: updateError } = await supabase
       .from('reservations')
       .update({ 
@@ -186,14 +145,12 @@ serve(async (req: Request) => {
       .eq('id', reservation.id);
 
     if (updateError) {
-      console.error('Erreur lors de la mise à jour:', updateError);
+      console.error('❌ Erreur confirmation:', updateError);
       return new Response(
         JSON.stringify({ 
           success: false, 
           error: 'Erreur lors de la confirmation',
-          debug: {
-            updateError: updateError.message
-          }
+          details: updateError.message 
         }),
         { 
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -202,8 +159,7 @@ serve(async (req: Request) => {
       );
     }
 
-    console.log('=== CONFIRMATION RÉUSSIE ===');
-    console.log('Réservation confirmée:', reservation.id);
+    console.log('🎉 Réservation confirmée avec succès !');
 
     const response = {
       success: true,
@@ -212,14 +168,8 @@ serve(async (req: Request) => {
       terrain_nom: reservation.terrain?.nom || 'Terrain inconnu',
       date: reservation.date,
       heure: reservation.heure,
-      duree: reservation.duree,
-      debug: {
-        reservationId: reservation.id,
-        confirmedAt: new Date().toISOString()
-      }
+      duree: reservation.duree
     };
-
-    console.log('Réponse finale:', response);
 
     return new Response(
       JSON.stringify(response),
@@ -230,20 +180,13 @@ serve(async (req: Request) => {
     );
 
   } catch (error) {
-    console.error('=== ERREUR GLOBALE ===');
-    console.error('Type:', error.constructor.name);
-    console.error('Message:', error.message);
-    console.error('Stack:', error.stack);
+    console.error('💥 Erreur globale:', error);
     
     return new Response(
       JSON.stringify({ 
         success: false,
         error: 'Erreur serveur interne',
-        debug: {
-          errorType: error.constructor.name,
-          errorMessage: error.message,
-          timestamp: new Date().toISOString()
-        }
+        details: error.message
       }),
       { 
         headers: { 'Content-Type': 'application/json', ...corsHeaders },

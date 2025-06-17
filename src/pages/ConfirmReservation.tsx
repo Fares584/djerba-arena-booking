@@ -11,78 +11,59 @@ const ConfirmReservation = () => {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
   const [reservationData, setReservationData] = useState<any>(null);
-  const [debugInfo, setDebugInfo] = useState<string>('');
+  const [debugInfo, setDebugInfo] = useState<any[]>([]);
   const token = searchParams.get('token');
 
-  console.log('ConfirmReservation component mounted');
-  console.log('Token from URL:', token);
-  console.log('Full URL:', window.location.href);
+  const addDebug = (msg: string, data?: any) => {
+    console.log(msg, data);
+    setDebugInfo(prev => [...prev, { msg, data, time: new Date().toISOString() }]);
+  };
 
   const confirmReservation = async () => {
     if (!token) {
-      console.error('No token found in URL');
+      addDebug('❌ Pas de token dans l\'URL');
       setStatus('error');
       setMessage('Token de confirmation manquant dans l\'URL');
-      setDebugInfo('Token manquant dans l\'URL');
       return;
     }
 
+    addDebug('🚀 Début de la confirmation', { token });
+    
     try {
-      console.log('Tentative de confirmation avec le token:', token);
-      setDebugInfo('Tentative de confirmation...');
-      
-      // Vérifier d'abord si Supabase est accessible
-      console.log('Test de connexion Supabase...');
-      const { data: testData, error: testError } = await supabase.from('terrains').select('count').limit(1);
-      console.log('Test Supabase:', { testData, testError });
-      
-      if (testError) {
-        console.error('Erreur de connexion Supabase:', testError);
-        setStatus('error');
-        setMessage('Erreur de connexion à la base de données');
-        setDebugInfo(`Erreur Supabase: ${testError.message}`);
-        return;
-      }
-
-      console.log('Appel de la fonction Edge confirm-reservation...');
-      setDebugInfo('Appel de la fonction Edge...');
+      addDebug('📡 Appel de la fonction Edge confirm-reservation...');
       
       const { data, error } = await supabase.functions.invoke('confirm-reservation', {
         body: { token }
       });
 
-      console.log('Réponse complète de la fonction:', { data, error });
-      setDebugInfo(`Réponse reçue: ${JSON.stringify({ data, error }, null, 2)}`);
+      addDebug('📨 Réponse reçue', { data, error });
 
       if (error) {
-        console.error('Erreur lors de l\'appel de la fonction:', error);
+        addDebug('❌ Erreur de la fonction Edge', error);
         setStatus('error');
-        setMessage(`Erreur de la fonction: ${error.message}`);
-        setDebugInfo(`Erreur fonction: ${JSON.stringify(error, null, 2)}`);
+        setMessage(`Erreur: ${error.message}`);
         return;
       }
 
       if (data?.success) {
-        console.log('Confirmation réussie:', data);
+        addDebug('✅ Confirmation réussie', data);
         setStatus('success');
         setReservationData(data);
         setMessage('Votre réservation a été confirmée avec succès !');
-        setDebugInfo('Succès !');
       } else {
-        console.error('Échec de la confirmation:', data);
+        addDebug('❌ Échec de la confirmation', data);
         setStatus('error');
         setMessage(data?.error || 'Erreur lors de la confirmation');
-        setDebugInfo(`Échec: ${JSON.stringify(data, null, 2)}`);
       }
     } catch (error: any) {
-      console.error('Erreur inattendue:', error);
+      addDebug('💥 Erreur catch', error);
       setStatus('error');
       setMessage('Une erreur inattendue s\'est produite');
-      setDebugInfo(`Erreur catch: ${error.message}\nStack: ${error.stack}`);
     }
   };
 
   useEffect(() => {
+    addDebug('🔧 Component monté', { url: window.location.href, token });
     confirmReservation();
   }, [token]);
 
@@ -161,10 +142,6 @@ const ConfirmReservation = () => {
                 </div>
               )}
               
-              <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
-                ✅ Votre réservation est maintenant confirmée dans notre système.
-              </p>
-              
               <Button 
                 onClick={() => window.location.href = '/'} 
                 className="w-full"
@@ -184,13 +161,6 @@ const ConfirmReservation = () => {
                 <p className="text-red-700 font-medium">{message}</p>
               </div>
               
-              <div className="text-left bg-gray-50 p-3 rounded-lg">
-                <p className="text-sm text-gray-600 mb-2">Informations de débogage :</p>
-                <p className="text-xs text-gray-500 break-all">Token: {token || 'non fourni'}</p>
-                <p className="text-xs text-gray-500 break-all">URL: {window.location.href}</p>
-                <p className="text-xs text-gray-500 break-all">Debug: {debugInfo}</p>
-              </div>
-              
               <div className="space-y-2">
                 <Button 
                   onClick={confirmReservation}
@@ -207,12 +177,25 @@ const ConfirmReservation = () => {
                   Retour à l'accueil
                 </Button>
               </div>
-              
-              <p className="text-sm text-gray-500">
-                Si le problème persiste, veuillez nous contacter directement.
-              </p>
             </>
           )}
+
+          {/* Informations de débogage */}
+          <details className="text-left bg-gray-50 p-3 rounded-lg">
+            <summary className="text-sm text-gray-600 cursor-pointer">Informations de débogage</summary>
+            <div className="mt-2 space-y-1">
+              <p className="text-xs text-gray-500">Token: {token || 'non fourni'}</p>
+              <p className="text-xs text-gray-500">URL: {window.location.href}</p>
+              <div className="max-h-40 overflow-y-auto">
+                {debugInfo.map((info, index) => (
+                  <div key={index} className="text-xs text-gray-500 border-b pb-1 mb-1">
+                    <strong>{info.time}:</strong> {info.msg}
+                    {info.data && <pre className="mt-1 text-xs">{JSON.stringify(info.data, null, 2)}</pre>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </details>
         </CardContent>
       </Card>
     </div>
