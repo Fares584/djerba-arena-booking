@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useAppSetting } from '@/hooks/useAppSettings';
 import { useCreateReservation } from '@/hooks/useReservations';
-import { useEmailConfirmation } from '@/hooks/useEmailConfirmation';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -47,7 +46,6 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
   const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
   const createReservation = useCreateReservation();
-  const emailConfirmation = useEmailConfirmation();
 
   // Get selected terrain object
   const selectedTerrain = terrains?.find(t => t.id === selectedField);
@@ -174,25 +172,10 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       date: formattedDate,
       heure: selectedTime,
       duree: parseFloat(effectiveDuration),
-      statut: 'en_attente', // Status will be "en_attente" until confirmed by email
+      statut: 'confirmee', // Directement confirmée
       remarque: message || undefined
     }, {
-      onSuccess: (data) => {
-        console.log('Réservation créée, envoi email avec token:', data.confirmation_token);
-        
-        // Envoyer un email de confirmation avec le token
-        if (selectedTerrain && data.confirmation_token) {
-          emailConfirmation.mutate({
-            reservation_id: data.id,
-            email: email,
-            nom_client: name,
-            terrain_nom: selectedTerrain.nom,
-            date: formattedDate,
-            heure: selectedTime,
-            duree: parseFloat(effectiveDuration),
-            confirmation_token: data.confirmation_token
-          });
-        }
+      onSuccess: () => {
         onSuccess();
       }
     });
@@ -367,10 +350,10 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
         </Button>
         <Button 
           type="submit" 
-          disabled={createReservation.isPending || emailConfirmation.isPending}
+          disabled={createReservation.isPending}
           className="bg-sport-green hover:bg-sport-dark"
         >
-          {(createReservation.isPending || emailConfirmation.isPending) ? (
+          {createReservation.isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               En cours...

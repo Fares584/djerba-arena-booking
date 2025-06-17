@@ -263,7 +263,7 @@ const Reservation = () => {
 
     const effectiveDuration = parseFloat(getEffectiveDuration());
 
-    // Créer la réservation en attente (retour au système original)
+    // Créer la réservation directement confirmée
     createReservation.mutate({
       nom_client: customerName,
       tel: customerPhone,
@@ -272,7 +272,7 @@ const Reservation = () => {
       date: selectedDate,
       heure: selectedTime,
       duree: effectiveDuration,
-      statut: "en_attente", // Retour au statut en attente
+      statut: "confirmee", // Directement confirmée
     });
   };
 

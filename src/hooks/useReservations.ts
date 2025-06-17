@@ -1,9 +1,8 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
-import { useEmailConfirmation } from './useEmailConfirmation';
 
 export function useReservations(filters?: { 
   terrain_id?: number; 
@@ -105,20 +104,18 @@ export function useReservationsHistory(filters?: {
 
 export function useCreateReservation(options?: { onSuccess?: () => void }) {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
-  const emailConfirmation = useEmailConfirmation();
 
   return useMutation({
     mutationFn: async (newReservation: Omit<Reservation, 'id' | 'created_at' | 'updated_at'>) => {
       try {
         console.log('Création de la réservation avec les données:', newReservation);
         
-        // Créer avec statut "en_attente" qui nécessite confirmation
+        // Créer avec statut "confirmee" directement
         const { data, error } = await supabase
           .from('reservations')
           .insert({
             ...newReservation,
-            statut: 'en_attente'
+            statut: 'confirmee'
           })
           .select(`
             *, 
@@ -132,34 +129,7 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
         }
 
         console.log('Réservation créée avec succès:', data);
-        console.log('Token de confirmation généré:', data.confirmation_token);
-
-        // Envoyer l'email de confirmation immédiatement après la création
-        if (data.confirmation_token) {
-          console.log('Envoi de l\'email de confirmation...');
-          
-          try {
-            await emailConfirmation.mutateAsync({
-              reservation_id: data.id,
-              email: data.email,
-              nom_client: data.nom_client,
-              terrain_nom: data.terrain?.nom || 'Terrain inconnu',
-              date: data.date,
-              heure: data.heure,
-              duree: data.duree,
-              confirmation_token: data.confirmation_token
-            });
-            
-            console.log('Email de confirmation envoyé avec succès');
-            toast.success("Réservation créée ! Vérifiez votre email pour la confirmation.");
-          } catch (emailError) {
-            console.error('Erreur lors de l\'envoi de l\'email:', emailError);
-            toast.error("Réservation créée mais erreur lors de l'envoi de l'email. Contactez l'administration.");
-          }
-        } else {
-          console.error('Pas de token de confirmation généré');
-          toast.error("Erreur : token de confirmation non généré");
-        }
+        toast.success("Réservation créée avec succès !");
 
         return data;
       } catch (error) {

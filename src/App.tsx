@@ -12,7 +12,6 @@ import Reservation from "./pages/Reservation";
 import About from "./pages/About";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
-import ConfirmReservation from "./pages/ConfirmReservation";
 
 // Admin pages
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -59,7 +58,6 @@ function App() {
             <Route path="/reservation" element={<Reservation />} />
             <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/confirm-reservation" element={<ConfirmReservation />} />
             
             {/* Admin routes */}
             <Route path="/admin" element={<AdminLayout />}>
