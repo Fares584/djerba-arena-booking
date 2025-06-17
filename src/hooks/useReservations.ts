@@ -110,12 +110,12 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
       try {
         console.log('Création de la réservation avec les données:', newReservation);
         
-        // Créer avec statut "confirmee" directement
+        // Créer avec statut "en_attente"
         const { data, error } = await supabase
           .from('reservations')
           .insert({
             ...newReservation,
-            statut: 'confirmee'
+            statut: 'en_attente'
           })
           .select(`
             *, 

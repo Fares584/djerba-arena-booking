@@ -172,7 +172,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       date: formattedDate,
       heure: selectedTime,
       duree: parseFloat(effectiveDuration),
-      statut: 'confirmee', // Directement confirmée
+      statut: 'en_attente', // Statut en attente
       remarque: message || undefined
     }, {
       onSuccess: () => {
