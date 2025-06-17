@@ -13,9 +13,13 @@ const ConfirmReservation = () => {
   const token = searchParams.get('token');
 
   useEffect(() => {
+    console.log('ConfirmReservation component mounted');
+    console.log('Token from URL:', token);
+    
     if (!token) {
+      console.error('No token found in URL');
       setStatus('error');
-      setMessage('Token de confirmation manquant');
+      setMessage('Token de confirmation manquant dans l\'URL');
       return;
     }
 
@@ -27,6 +31,8 @@ const ConfirmReservation = () => {
           body: { token }
         });
 
+        console.log('Réponse de la fonction confirm-reservation:', { data, error });
+
         if (error) {
           console.error('Erreur lors de la confirmation:', error);
           setStatus('error');
@@ -35,10 +41,12 @@ const ConfirmReservation = () => {
         }
 
         if (data?.success) {
+          console.log('Confirmation réussie:', data);
           setStatus('success');
           setReservationData(data);
           setMessage('Votre réservation a été confirmée avec succès !');
         } else {
+          console.error('Échec de la confirmation:', data);
           setStatus('error');
           setMessage(data?.error || 'Erreur lors de la confirmation');
         }
@@ -143,6 +151,12 @@ const ConfirmReservation = () => {
               
               <div className="bg-red-50 p-4 rounded-lg border border-red-200">
                 <p className="text-red-700 font-medium">{message}</p>
+              </div>
+              
+              <div className="text-left bg-gray-50 p-3 rounded-lg">
+                <p className="text-sm text-gray-600 mb-2">Informations de débogage :</p>
+                <p className="text-xs text-gray-500">Token: {token || 'non fourni'}</p>
+                <p className="text-xs text-gray-500">URL actuelle: {window.location.href}</p>
               </div>
               
               <p className="text-sm text-gray-500">

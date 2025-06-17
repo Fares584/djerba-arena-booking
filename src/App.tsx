@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -58,6 +59,7 @@ function App() {
             <Route path="/reservation" element={<Reservation />} />
             <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/confirm-reservation" element={<ConfirmReservation />} />
             
             {/* Admin routes */}
             <Route path="/admin" element={<AdminLayout />}>
@@ -69,8 +71,6 @@ function App() {
               <Route path="stats" element={<Stats />} />
               <Route path="abonnements" element={<Abonnements />} />
             </Route>
-            
-            <Route path="/confirm-reservation" element={<ConfirmReservation />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
