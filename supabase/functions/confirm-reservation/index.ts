@@ -8,23 +8,16 @@ const corsHeaders = {
 };
 
 serve(async (req: Request) => {
-  console.log('🚀 Fonction confirm-reservation démarrée');
-  console.log('Method:', req.method);
-  console.log('URL:', req.url);
-  
   if (req.method === 'OPTIONS') {
-    console.log('Handling CORS preflight');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const requestBody = await req.json();
-    console.log('Body reçu:', requestBody);
-    
-    const { token } = requestBody;
-    
+    const { token } = await req.json();
+
+    console.log('Tentative de confirmation avec le token:', token);
+
     if (!token) {
-      console.error('❌ Token manquant');
       return new Response(
         JSON.stringify({ success: false, error: 'Token manquant' }),
         { 
@@ -34,36 +27,13 @@ serve(async (req: Request) => {
       );
     }
 
-    console.log('🔍 Token reçu:', token);
+    // Initialiser le client Supabase avec la clé de service
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    // Configuration Supabase
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    console.log('Configuration Supabase:', {
-      hasUrl: !!supabaseUrl,
-      hasKey: !!supabaseServiceKey
-    });
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('❌ Variables d\'environnement manquantes');
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Configuration serveur incorrecte' 
-        }),
-        { 
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
-          status: 500 
-        }
-      );
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    console.log('✅ Client Supabase créé');
-
-    // Rechercher la réservation
-    console.log('🔍 Recherche de la réservation...');
+    // Rechercher la réservation par token avec les infos du terrain
     const { data: reservation, error: findError } = await supabase
       .from('reservations')
       .select(`
@@ -74,25 +44,8 @@ serve(async (req: Request) => {
       .eq('statut', 'en_attente')
       .single();
 
-    console.log('Résultat recherche:', { reservation, findError });
-
-    if (findError) {
-      console.error('❌ Erreur recherche:', findError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Erreur lors de la recherche',
-          details: findError.message 
-        }),
-        { 
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
-          status: 500 
-        }
-      );
-    }
-
-    if (!reservation) {
-      console.error('❌ Réservation non trouvée');
+    if (findError || !reservation) {
+      console.error('Réservation non trouvée ou déjà confirmée:', findError);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -105,18 +58,13 @@ serve(async (req: Request) => {
       );
     }
 
-    console.log('✅ Réservation trouvée:', reservation.id);
-
-    // Vérifier l'expiration (15 minutes)
+    // Vérifier si la réservation n'est pas expirée (15 minutes)
     const createdAt = new Date(reservation.created_at);
     const now = new Date();
     const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
 
-    console.log('⏱️ Âge de la réservation:', diffMinutes, 'minutes');
-
     if (diffMinutes > 15) {
-      console.log('⚠️ Réservation expirée, annulation...');
-      
+      // Annuler la réservation expirée
       await supabase
         .from('reservations')
         .update({ statut: 'annulee' })
@@ -135,7 +83,6 @@ serve(async (req: Request) => {
     }
 
     // Confirmer la réservation
-    console.log('✅ Confirmation de la réservation...');
     const { error: updateError } = await supabase
       .from('reservations')
       .update({ 
@@ -145,12 +92,11 @@ serve(async (req: Request) => {
       .eq('id', reservation.id);
 
     if (updateError) {
-      console.error('❌ Erreur confirmation:', updateError);
+      console.error('Erreur lors de la mise à jour:', updateError);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Erreur lors de la confirmation',
-          details: updateError.message 
+          error: 'Erreur lors de la confirmation' 
         }),
         { 
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -159,20 +105,18 @@ serve(async (req: Request) => {
       );
     }
 
-    console.log('🎉 Réservation confirmée avec succès !');
-
-    const response = {
-      success: true,
-      message: 'Réservation confirmée avec succès',
-      nom_client: reservation.nom_client,
-      terrain_nom: reservation.terrain?.nom || 'Terrain inconnu',
-      date: reservation.date,
-      heure: reservation.heure,
-      duree: reservation.duree
-    };
+    console.log('Réservation confirmée avec succès:', reservation.id);
 
     return new Response(
-      JSON.stringify(response),
+      JSON.stringify({ 
+        success: true, 
+        message: 'Réservation confirmée avec succès',
+        nom_client: reservation.nom_client,
+        terrain_nom: reservation.terrain?.nom || 'Terrain inconnu',
+        date: reservation.date,
+        heure: reservation.heure,
+        duree: reservation.duree
+      }),
       { 
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
         status: 200 
@@ -180,13 +124,11 @@ serve(async (req: Request) => {
     );
 
   } catch (error) {
-    console.error('💥 Erreur globale:', error);
-    
+    console.error('Erreur dans confirm-reservation:', error);
     return new Response(
       JSON.stringify({ 
-        success: false,
-        error: 'Erreur serveur interne',
-        details: error.message
+        error: 'Erreur lors de la confirmation',
+        details: error.message 
       }),
       { 
         headers: { 'Content-Type': 'application/json', ...corsHeaders },

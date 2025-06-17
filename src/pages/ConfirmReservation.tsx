@@ -4,7 +4,6 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, XCircle, Loader2, Calendar, Clock, MapPin } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 const ConfirmReservation = () => {
   const [searchParams] = useSearchParams();
@@ -13,48 +12,51 @@ const ConfirmReservation = () => {
   const [reservationData, setReservationData] = useState<any>(null);
   const token = searchParams.get('token');
 
-  const confirmReservation = async () => {
+  useEffect(() => {
+    console.log('ConfirmReservation component mounted');
+    console.log('Token from URL:', token);
+    
     if (!token) {
+      console.error('No token found in URL');
       setStatus('error');
       setMessage('Token de confirmation manquant dans l\'URL');
       return;
     }
 
-    try {
-      console.log('🚀 Tentative de confirmation avec token:', token);
-      
-      const { data, error } = await supabase.functions.invoke('confirm-reservation', {
-        body: { token }
-      });
+    const confirmReservation = async () => {
+      try {
+        console.log('Tentative de confirmation avec le token:', token);
+        
+        const { data, error } = await supabase.functions.invoke('confirm-reservation', {
+          body: { token }
+        });
 
-      console.log('📨 Réponse de la fonction Edge:', { data, error });
+        console.log('Réponse de la fonction confirm-reservation:', { data, error });
 
-      if (error) {
-        console.error('❌ Erreur de la fonction Edge:', error);
+        if (error) {
+          console.error('Erreur lors de la confirmation:', error);
+          setStatus('error');
+          setMessage(error.message || 'Erreur lors de la confirmation');
+          return;
+        }
+
+        if (data?.success) {
+          console.log('Confirmation réussie:', data);
+          setStatus('success');
+          setReservationData(data);
+          setMessage('Votre réservation a été confirmée avec succès !');
+        } else {
+          console.error('Échec de la confirmation:', data);
+          setStatus('error');
+          setMessage(data?.error || 'Erreur lors de la confirmation');
+        }
+      } catch (error) {
+        console.error('Erreur inattendue:', error);
         setStatus('error');
-        setMessage(`Erreur: ${error.message}`);
-        return;
+        setMessage('Une erreur inattendue s\'est produite');
       }
+    };
 
-      if (data?.success) {
-        console.log('✅ Confirmation réussie', data);
-        setStatus('success');
-        setReservationData(data);
-        setMessage('Votre réservation a été confirmée avec succès !');
-      } else {
-        console.log('❌ Échec de la confirmation', data);
-        setStatus('error');
-        setMessage(data?.error || 'Erreur lors de la confirmation');
-      }
-    } catch (error: any) {
-      console.error('💥 Erreur catch:', error);
-      setStatus('error');
-      setMessage('Une erreur inattendue s\'est produite');
-    }
-  };
-
-  useEffect(() => {
-    console.log('🔧 Component monté, token:', token);
     confirmReservation();
   }, [token]);
 
@@ -133,12 +135,11 @@ const ConfirmReservation = () => {
                 </div>
               )}
               
-              <Button 
-                onClick={() => window.location.href = '/'} 
-                className="w-full"
-              >
-                Retour à l'accueil
-              </Button>
+              <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+                ✅ Votre réservation est maintenant confirmée dans notre système.
+                <br />
+                Vous pouvez maintenant fermer cette page.
+              </p>
             </>
           )}
           
@@ -152,33 +153,17 @@ const ConfirmReservation = () => {
                 <p className="text-red-700 font-medium">{message}</p>
               </div>
               
-              <div className="space-y-2">
-                <Button 
-                  onClick={confirmReservation}
-                  variant="outline"
-                  className="w-full"
-                >
-                  Réessayer
-                </Button>
-                
-                <Button 
-                  onClick={() => window.location.href = '/'} 
-                  className="w-full"
-                >
-                  Retour à l'accueil
-                </Button>
+              <div className="text-left bg-gray-50 p-3 rounded-lg">
+                <p className="text-sm text-gray-600 mb-2">Informations de débogage :</p>
+                <p className="text-xs text-gray-500">Token: {token || 'non fourni'}</p>
+                <p className="text-xs text-gray-500">URL actuelle: {window.location.href}</p>
               </div>
+              
+              <p className="text-sm text-gray-500">
+                Si le problème persiste, veuillez nous contacter directement.
+              </p>
             </>
           )}
-
-          {/* Debug info */}
-          <details className="text-left bg-gray-50 p-3 rounded-lg">
-            <summary className="text-sm text-gray-600 cursor-pointer">Informations de débogage</summary>
-            <div className="mt-2 space-y-1">
-              <p className="text-xs text-gray-500">Token: {token || 'non fourni'}</p>
-              <p className="text-xs text-gray-500">URL: {window.location.href}</p>
-            </div>
-          </details>
         </CardContent>
       </Card>
     </div>
