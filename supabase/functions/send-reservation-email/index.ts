@@ -8,22 +8,45 @@ const corsHeaders = {
 };
 
 serve(async (req: Request) => {
+  // Gérer les requêtes OPTIONS pour CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log('Fonction send-reservation-email appelée');
+    
     const { reservation_id, email, nom_client, terrain_nom, date, heure, duree, confirmation_token } = await req.json();
 
-    console.log('Envoi de l\'email avec Resend pour la réservation:', reservation_id);
+    console.log('Données reçues:', {
+      reservation_id,
+      email,
+      nom_client,
+      terrain_nom,
+      date,
+      heure,
+      duree,
+      confirmation_token: confirmation_token ? 'présent' : 'absent'
+    });
 
-    const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+    // Vérifier que la clé API Resend est configurée
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (!resendApiKey) {
+      console.error('RESEND_API_KEY non configurée');
+      throw new Error('Configuration Resend manquante');
+    }
 
-    // URL de confirmation
+    console.log('Initialisation de Resend...');
+    const resend = new Resend(resendApiKey);
+
+    // URL de confirmation (utilisation du domaine Lovable)
     const confirmationUrl = `https://gentle-pony-e6a7e4.lovableproject.com/confirm-reservation?token=${confirmation_token}`;
+    console.log('URL de confirmation générée:', confirmationUrl);
 
-    // Logo du site (vous pouvez remplacer par votre propre logo)
+    // Logo du site
     const logoUrl = "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=200&h=80&fit=crop&auto=format";
+
+    console.log('Tentative d\'envoi d\'email vers:', email);
 
     const result = await resend.emails.send({
       from: "Sport Center <noreply@resend.dev>",
@@ -127,7 +150,7 @@ serve(async (req: Request) => {
                 </table>
               </div>
               
-              <!-- Bouton de confirmation personnalisé -->
+              <!-- Bouton de confirmation -->
               <div style="text-align: center; margin: 40px 0;">
                 <a href="${confirmationUrl}" 
                    style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
@@ -139,7 +162,6 @@ serve(async (req: Request) => {
                           font-size: 18px;
                           display: inline-block;
                           box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
-                          transition: all 0.3s ease;
                           text-transform: uppercase;
                           letter-spacing: 1px;">
                   ✅ CONFIRMER MA RÉSERVATION
@@ -223,10 +245,19 @@ serve(async (req: Request) => {
       `,
     });
 
-    console.log('Email envoyé avec succès via Resend:', result);
+    console.log('Réponse de Resend:', result);
+
+    if (result.error) {
+      console.error('Erreur Resend:', result.error);
+      throw new Error(`Erreur Resend: ${result.error.message}`);
+    }
     
     return new Response(
-      JSON.stringify({ success: true, message: 'Email envoyé avec succès', emailId: result.data?.id }),
+      JSON.stringify({ 
+        success: true, 
+        message: 'Email envoyé avec succès', 
+        emailId: result.data?.id 
+      }),
       { 
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
         status: 200 
@@ -237,6 +268,7 @@ serve(async (req: Request) => {
     console.error('Erreur dans send-reservation-email:', error);
     return new Response(
       JSON.stringify({ 
+        success: false,
         error: 'Erreur lors de l\'envoi de l\'email',
         details: error.message 
       }),
