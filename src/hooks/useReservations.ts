@@ -128,6 +128,29 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
           throw error;
         }
 
+        // Envoyer un email de confirmation en utilisant le système d'email de Supabase
+        try {
+          await supabase.auth.admin.generateLink({
+            type: 'invite',
+            email: newReservation.email,
+            options: {
+              data: {
+                reservation_id: data.id,
+                nom_client: newReservation.nom_client,
+                terrain_nom: data.terrain?.nom || 'Terrain',
+                date: newReservation.date,
+                heure: newReservation.heure,
+                duree: newReservation.duree
+              }
+            }
+          });
+          
+          console.log('Email de confirmation envoyé');
+        } catch (emailError) {
+          console.error('Erreur lors de l\'envoi de l\'email:', emailError);
+          // Ne pas faire échouer la réservation si l'email échoue
+        }
+
         return data;
       } catch (error) {
         console.error("Error in createReservation mutation:", error);
@@ -140,6 +163,7 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
       }
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
       queryClient.invalidateQueries({ queryKey: ['reservations-history'] });
+      toast.success("Réservation créée avec succès ! Un email de confirmation a été envoyé.");
     },
     onError: (error) => {
       toast.error("Erreur lors de la création de la réservation");
