@@ -40,10 +40,17 @@ const AdminLayout = () => {
             </Button>
             <h1 className="text-xl font-semibold text-gray-900">Administration</h1>
           </div>
-          <Button onClick={handleLogout} variant="outline" size="sm" className="px-2 py-1 text-xs">
-            <LogOut className="h-3 w-3 mr-1" />
-            Déconnexion
-          </Button>
+          <div className="flex justify-end ml-auto">
+            <Button 
+              onClick={handleLogout} 
+              variant="outline" 
+              size="sm" 
+              className="px-2 py-1 text-xs border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700"
+            >
+              <LogOut className="h-3 w-3 mr-1" />
+              Déconnexion
+            </Button>
+          </div>
         </div>
       </header>
 
