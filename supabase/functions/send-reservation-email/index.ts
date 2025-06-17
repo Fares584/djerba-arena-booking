@@ -43,10 +43,13 @@ serve(async (req: Request) => {
     const confirmationUrl = `https://gentle-pony-e6a7e4.lovableproject.com/confirm-reservation?token=${confirmation_token}`;
     console.log('URL de confirmation générée:', confirmationUrl);
 
+    // Logo du site
+    const logoUrl = "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=200&h=80&fit=crop&auto=format";
+
     console.log('Tentative d\'envoi d\'email vers:', email);
 
     const result = await resend.emails.send({
-      from: "Sport Center <onboarding@resend.dev>",
+      from: "Sport Center <noreply@resend.dev>",
       to: [email],
       subject: "🏟️ Confirmez votre réservation de stade - Sport Center",
       html: `
@@ -60,12 +63,13 @@ serve(async (req: Request) => {
         <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fdf8;">
           <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             
-            <!-- Header -->
+            <!-- Header avec logo -->
             <div style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); padding: 30px 20px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">
-                🏟️ Sport Center
+              <img src="${logoUrl}" alt="Sport Center Logo" style="max-height: 60px; margin-bottom: 15px; border-radius: 8px;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                Sport Center
               </h1>
-              <p style="color: #f0fdf4; margin: 5px 0 0 0; font-size: 16px;">
+              <p style="color: #f0fdf4; margin: 5px 0 0 0; font-size: 16px; opacity: 0.9;">
                 Votre terrain, votre passion
               </p>
             </div>
@@ -73,7 +77,7 @@ serve(async (req: Request) => {
             <!-- Contenu principal -->
             <div style="padding: 40px 30px;">
               <h2 style="color: #16a34a; margin: 0 0 20px 0; font-size: 24px; text-align: center;">
-                🎉 Confirmez votre réservation !
+                🎉 Votre réservation est presque confirmée !
               </h2>
               
               <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 20px 0;">
@@ -81,7 +85,7 @@ serve(async (req: Request) => {
               </p>
               
               <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 20px 0;">
-                Merci pour votre demande de réservation ! Pour finaliser votre réservation, veuillez cliquer sur le bouton ci-dessous.
+                Merci pour votre demande de réservation ! Nous avons bien reçu votre demande et nous sommes ravis de vous accueillir sur nos terrains.
               </p>
               
               <!-- Détails de la réservation -->
@@ -89,20 +93,61 @@ serve(async (req: Request) => {
                           border: 2px solid #16a34a; 
                           border-radius: 12px; 
                           padding: 25px; 
-                          margin: 30px 0;">
-                <h3 style="color: #16a34a; margin: 0 0 20px 0; font-size: 18px; text-align: center;">
-                  📋 Détails de votre réservation
+                          margin: 30px 0;
+                          box-shadow: 0 2px 8px rgba(22, 163, 74, 0.1);">
+                <h3 style="color: #16a34a; margin: 0 0 20px 0; font-size: 20px; text-align: center; display: flex; align-items: center; justify-content: center;">
+                  <span style="margin-right: 8px;">📋</span> Détails de votre réservation
                 </h3>
                 
-                <p style="margin: 10px 0; color: #374151;"><strong>🏟️ Terrain :</strong> ${terrain_nom}</p>
-                <p style="margin: 10px 0; color: #374151;"><strong>📅 Date :</strong> ${new Date(date).toLocaleDateString('fr-FR', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}</p>
-                <p style="margin: 10px 0; color: #374151;"><strong>⏰ Heure :</strong> ${heure}</p>
-                <p style="margin: 10px 0; color: #374151;"><strong>⏱️ Durée :</strong> ${duree}h</p>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #d1fae5;">
+                      <span style="font-weight: bold; color: #15803d; display: inline-flex; align-items: center;">
+                        <span style="margin-right: 8px;">🏟️</span> Terrain :
+                      </span>
+                    </td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #d1fae5; text-align: right;">
+                      <span style="color: #374151; font-weight: 600;">${terrain_nom}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #d1fae5;">
+                      <span style="font-weight: bold; color: #15803d; display: inline-flex; align-items: center;">
+                        <span style="margin-right: 8px;">📅</span> Date :
+                      </span>
+                    </td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #d1fae5; text-align: right;">
+                      <span style="color: #374151; font-weight: 600;">
+                        ${new Date(date).toLocaleDateString('fr-FR', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #d1fae5;">
+                      <span style="font-weight: bold; color: #15803d; display: inline-flex; align-items: center;">
+                        <span style="margin-right: 8px;">⏰</span> Heure :
+                      </span>
+                    </td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #d1fae5; text-align: right;">
+                      <span style="color: #374151; font-weight: 600;">${heure}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0;">
+                      <span style="font-weight: bold; color: #15803d; display: inline-flex; align-items: center;">
+                        <span style="margin-right: 8px;">⏱️</span> Durée :
+                      </span>
+                    </td>
+                    <td style="padding: 12px 0; text-align: right;">
+                      <span style="color: #374151; font-weight: 600;">${duree}h</span>
+                    </td>
+                  </tr>
+                </table>
               </div>
               
               <!-- Bouton de confirmation -->
@@ -116,7 +161,9 @@ serve(async (req: Request) => {
                           font-weight: bold;
                           font-size: 18px;
                           display: inline-block;
-                          box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);">
+                          box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+                          text-transform: uppercase;
+                          letter-spacing: 1px;">
                   ✅ CONFIRMER MA RÉSERVATION
                 </a>
               </div>
@@ -127,12 +174,18 @@ serve(async (req: Request) => {
                           border-radius: 6px; 
                           padding: 20px; 
                           margin: 30px 0;">
-                <p style="margin: 0; color: #92400e; font-weight: bold;">
-                  ⚠️ Action requise dans les 15 minutes
-                </p>
-                <p style="margin: 8px 0 0 0; color: #92400e; font-size: 14px;">
-                  Veuillez confirmer votre réservation. Passé ce délai, elle sera automatiquement annulée.
-                </p>
+                <div style="display: flex; align-items: flex-start;">
+                  <span style="font-size: 24px; margin-right: 12px;">⚠️</span>
+                  <div>
+                    <p style="margin: 0; color: #92400e; font-weight: bold; font-size: 16px;">
+                      Action requise dans les 15 minutes
+                    </p>
+                    <p style="margin: 8px 0 0 0; color: #92400e; font-size: 14px; line-height: 1.5;">
+                      Veuillez confirmer votre réservation en cliquant sur le bouton ci-dessus. 
+                      Passé ce délai, votre demande sera automatiquement annulée.
+                    </p>
+                  </div>
+                </div>
               </div>
               
               <!-- Lien de secours -->
@@ -140,8 +193,11 @@ serve(async (req: Request) => {
                           border-radius: 8px; 
                           padding: 20px; 
                           margin: 30px 0;">
-                <p style="color: #6b7280; margin: 0 0 10px 0; font-size: 14px;">
-                  Le bouton ne fonctionne pas ? Copiez ce lien :
+                <p style="color: #6b7280; margin: 0 0 10px 0; font-size: 14px; font-weight: 600;">
+                  Le bouton ne fonctionne pas ?
+                </p>
+                <p style="color: #6b7280; margin: 0; font-size: 13px; line-height: 1.4;">
+                  Copiez et collez ce lien dans votre navigateur :
                 </p>
                 <p style="word-break: break-all; 
                           color: #16a34a; 
@@ -149,17 +205,39 @@ serve(async (req: Request) => {
                           background-color: #ffffff; 
                           padding: 10px; 
                           border-radius: 4px; 
-                          margin: 8px 0 0 0;">
+                          margin: 8px 0 0 0;
+                          border: 1px solid #d1d5db;">
                   ${confirmationUrl}
                 </p>
               </div>
             </div>
             
             <!-- Footer -->
-            <div style="background-color: #f3f4f6; padding: 20px; text-align: center;">
-              <p style="color: #6b7280; font-size: 14px; margin: 0;">
+            <div style="background-color: #f3f4f6; 
+                        padding: 30px 20px; 
+                        text-align: center; 
+                        border-top: 1px solid #e5e7eb;">
+              <p style="color: #16a34a; 
+                        font-size: 18px; 
+                        font-weight: bold; 
+                        margin: 0 0 10px 0;">
+                Merci de nous faire confiance ! 🙏
+              </p>
+              <p style="color: #6b7280; 
+                        font-size: 14px; 
+                        margin: 0 0 15px 0;">
                 Sport Center - Votre centre sportif de confiance
               </p>
+              <div style="border-top: 1px solid #d1d5db; 
+                          padding-top: 15px; 
+                          margin-top: 15px;">
+                <p style="color: #9ca3af; 
+                          font-size: 12px; 
+                          margin: 0;">
+                  Cet email a été envoyé pour confirmer votre réservation. 
+                  Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer ce message.
+                </p>
+              </div>
             </div>
           </div>
         </body>
