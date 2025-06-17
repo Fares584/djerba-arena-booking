@@ -141,7 +141,7 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
       }
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
       queryClient.invalidateQueries({ queryKey: ['reservations-history'] });
-      toast.success("Réservation créée avec succès ! Un email de confirmation a été envoyé.");
+      toast.success("Réservation créée ! Vérifiez votre email pour la confirmation.");
     },
     onError: (error) => {
       toast.error("Erreur lors de la création de la réservation");

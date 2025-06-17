@@ -33,10 +33,13 @@ serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Rechercher la réservation par token
+    // Rechercher la réservation par token avec les infos du terrain
     const { data: reservation, error: findError } = await supabase
       .from('reservations')
-      .select('*')
+      .select(`
+        *,
+        terrain:terrains(nom)
+      `)
       .eq('confirmation_token', token)
       .eq('statut', 'en_attente')
       .single();
@@ -44,7 +47,10 @@ serve(async (req: Request) => {
     if (findError || !reservation) {
       console.error('Réservation non trouvée ou déjà confirmée:', findError);
       return new Response(
-        JSON.stringify({ success: false, error: 'Token invalide ou réservation déjà confirmée' }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'Token invalide ou réservation déjà confirmée' 
+        }),
         { 
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
           status: 404 
@@ -65,7 +71,10 @@ serve(async (req: Request) => {
         .eq('id', reservation.id);
 
       return new Response(
-        JSON.stringify({ success: false, error: 'La réservation a expiré (plus de 15 minutes)' }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'La réservation a expiré (plus de 15 minutes)' 
+        }),
         { 
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
           status: 410 
@@ -85,7 +94,10 @@ serve(async (req: Request) => {
     if (updateError) {
       console.error('Erreur lors de la mise à jour:', updateError);
       return new Response(
-        JSON.stringify({ success: false, error: 'Erreur lors de la confirmation' }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'Erreur lors de la confirmation' 
+        }),
         { 
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
           status: 500 
@@ -99,7 +111,11 @@ serve(async (req: Request) => {
       JSON.stringify({ 
         success: true, 
         message: 'Réservation confirmée avec succès',
-        nom_client: reservation.nom_client
+        nom_client: reservation.nom_client,
+        terrain_nom: reservation.terrain?.nom || 'Terrain inconnu',
+        date: reservation.date,
+        heure: reservation.heure,
+        duree: reservation.duree
       }),
       { 
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
