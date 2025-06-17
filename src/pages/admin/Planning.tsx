@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -26,7 +27,7 @@ function generateTimeSlotsForFoot(startHour: number, startMinute: number, endHou
   return slots;
 }
 
-// Met à jour la liste des créneaux horaires standards pour tennis et padel :
+// Met à jour la liste des créneaux horaires standards pour tennis et padel :
 const defaultTimeSlots = [
   '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
   '15:00', '16:00', '17:00', '18:00', '19:00', '20:00',
@@ -45,6 +46,20 @@ function getTimeSlotsForTerrain(terrain: Terrain): string[] {
   }
   // Autres terrains (tennis, padel…) : créneaux horaires standards
   return defaultTimeSlots;
+}
+
+// Fonction pour obtenir la couleur d'en-tête selon le type de terrain
+function getHeaderColorByType(type: string): string {
+  switch (type) {
+    case 'padel':
+      return 'bg-blue-600';
+    case 'tennis':
+      return 'bg-red-700';
+    case 'foot':
+      return 'bg-green-600';
+    default:
+      return 'bg-sport-dark';
+  }
 }
 
 const Planning = () => {
@@ -238,10 +253,11 @@ const Planning = () => {
           filteredTerrains.map(terrain => {
             // Récupère dynamiquement la liste de créneaux selon le terrain
             const timeSlots = getTimeSlotsForTerrain(terrain);
+            const headerColor = getHeaderColorByType(terrain.type);
 
             return (
               <Card key={terrain.id} className="mb-8">
-                <CardHeader className="bg-sport-dark text-white py-3">
+                <CardHeader className={`${headerColor} text-white py-3`}>
                   <CardTitle className="text-base md:text-lg">{terrain.nom} - {terrain.type === 'foot' ? 'Football' : terrain.type === 'tennis' ? 'Tennis' : 'Padel'}</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
