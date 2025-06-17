@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -176,8 +174,8 @@ const Planning = () => {
       </div>
       
       <div className="bg-white p-4 md:p-6 rounded-lg shadow mb-8">
-        <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
-          <div className="w-full md:w-64">
+        <div className="flex flex-col lg:flex-row justify-between gap-4 mb-6">
+          <div className="w-full lg:w-64">
             <Select 
               value={selectedTerrain ? selectedTerrain.toString() : "all"}
               onValueChange={(value) => setSelectedTerrain(value === "all" ? null : parseInt(value))}
@@ -196,7 +194,7 @@ const Planning = () => {
             </Select>
           </div>
           
-          {/* Desktop Week Navigation */}
+          {/* Desktop & Tablet Week Navigation */}
           <div className="hidden md:flex items-center space-x-2">
             <Button variant="outline" size="sm" onClick={goToPreviousWeek}>
               <ChevronLeft className="h-4 w-4" />
@@ -223,9 +221,9 @@ const Planning = () => {
           </div>
         </div>
         
-        {/* Desktop Week Header */}
+        {/* Desktop & Tablet Week Header */}
         <div className="hidden md:block text-center mb-4">
-          <h2 className="text-xl font-medium">
+          <h2 className="text-lg lg:text-xl font-medium">
             Du {format(startDate, 'dd MMMM', { locale: fr })} au {format(weekDays[6] || addDays(startDate, 6), 'dd MMMM yyyy', { locale: fr })}
           </h2>
         </div>
@@ -259,16 +257,16 @@ const Planning = () => {
             return (
               <Card key={terrain.id} className="mb-8">
                 <CardHeader className={`${headerColor} text-white py-3`}>
-                  <CardTitle className="text-base md:text-lg">{terrain.nom} - {terrain.type === 'foot' ? 'Football' : terrain.type === 'tennis' ? 'Tennis' : 'Padel'}</CardTitle>
+                  <CardTitle className="text-base md:text-lg lg:text-xl">{terrain.nom} - {terrain.type === 'foot' ? 'Football' : terrain.type === 'tennis' ? 'Tennis' : 'Padel'}</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                  {/* Desktop View - Table */}
+                  {/* Desktop & Tablet View - Table */}
                   <div className="hidden md:block overflow-x-auto">
-                    <div className="min-w-[800px]">
+                    <div className="min-w-[600px] lg:min-w-[800px]">
                       <div className="grid grid-cols-8 bg-gray-100">
-                        <div className="p-2 border-b border-r border-gray-200 font-medium">Heure</div>
+                        <div className="p-2 lg:p-3 border-b border-r border-gray-200 font-medium text-sm lg:text-base">Heure</div>
                         {weekDays.map((day, index) => (
-                          <div key={index} className="p-2 border-b border-r border-gray-200 text-center font-medium">
+                          <div key={index} className="p-2 lg:p-3 border-b border-r border-gray-200 text-center font-medium text-xs lg:text-sm">
                             <div>{format(day, 'EEE', { locale: fr })}</div>
                             <div>{format(day, 'dd/MM')}</div>
                           </div>
@@ -277,7 +275,7 @@ const Planning = () => {
                       
                       {timeSlots.map((timeSlot) => (
                         <div key={timeSlot} className="grid grid-cols-8">
-                          <div className="p-2 border-b border-r border-gray-200 font-medium">
+                          <div className="p-2 lg:p-3 border-b border-r border-gray-200 font-medium text-sm lg:text-base">
                             {timeSlot}
                           </div>
                           
@@ -288,13 +286,17 @@ const Planning = () => {
                             return (
                               <div 
                                 key={dayIndex}
-                                className={`p-2 border-b border-r ${getCellClassName(reservation)}`}
+                                className={`p-1 lg:p-2 border-b border-r ${getCellClassName(reservation)}`}
                               >
                                 {reservation ? (
                                   <div className="text-xs">
-                                    <div className="font-medium">{reservation.nom_client}</div>
-                                    <div className="text-gray-600">{reservation.tel}</div>
-                                    <div>{reservation.duree}h</div>
+                                    <div className="font-medium truncate" title={reservation.nom_client}>
+                                      {reservation.nom_client}
+                                    </div>
+                                    <div className="text-gray-600 truncate" title={reservation.tel}>
+                                      {reservation.tel}
+                                    </div>
+                                    <div className="text-xs opacity-75">{reservation.duree}h</div>
                                   </div>
                                 ) : null}
                               </div>
