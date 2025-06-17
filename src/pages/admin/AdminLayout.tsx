@@ -40,7 +40,7 @@ const AdminLayout = () => {
             </Button>
             <h1 className="text-xl font-semibold text-gray-900">Administration</h1>
           </div>
-          <div className="flex justify-end ml-auto">
+          <div className="flex justify-end ml-auto pl-8">
             <Button 
               onClick={handleLogout} 
               variant="outline" 
