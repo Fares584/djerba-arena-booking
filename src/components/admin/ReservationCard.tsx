@@ -103,11 +103,17 @@ const ReservationCard = ({
               <div className="grid grid-cols-1 gap-2">
                 <div className="flex items-center gap-2 text-gray-600">
                   <Phone className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                  <span className="font-medium text-lg">{reservation.tel}</span>
+                  <a 
+                    href={`tel:${reservation.tel}`}
+                    className="font-medium text-lg text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+                    title={`Appeler ${reservation.tel}`}
+                  >
+                    {reservation.tel}
+                  </a>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600 min-w-0">
                   <Mail className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                  <span className="text-sm truncate" title={reservation.email}>{reservation.email}</span>
+                  <span className="text-sm truncate min-w-0" title={reservation.email}>{reservation.email}</span>
                 </div>
               </div>
             </div>
