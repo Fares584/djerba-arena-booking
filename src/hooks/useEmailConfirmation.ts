@@ -43,6 +43,7 @@ export function useEmailConfirmation() {
     },
     onSuccess: (result) => {
       console.log('Email de confirmation envoyé avec succès:', result);
+      toast.success('Email de confirmation envoyé ! Vérifiez votre boîte mail.');
     },
     onError: (error) => {
       console.error('Erreur dans useEmailConfirmation:', error);
