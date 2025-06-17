@@ -40,8 +40,8 @@ const AdminLayout = () => {
             </Button>
             <h1 className="text-xl font-semibold text-gray-900">Administration</h1>
           </div>
-          <Button onClick={handleLogout} variant="outline" size="sm">
-            <LogOut className="h-4 w-4 mr-2" />
+          <Button onClick={handleLogout} variant="outline" size="sm" className="px-2 py-1 text-xs">
+            <LogOut className="h-3 w-3 mr-1" />
             Déconnexion
           </Button>
         </div>
