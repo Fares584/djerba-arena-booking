@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -292,6 +293,7 @@ const Planning = () => {
                                 {reservation ? (
                                   <div className="text-xs">
                                     <div className="font-medium">{reservation.nom_client}</div>
+                                    <div className="text-gray-600">{reservation.tel}</div>
                                     <div>{reservation.duree}h</div>
                                   </div>
                                 ) : null}
@@ -320,6 +322,7 @@ const Planning = () => {
                               {reservation ? (
                                 <div className="text-right">
                                   <div className="font-medium text-sm">{reservation.nom_client}</div>
+                                  <div className="text-xs text-gray-600">{reservation.tel}</div>
                                   <div className="text-xs opacity-75">{reservation.duree}h</div>
                                 </div>
                               ) : (
