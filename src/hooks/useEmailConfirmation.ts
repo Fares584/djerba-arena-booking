@@ -11,11 +11,14 @@ interface EmailConfirmationData {
   date: string;
   heure: string;
   duree: number;
+  confirmation_token: string;
 }
 
 export function useEmailConfirmation() {
   return useMutation({
     mutationFn: async (data: EmailConfirmationData) => {
+      console.log('Envoi de l\'email avec les données:', data);
+      
       const { data: result, error } = await supabase.functions.invoke('send-reservation-email', {
         body: data
       });

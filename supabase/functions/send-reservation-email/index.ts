@@ -13,13 +13,16 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { reservation_id, email, nom_client, terrain_nom, date, heure, duree } = await req.json();
+    const { reservation_id, email, nom_client, terrain_nom, date, heure, duree, confirmation_token } = await req.json();
 
     // Initialiser le client Supabase avec la clé de service
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    // URL de confirmation
+    const confirmationUrl = `${Deno.env.get('SUPABASE_URL')?.replace('/supabase', '')}/confirm-reservation?token=${confirmation_token}`;
 
     // Créer le contenu de l'email
     const emailContent = `
@@ -40,11 +43,15 @@ serve(async (req: Request) => {
           </ul>
         </div>
         
-        <p style="color: #d97706; background-color: #fef3c7; padding: 10px; border-radius: 4px;">
-          <strong>Statut :</strong> En attente de confirmation par notre équipe
-        </p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${confirmationUrl}" style="background-color: #16a34a; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+            Confirmer ma réservation
+          </a>
+        </div>
         
-        <p>Vous recevrez un email de confirmation une fois que notre équipe aura validé votre réservation.</p>
+        <p style="color: #d97706; background-color: #fef3c7; padding: 10px; border-radius: 4px;">
+          <strong>Important :</strong> Veuillez confirmer votre réservation en cliquant sur le bouton ci-dessus dans les 15 minutes, sinon elle sera automatiquement annulée.
+        </p>
         
         <p>Merci de nous faire confiance !</p>
         
@@ -55,16 +62,15 @@ serve(async (req: Request) => {
       </div>
     `;
 
-    // Envoyer l'email en utilisant l'API auth de Supabase
+    // Envoyer l'email via l'API admin de Supabase
     const { error } = await supabase.auth.admin.generateLink({
-      type: 'invite',
+      type: 'email',
       email: email,
       options: {
-        emailRedirectTo: `${Deno.env.get('SUPABASE_URL')}/auth/v1/verify`,
         data: {
-          custom_email: 'reservation_confirmation',
-          email_content: emailContent,
-          subject: 'Confirmation de votre réservation - Sport Center'
+          email_type: 'reservation_confirmation',
+          subject: 'Confirmation de votre réservation - Sport Center',
+          html_content: emailContent
         }
       }
     });
@@ -74,7 +80,7 @@ serve(async (req: Request) => {
       throw error;
     }
 
-    console.log('Email de confirmation envoyé avec succès');
+    console.log('Email de confirmation envoyé avec succès pour la réservation:', reservation_id);
     
     return new Response(
       JSON.stringify({ success: true, message: 'Email envoyé avec succès' }),

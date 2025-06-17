@@ -1,55 +1,102 @@
 
-import { useEffect, useState } from "react";
-import { Loader2, CheckCircle, XCircle } from "lucide-react";
-
-const CONFIRM_API = "https://gohcvgpwuzlepfcucvmj.supabase.co/functions/v1/confirm-reservation";
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 const ConfirmReservation = () => {
-  const [status, setStatus] = useState<"pending" | "success" | "fail">("pending");
-  const [clientName, setClientName] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [message, setMessage] = useState('');
+  const [clientName, setClientName] = useState('');
+  const token = searchParams.get('token');
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
     if (!token) {
-      setStatus("fail");
+      setStatus('error');
+      setMessage('Token de confirmation manquant');
       return;
     }
 
-    fetch(CONFIRM_API + "?token=" + encodeURIComponent(token))
-      .then(async res => {
-        if (!res.ok) throw new Error("failed");
-        const data = await res.json();
-        setStatus("success");
-        setClientName(data.nom_client);
-      })
-      .catch(() => setStatus("fail"));
-  }, []);
+    const confirmReservation = async () => {
+      try {
+        console.log('Tentative de confirmation avec le token:', token);
+        
+        const { data, error } = await supabase.functions.invoke('confirm-reservation', {
+          body: { token }
+        });
+
+        if (error) {
+          console.error('Erreur lors de la confirmation:', error);
+          setStatus('error');
+          setMessage(error.message || 'Erreur lors de la confirmation');
+          return;
+        }
+
+        if (data?.success) {
+          setStatus('success');
+          setClientName(data.nom_client || '');
+          setMessage('Votre réservation a été confirmée avec succès !');
+        } else {
+          setStatus('error');
+          setMessage(data?.error || 'Erreur lors de la confirmation');
+        }
+      } catch (error) {
+        console.error('Erreur inattendue:', error);
+        setStatus('error');
+        setMessage('Une erreur inattendue s\'est produite');
+      }
+    };
+
+    confirmReservation();
+  }, [token]);
 
   return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center">
-      {status === "pending" && (
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-12 w-12 animate-spin text-sport-green" />
-          <span>Confirmation de la réservation en cours...</span>
-        </div>
-      )}
-      {status === "success" && (
-        <div className="flex flex-col items-center gap-4">
-          <CheckCircle className="h-14 w-14 text-green-500" />
-          <h1 className="text-2xl font-bold">Merci {clientName || ""} !</h1>
-          <p className="text-lg">Votre réservation est maintenant confirmée.</p>
-        </div>
-      )}
-      {status === "fail" && (
-        <div className="flex flex-col items-center gap-4">
-          <XCircle className="h-14 w-14 text-red-500" />
-          <h1 className="text-2xl font-bold">Lien invalide ou déjà confirmé</h1>
-          <p className="text-lg">Ce lien n&#39;est plus valide.</p>
-        </div>
-      )}
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <Card className="max-w-md w-full">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">
+            {status === 'loading' && 'Confirmation en cours...'}
+            {status === 'success' && 'Réservation confirmée !'}
+            {status === 'error' && 'Erreur de confirmation'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-center space-y-4">
+          {status === 'loading' && (
+            <div className="flex justify-center">
+              <Loader2 className="h-12 w-12 animate-spin text-sport-green" />
+            </div>
+          )}
+          
+          {status === 'success' && (
+            <>
+              <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+              {clientName && (
+                <p className="text-lg font-medium">
+                  Merci {clientName} !
+                </p>
+              )}
+              <p className="text-gray-600">{message}</p>
+              <p className="text-sm text-gray-500">
+                Vous pouvez maintenant fermer cette page.
+              </p>
+            </>
+          )}
+          
+          {status === 'error' && (
+            <>
+              <XCircle className="h-16 w-16 text-red-500 mx-auto" />
+              <p className="text-gray-600">{message}</p>
+              <p className="text-sm text-gray-500">
+                Si le problème persiste, veuillez nous contacter.
+              </p>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
-  )
+  );
 };
 
 export default ConfirmReservation;

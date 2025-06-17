@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -160,12 +159,14 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       date: formattedDate,
       heure: selectedTime,
       duree: parseFloat(effectiveDuration),
-      statut: 'confirmee', // Admin-created reservations are automatically confirmed
+      statut: 'en_attente', // Status will be "en_attente" until confirmed by email
       remarque: message || undefined
     }, {
       onSuccess: (data) => {
-        // Envoyer un email de confirmation
-        if (selectedTerrain) {
+        console.log('Réservation créée, envoi email avec token:', data.confirmation_token);
+        
+        // Envoyer un email de confirmation avec le token
+        if (selectedTerrain && data.confirmation_token) {
           emailConfirmation.mutate({
             reservation_id: data.id,
             email: email,
@@ -173,7 +174,8 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
             terrain_nom: selectedTerrain.nom,
             date: formattedDate,
             heure: selectedTime,
-            duree: parseFloat(effectiveDuration)
+            duree: parseFloat(effectiveDuration),
+            confirmation_token: data.confirmation_token
           });
         }
         onSuccess();

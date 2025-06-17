@@ -110,7 +110,7 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
   return useMutation({
     mutationFn: async (newReservation: Omit<Reservation, 'id' | 'created_at' | 'updated_at'>) => {
       try {
-        // Créer avec statut "en_attente" qui nécessite confirmation admin
+        // Créer avec statut "en_attente" qui nécessite confirmation
         const { data, error } = await supabase
           .from('reservations')
           .insert({
@@ -128,29 +128,7 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
           throw error;
         }
 
-        // Envoyer un email de confirmation en utilisant le système d'email de Supabase
-        try {
-          await supabase.auth.admin.generateLink({
-            type: 'invite',
-            email: newReservation.email,
-            options: {
-              data: {
-                reservation_id: data.id,
-                nom_client: newReservation.nom_client,
-                terrain_nom: data.terrain?.nom || 'Terrain',
-                date: newReservation.date,
-                heure: newReservation.heure,
-                duree: newReservation.duree
-              }
-            }
-          });
-          
-          console.log('Email de confirmation envoyé');
-        } catch (emailError) {
-          console.error('Erreur lors de l\'envoi de l\'email:', emailError);
-          // Ne pas faire échouer la réservation si l'email échoue
-        }
-
+        console.log('Réservation créée avec le token:', data.confirmation_token);
         return data;
       } catch (error) {
         console.error("Error in createReservation mutation:", error);
