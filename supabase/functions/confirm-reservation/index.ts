@@ -8,16 +8,21 @@ const corsHeaders = {
 };
 
 serve(async (req: Request) => {
+  console.log('Function confirm-reservation called with method:', req.method);
+  
   if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight request');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log('Processing confirm-reservation request');
     const { token } = await req.json();
 
     console.log('Tentative de confirmation avec le token:', token);
 
     if (!token) {
+      console.error('Token manquant dans la requête');
       return new Response(
         JSON.stringify({ success: false, error: 'Token manquant' }),
         { 
@@ -28,12 +33,27 @@ serve(async (req: Request) => {
     }
 
     // Initialiser le client Supabase avec la clé de service
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    console.log('Supabase URL:', supabaseUrl ? 'configurée' : 'manquante');
+    console.log('Service key:', supabaseServiceKey ? 'configurée' : 'manquante');
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Configuration Supabase manquante');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Configuration serveur manquante' }),
+        { 
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          status: 500 
+        }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Rechercher la réservation par token avec les infos du terrain
+    console.log('Recherche de la réservation avec le token:', token);
     const { data: reservation, error: findError } = await supabase
       .from('reservations')
       .select(`
@@ -58,12 +78,17 @@ serve(async (req: Request) => {
       );
     }
 
+    console.log('Réservation trouvée:', reservation.id);
+
     // Vérifier si la réservation n'est pas expirée (15 minutes)
     const createdAt = new Date(reservation.created_at);
     const now = new Date();
     const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
 
+    console.log('Âge de la réservation en minutes:', diffMinutes);
+
     if (diffMinutes > 15) {
+      console.log('Réservation expirée, annulation...');
       // Annuler la réservation expirée
       await supabase
         .from('reservations')
@@ -83,6 +108,7 @@ serve(async (req: Request) => {
     }
 
     // Confirmer la réservation
+    console.log('Confirmation de la réservation:', reservation.id);
     const { error: updateError } = await supabase
       .from('reservations')
       .update({ 
@@ -127,6 +153,7 @@ serve(async (req: Request) => {
     console.error('Erreur dans confirm-reservation:', error);
     return new Response(
       JSON.stringify({ 
+        success: false,
         error: 'Erreur lors de la confirmation',
         details: error.message 
       }),
