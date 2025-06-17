@@ -1,3 +1,5 @@
+
+
 import { useState, useEffect } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -7,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, Loader2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Reservation, Terrain } from '@/lib/supabase';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
@@ -229,27 +230,24 @@ const Planning = () => {
           </h2>
         </div>
 
-        {/* Mobile Day Selector with Horizontal Scroll */}
+        {/* Mobile Day Selector */}
         <div className="md:hidden mb-4">
-          <ScrollArea className="w-full whitespace-nowrap">
-            <div className="flex space-x-2 pb-4">
-              {weekDays.map((day, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedDay(day)}
-                  className={`flex-shrink-0 p-3 rounded-lg text-sm font-medium min-w-[80px] ${
-                    format(day, 'yyyy-MM-dd') === format(selectedDay, 'yyyy-MM-dd')
-                      ? 'bg-sport-green text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  <div>{format(day, 'EEE', { locale: fr })}</div>
-                  <div>{format(day, 'dd')}</div>
-                </button>
-              ))}
-            </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
+          <div className="grid grid-cols-7 gap-1">
+            {weekDays.map((day, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedDay(day)}
+                className={`p-2 rounded text-xs font-medium ${
+                  format(day, 'yyyy-MM-dd') === format(selectedDay, 'yyyy-MM-dd')
+                    ? 'bg-sport-green text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <div>{format(day, 'EEE', { locale: fr })}</div>
+                <div>{format(day, 'dd')}</div>
+              </button>
+            ))}
+          </div>
         </div>
         
         {terrains && filteredTerrains && filteredTerrains.length > 0 ? (
