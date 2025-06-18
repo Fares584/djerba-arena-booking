@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -73,9 +74,9 @@ const Fields = () => {
             </div>
           )}
           
-          {/* Fields Grid */}
+          {/* Fields Grid - Responsive layout */}
           {!isLoading && !error && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 lg:gap-8">
               {filteredFields.map((field) => (
                 <FieldCard 
                   key={field.id} 
