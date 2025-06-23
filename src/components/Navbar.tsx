@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
@@ -16,7 +16,7 @@ const Navbar = () => {
   };
 
   // Close menu when route changes
-  React.useEffect(() => {
+  useEffect(() => {
     setIsMenuOpen(false);
   }, [location.pathname]);
 
