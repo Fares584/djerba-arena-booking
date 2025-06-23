@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -198,18 +197,18 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 py-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <form onSubmit={handleSubmit} className="space-y-4 p-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Left Column - Field Selection and Date/Time */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div>
-            <Label htmlFor="terrain">Terrain</Label>
+            <Label htmlFor="terrain" className="text-sm">Terrain</Label>
             <Select 
               value={selectedField?.toString() || "select-terrain"} 
               onValueChange={(value) => setSelectedField(value !== "select-terrain" ? parseInt(value) : null)}
               disabled={terrainsLoading || !terrains}
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-9">
                 <SelectValue placeholder="Sélectionnez un terrain" />
               </SelectTrigger>
               <SelectContent>
@@ -224,25 +223,29 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
           </div>
           
           <div>
-            <Label>Date</Label>
+            <Label className="text-sm">Date</Label>
             <div className="border rounded-md p-1 mt-1">
               <Calendar
                 mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}
                 locale={fr}
+                className="scale-90"
               />
             </div>
           </div>
-          
-          <div className="grid grid-cols-2 gap-4">
+        </div>
+        
+        {/* Right Column - Client Information with validation */}
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="time">Heure</Label>
+              <Label htmlFor="time" className="text-sm">Heure</Label>
               <Select 
                 value={selectedTime || "select-time"} 
                 onValueChange={(value) => setSelectedTime(value !== "select-time" ? value : "")}
               >
-                <SelectTrigger id="time">
+                <SelectTrigger id="time" className="h-9">
                   <SelectValue placeholder="Heure" />
                 </SelectTrigger>
                 <SelectContent>
@@ -257,9 +260,9 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
             </div>
             
             <div>
-              <Label htmlFor="duration">Durée</Label>
+              <Label htmlFor="duration" className="text-sm">Durée</Label>
               {selectedTerrain?.type === 'foot' ? (
-                <div className="w-full border rounded-md p-2 bg-gray-100 text-gray-700 text-sm flex items-center h-10">
+                <div className="w-full border rounded-md p-2 bg-gray-100 text-gray-700 text-sm flex items-center h-9">
                   1h30 (fixe pour football)
                 </div>
               ) : (
@@ -268,7 +271,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
                   onValueChange={setSelectedDuration}
                   disabled={!isDurationChangeable()}
                 >
-                  <SelectTrigger id="duration">
+                  <SelectTrigger id="duration" className="h-9">
                     <SelectValue placeholder="Durée" />
                   </SelectTrigger>
                   <SelectContent>
@@ -282,12 +285,9 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
               )}
             </div>
           </div>
-        </div>
-        
-        {/* Right Column - Client Information with validation */}
-        <div className="space-y-4">
+          
           <div>
-            <Label htmlFor="clientName">Nom du client</Label>
+            <Label htmlFor="clientName" className="text-sm">Nom du client</Label>
             <Input
               id="clientName"
               type="text"
@@ -296,6 +296,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
               maxLength={40}
               placeholder="Nom et prénom (lettres uniquement)"
               required
+              className="h-9"
             />
             <p className="text-gray-500 text-xs mt-1">
               {name.length}/40 caractères (lettres uniquement)
@@ -303,7 +304,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
           </div>
           
           <div>
-            <Label htmlFor="clientEmail">Email</Label>
+            <Label htmlFor="clientEmail" className="text-sm">Email</Label>
             <Input
               id="clientEmail"
               type="email"
@@ -311,11 +312,12 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="votre@email.com"
               required
+              className="h-9"
             />
           </div>
           
           <div>
-            <Label htmlFor="clientPhone">Téléphone</Label>
+            <Label htmlFor="clientPhone" className="text-sm">Téléphone</Label>
             <Input
               id="clientPhone"
               type="tel"
@@ -323,6 +325,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
               onChange={(e) => setPhone(e.target.value)}
               placeholder="Ex: 12345678 ou +21612345678"
               required
+              className="h-9"
             />
             <p className="text-gray-500 text-xs mt-1">
               Numéro tunisien (8 chiffres)
@@ -330,18 +333,18 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
           </div>
           
           <div>
-            <Label htmlFor="message">Remarques</Label>
+            <Label htmlFor="message" className="text-sm">Remarques</Label>
             <Textarea
               id="message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="h-24"
+              className="h-16 text-sm"
             />
           </div>
           
           {selectedField && selectedTime && terrains && (
-            <div className="p-4 bg-gray-50 rounded-md border">
-              <h3 className="font-medium mb-2">Prix Total</h3>
+            <div className="p-3 bg-gray-50 rounded-md border">
+              <h3 className="font-medium mb-1 text-sm">Prix Total</h3>
               <div className="text-sm text-gray-600 mb-1">
                 {selectedTerrain?.type === 'foot' ? (
                   `Tarif fixe 1h30 (${isNightTime(selectedTime, getGlobalNightStartTime()) ? 'nuit' : 'jour'})`
@@ -360,7 +363,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
         </div>
       </div>
       
-      <div className="flex justify-end space-x-2 pt-4">
+      <div className="flex justify-end space-x-2 pt-4 border-t">
         <Button type="button" variant="outline" onClick={onSuccess}>
           Annuler
         </Button>

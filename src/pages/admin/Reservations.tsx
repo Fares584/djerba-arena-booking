@@ -124,11 +124,11 @@ const Reservations = () => {
               Nouvelle Réservation
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
+          <DialogContent className="max-w-4xl h-[90vh] w-[95vw] sm:w-full">
             <DialogHeader>
               <DialogTitle>Ajouter une Réservation</DialogTitle>
             </DialogHeader>
-            <div className="overflow-y-auto max-h-[calc(90vh-100px)]">
+            <div className="flex-1 overflow-y-auto">
               <ReservationForm onSuccess={handleReservationAdded} />
             </div>
           </DialogContent>
