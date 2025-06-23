@@ -33,11 +33,19 @@ const defaultTimeSlots = [
   '21:00', '22:00', '23:00'
 ];
 
-// Fonction pour calculer les slots selon le type du terrain
-function getTimeSlotsForTerrain(terrain: Terrain): string[] {
+// Fonction pour calculer les slots selon le type du terrain et la date
+function getTimeSlotsForTerrain(terrain: Terrain, date?: Date): string[] {
   if (terrain.type === 'foot' && terrain.nom && terrain.nom.includes('6')) {
-    // Foot à 6 : de 09:00 à 22:30, toutes les 1h30
-    return generateTimeSlotsForFoot(9, 0, 22, 30);
+    // Vérifier si c'est un samedi (jour 6 de la semaine)
+    const isSaturday = date && date.getDay() === 6;
+    
+    if (isSaturday) {
+      // Samedi : de 10:00 à 23:30 pour Foot à 6
+      return generateTimeSlotsForFoot(10, 0, 23, 30);
+    } else {
+      // Autres jours : de 09:00 à 22:30 pour Foot à 6
+      return generateTimeSlotsForFoot(9, 0, 22, 30);
+    }
   }
   if (terrain.type === 'foot' && terrain.nom && (terrain.nom.includes('7') || terrain.nom.includes('8'))) {
     // Foot à 7/8 : de 10:00 à 23:30, toutes les 1h30
@@ -250,8 +258,8 @@ const Planning = () => {
         
         {terrains && filteredTerrains && filteredTerrains.length > 0 ? (
           filteredTerrains.map(terrain => {
-            // Récupère dynamiquement la liste de créneaux selon le terrain
-            const timeSlots = getTimeSlotsForTerrain(terrain);
+            // Récupère dynamiquement la liste de créneaux selon le terrain et le jour sélectionné
+            const timeSlots = getTimeSlotsForTerrain(terrain, selectedDay);
             const headerColor = getHeaderColorByType(terrain.type);
 
             return (
@@ -273,6 +281,7 @@ const Planning = () => {
                         ))}
                       </div>
                       
+                      {/* Pour la vue desktop, recalculer les slots pour chaque jour */}
                       {timeSlots.map((timeSlot) => (
                         <div key={timeSlot} className="grid grid-cols-8">
                           <div className="p-2 lg:p-3 border-b border-r border-gray-200 font-medium text-sm lg:text-base">
@@ -280,6 +289,21 @@ const Planning = () => {
                           </div>
                           
                           {weekDays.map((day, dayIndex) => {
+                            // Recalculer les slots pour chaque jour spécifique
+                            const dayTimeSlots = getTimeSlotsForTerrain(terrain, day);
+                            const isTimeSlotAvailable = dayTimeSlots.includes(timeSlot);
+                            
+                            if (!isTimeSlotAvailable) {
+                              return (
+                                <div 
+                                  key={dayIndex}
+                                  className="p-1 lg:p-2 border-b border-r bg-gray-200 text-gray-500"
+                                >
+                                  <div className="text-xs text-center">Non disponible</div>
+                                </div>
+                              );
+                            }
+                            
                             const reservationsForSlot = getReservationsForSlot(terrain, day, timeSlot);
                             const reservation = reservationsForSlot[0];
                             

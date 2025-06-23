@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -71,11 +72,19 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
 
   const timeSlotsForSelectedTerrain = React.useMemo(() => {
     if (isFoot6) {
-      // Foot à 6 : de 09:00 à 22:30
-      return generateTimeSlotsForFoot(9, 0, 22, 30);
+      // Vérifier si c'est un samedi (jour 6 de la semaine)
+      const isSaturday = selectedDate && selectedDate.getDay() === 6;
+      
+      if (isSaturday) {
+        // Samedi : de 10:00 à 23:30 pour Foot à 6
+        return generateTimeSlotsForFoot(10, 0, 23, 30);
+      } else {
+        // Autres jours : de 09:00 à 22:30 pour Foot à 6
+        return generateTimeSlotsForFoot(9, 0, 22, 30);
+      }
     }
     if (isFoot7or8) {
-      // Foot à 7/8 : de 10:00 à 23:30
+      // Foot à 7/8 : de 10:00 à 23:30 (inchangé)
       return generateTimeSlotsForFoot(10, 0, 23, 30);
     }
     // Autres terrains : créneaux classiques
@@ -83,7 +92,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', 
       '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
     ];
-  }, [isFoot6, isFoot7or8]);
+  }, [isFoot6, isFoot7or8, selectedDate]);
 
   // Get global night start time
   const getGlobalNightStartTime = (): string => {
@@ -139,6 +148,13 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       setSelectedDuration('1.5');
     }
   }, [selectedTerrain]);
+
+  // Reset selected time when date changes for foot 6 terrain
+  useEffect(() => {
+    if (isFoot6) {
+      setSelectedTime('');
+    }
+  }, [selectedDate, isFoot6]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
