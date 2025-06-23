@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useAppSetting } from '@/hooks/useAppSettings';
@@ -153,60 +152,25 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-1">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Left Column - Field Selection and Date/Time */}
-        <div className="space-y-3">
-          <div>
-            <Label htmlFor="terrain" className="text-sm">Terrain</Label>
-            <Select 
-              value={selectedField?.toString()} 
-              onValueChange={(value) => setSelectedField(parseInt(value))}
-              disabled={terrainsLoading || !terrains}
-            >
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Sélectionnez un terrain" />
-              </SelectTrigger>
-              <SelectContent>
-                {terrains?.map((terrain) => (
-                  <SelectItem key={terrain.id} value={terrain.id.toString()}>
-                    {terrain.nom} - {terrain.type} (Jour: {terrain.prix} DT/h{terrain.prix_nuit ? `, Nuit: ${terrain.prix_nuit} DT/h dès ${getGlobalNightStartTime()}` : ''})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div>
-            <Label className="text-sm">Date</Label>
-            <div className="border rounded-md p-1 mt-1">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
-                locale={fr}
-                className="scale-90"
-              />
-            </div>
-          </div>
-        </div>
-        
-        {/* Right Column - Details */}
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+    <div className="max-h-[80vh] overflow-y-auto">
+      <form onSubmit={handleSubmit} className="space-y-4 p-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Left Column - Field Selection and Date/Time */}
+          <div className="space-y-3">
             <div>
-              <Label htmlFor="time" className="text-sm">Heure</Label>
+              <Label htmlFor="terrain" className="text-sm">Terrain</Label>
               <Select 
-                value={selectedTime} 
-                onValueChange={setSelectedTime}
+                value={selectedField?.toString()} 
+                onValueChange={(value) => setSelectedField(parseInt(value))}
+                disabled={terrainsLoading || !terrains}
               >
-                <SelectTrigger id="time" className="h-9">
-                  <SelectValue placeholder="Heure" />
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Sélectionnez un terrain" />
                 </SelectTrigger>
                 <SelectContent>
-                  {timeSlots.map((time) => (
-                    <SelectItem key={time} value={time}>
-                      {time} {isNightTime(time, getGlobalNightStartTime()) ? '🌙' : '☀️'}
+                  {terrains?.map((terrain) => (
+                    <SelectItem key={terrain.id} value={terrain.id.toString()}>
+                      {terrain.nom} - {terrain.type} (Jour: {terrain.prix} DT/h{terrain.prix_nuit ? `, Nuit: ${terrain.prix_nuit} DT/h dès ${getGlobalNightStartTime()}` : ''})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -214,138 +178,175 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
             </div>
             
             <div>
-              <Label htmlFor="duration" className="text-sm">Durée</Label>
-              {selectedTerrain?.type === 'foot' ? (
-                <div className="w-full border rounded-md p-2 bg-gray-100 text-gray-700 text-sm flex items-center h-9">
-                  1h30 (fixe pour football)
-                </div>
-              ) : (
+              <Label className="text-sm">Date</Label>
+              <div className="border rounded-md p-1 mt-1">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  locale={fr}
+                  className="scale-90"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Right Column - Details */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="time" className="text-sm">Heure</Label>
                 <Select 
-                  value={selectedDuration} 
-                  onValueChange={setSelectedDuration}
+                  value={selectedTime} 
+                  onValueChange={setSelectedTime}
                 >
-                  <SelectTrigger id="duration" className="h-9">
-                    <SelectValue placeholder="Durée" />
+                  <SelectTrigger id="time" className="h-9">
+                    <SelectValue placeholder="Heure" />
                   </SelectTrigger>
                   <SelectContent>
-                    {durationOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
+                    {timeSlots.map((time) => (
+                      <SelectItem key={time} value={time}>
+                        {time} {isNightTime(time, getGlobalNightStartTime()) ? '🌙' : '☀️'}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              )}
+              </div>
+              
+              <div>
+                <Label htmlFor="duration" className="text-sm">Durée</Label>
+                {selectedTerrain?.type === 'foot' ? (
+                  <div className="w-full border rounded-md p-2 bg-gray-100 text-gray-700 text-sm flex items-center h-9">
+                    1h30 (fixe pour football)
+                  </div>
+                ) : (
+                  <Select 
+                    value={selectedDuration} 
+                    onValueChange={setSelectedDuration}
+                  >
+                    <SelectTrigger id="duration" className="h-9">
+                      <SelectValue placeholder="Durée" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {durationOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="status" className="text-sm">Statut</Label>
+              <Select 
+                value={selectedStatus} 
+                onValueChange={setSelectedStatus}
+              >
+                <SelectTrigger id="status" className="h-9">
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="clientName" className="text-sm">Nom du client</Label>
+              <Input
+                id="clientName"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="h-9"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="clientEmail" className="text-sm">Email</Label>
+              <Input
+                id="clientEmail"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="h-9"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="clientPhone" className="text-sm">Téléphone</Label>
+              <Input
+                id="clientPhone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                className="h-9"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="message" className="text-sm">Remarques</Label>
+              <Textarea
+                id="message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="h-16 text-sm"
+              />
             </div>
           </div>
-          
-          <div>
-            <Label htmlFor="status" className="text-sm">Statut</Label>
-            <Select 
-              value={selectedStatus} 
-              onValueChange={setSelectedStatus}
-            >
-              <SelectTrigger id="status" className="h-9">
-                <SelectValue placeholder="Statut" />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div>
-            <Label htmlFor="clientName" className="text-sm">Nom du client</Label>
-            <Input
-              id="clientName"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="h-9"
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="clientEmail" className="text-sm">Email</Label>
-            <Input
-              id="clientEmail"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="h-9"
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="clientPhone" className="text-sm">Téléphone</Label>
-            <Input
-              id="clientPhone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-              className="h-9"
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="message" className="text-sm">Remarques</Label>
-            <Textarea
-              id="message"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="h-16 text-sm"
-            />
-          </div>
         </div>
-      </div>
-      
-      {/* Price Display */}
-      {selectedField && selectedTime && terrains && (
-        <div className="p-3 bg-gray-50 rounded-md border">
-          <h3 className="font-medium mb-1 text-sm">Prix Total</h3>
-          <div className="text-sm text-gray-600 mb-1">
-            {isNightTime(selectedTime, getGlobalNightStartTime()) ? `Tarif nuit (dès ${getGlobalNightStartTime()})` : 'Tarif jour'} - {getEffectiveDuration()}h
-            {selectedTerrain?.type === 'foot' && (
-              <span className="text-blue-600 ml-1">(durée fixe)</span>
-            )}
+        
+        {/* Price Display */}
+        {selectedField && selectedTime && terrains && (
+          <div className="p-3 bg-gray-50 rounded-md border">
+            <h3 className="font-medium mb-1 text-sm">Prix Total</h3>
+            <div className="text-sm text-gray-600 mb-1">
+              {isNightTime(selectedTime, getGlobalNightStartTime()) ? `Tarif nuit (dès ${getGlobalNightStartTime()})` : 'Tarif jour'} - {getEffectiveDuration()}h
+              {selectedTerrain?.type === 'foot' && (
+                <span className="text-blue-600 ml-1">(durée fixe)</span>
+              )}
+            </div>
+            <p className="text-lg font-bold text-sport-green">
+              {calculateTotalPrice()} DT
+            </p>
           </div>
-          <p className="text-lg font-bold text-sport-green">
-            {calculateTotalPrice()} DT
-          </p>
+        )}
+        
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-2 pt-4 border-t">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onCancel}
+            disabled={isUpdating}
+          >
+            Annuler
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={isUpdating}
+            className="bg-sport-green hover:bg-sport-dark"
+          >
+            {isUpdating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Modification...
+              </>
+            ) : 'Valider la modification'}
+          </Button>
         </div>
-      )}
-      
-      {/* Action Buttons */}
-      <div className="flex justify-end space-x-2 pt-4 border-t">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={onCancel}
-          disabled={isUpdating}
-        >
-          Annuler
-        </Button>
-        <Button 
-          type="submit" 
-          disabled={isUpdating}
-          className="bg-sport-green hover:bg-sport-dark"
-        >
-          {isUpdating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Modification...
-            </>
-          ) : 'Valider la modification'}
-        </Button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 };
 
