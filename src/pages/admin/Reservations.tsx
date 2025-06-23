@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -178,11 +177,11 @@ const Reservations = () => {
       
       {/* Edit Reservation Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
+        <DialogContent className="max-w-5xl h-[90vh] w-[95vw] sm:w-full flex flex-col">
           <DialogHeader>
             <DialogTitle>Modifier la Réservation #{editingReservation?.id}</DialogTitle>
           </DialogHeader>
-          <div className="overflow-y-auto max-h-[calc(90vh-100px)]">
+          <div className="flex-1 overflow-y-auto">
             {editingReservation && (
               <EditReservationForm 
                 reservation={editingReservation}
