@@ -24,6 +24,10 @@ const AdminLayout = () => {
     }
   };
 
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -63,7 +67,7 @@ const AdminLayout = () => {
           flex flex-col h-[calc(100vh-73px)]
         `}>
           <div className="p-6 flex-1">
-            <AdminNavigation />
+            <AdminNavigation onMobileMenuClose={closeMobileMenu} />
           </div>
         </aside>
 

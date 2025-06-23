@@ -11,8 +11,18 @@ import {
   Home 
 } from 'lucide-react';
 
-const AdminNavigation = () => {
+interface AdminNavigationProps {
+  onMobileMenuClose?: () => void;
+}
+
+const AdminNavigation = ({ onMobileMenuClose }: AdminNavigationProps) => {
   const location = useLocation();
+
+  const handleLinkClick = () => {
+    if (onMobileMenuClose) {
+      onMobileMenuClose();
+    }
+  };
 
   const navItems = [
     { path: '/admin', label: 'Dashboard', icon: Home, exact: true },
@@ -35,6 +45,7 @@ const AdminNavigation = () => {
           <Link
             key={item.path}
             to={item.path}
+            onClick={handleLinkClick}
             className={cn(
               "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
               isActive
