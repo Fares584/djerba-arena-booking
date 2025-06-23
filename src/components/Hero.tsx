@@ -13,7 +13,7 @@ const Hero = () => {
           playsInline
           className="absolute inset-0 w-full h-full object-cover z-0">
           <source
-            src="https://ik.imagekit.io/k4czw9rkh/mainPageVideo.mp4?updatedAt=1749999314718"
+            src="https://ik.imagekit.io/k4czw9rkh/videoMainPagePlanetSport.mp4?updatedAt=1750691619266"
             type="video/mp4"/>
           Your browser does not support the video tag.
       </video>
@@ -53,4 +53,3 @@ const Hero = () => {
 };
 
 export default Hero;
-
