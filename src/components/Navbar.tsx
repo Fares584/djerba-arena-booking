@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -13,6 +14,11 @@ const Navbar = () => {
     setIsMenuOpen(false);
     window.scrollTo(0, 0);
   };
+
+  // Close menu when route changes
+  React.useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
   return (
     <nav className="bg-white shadow-sm sticky top-0 z-50">
