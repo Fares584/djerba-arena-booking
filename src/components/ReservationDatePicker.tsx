@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { format, addDays, isAfter, isBefore, startOfDay } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,8 @@ export default function ReservationDatePicker({
   onChange,
   label = "Date *"
 }: ReservationDatePickerProps) {
+  const [open, setOpen] = useState(false);
+  
   // Convert string to Date
   const selectedDate = value ? new Date(value) : undefined;
   const today = startOfDay(new Date());
@@ -27,13 +29,20 @@ export default function ReservationDatePicker({
     return isBefore(date, today) || isAfter(date, maxDate);
   };
 
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      onChange(format(date, "yyyy-MM-dd"));
+      setOpen(false); // Fermer le calendrier automatiquement
+    }
+  };
+
   return (
     <div>
       <span className="block text-lg font-semibold mb-2 flex items-center">
         <CalendarIcon className="mr-2 h-5 w-5" />
         {label}
       </span>
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant={"outline"}
@@ -47,12 +56,10 @@ export default function ReservationDatePicker({
           <Calendar
             mode="single"
             selected={selectedDate}
-            onSelect={(date) =>
-              date ? onChange(format(date, "yyyy-MM-dd")) : undefined
-            }
+            onSelect={handleDateSelect}
             disabled={isDateDisabled}
             initialFocus
-            className="p-3 pointer-events-auto" // obligatoire pour shadcn calendar
+            className="p-3 pointer-events-auto"
           />
         </PopoverContent>
       </Popover>
