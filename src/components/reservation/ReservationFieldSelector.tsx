@@ -28,7 +28,7 @@ const ReservationFieldSelector: React.FC<Props> = ({
         if (dateTimeSection) {
           dateTimeSection.scrollIntoView({ 
             behavior: 'smooth', 
-            block: 'start',
+            block: 'center',
             inline: 'nearest'
           });
         }
