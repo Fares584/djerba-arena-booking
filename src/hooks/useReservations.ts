@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
@@ -109,19 +110,24 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
   return useMutation({
     mutationFn: async (newReservation: Omit<Reservation, 'id' | 'created_at' | 'updated_at'>) => {
       try {
-        console.log('Vérification des limites de sécurité...');
+        console.log('=== DÉBUT CRÉATION RÉSERVATION ===');
+        console.log('Données de réservation:', newReservation);
         
         // Vérification des limites de sécurité
+        console.log('Vérification des limites de sécurité...');
         const securityCheck = await checkReservationLimits(
           newReservation.tel,
           newReservation.email
         );
 
+        console.log('Résultat vérification sécurité:', securityCheck);
+
         if (!securityCheck.canReserve) {
+          console.log('Réservation bloquée:', securityCheck.reason);
           throw new Error(securityCheck.reason || 'Réservation non autorisée');
         }
 
-        console.log('Création de la réservation avec les données:', newReservation);
+        console.log('Sécurité validée, création de la réservation...');
         
         // Créer avec statut "en_attente"
         const { data, error } = await supabase
@@ -142,6 +148,7 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
         }
 
         console.log('Réservation créée avec succès:', data);
+        console.log('=== FIN CRÉATION RÉSERVATION ===');
         toast.success("Réservation créée avec succès !");
 
         return data;
