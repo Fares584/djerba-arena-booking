@@ -83,12 +83,41 @@ export function useReservationSecurity() {
         }
       }
 
-      // 4. VÉRIFICATION TEMPORELLE ULTRA-STRICTE (plusieurs méthodes combinées)
-      console.log('4. Vérification temporelle renforcée...');
+      // 4. NOUVELLE VÉRIFICATION : Limite quotidienne par appareil (max 2 réservations par jour)
+      console.log('4. Vérification de la limite quotidienne par appareil...');
+      const sessionId = getOrCreateSessionId();
+      const today = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
+      const todayStart = `${today}T00:00:00.000Z`;
+      const todayEnd = `${today}T23:59:59.999Z`;
+
+      const { data: dailyDeviceReservations, error: dailyError } = await supabase
+        .from('reservations')
+        .select('id, created_at, ip_address, nom_client, tel, email')
+        .eq('ip_address', sessionId)
+        .gte('created_at', todayStart)
+        .lte('created_at', todayEnd);
+
+      if (!dailyError && dailyDeviceReservations && dailyDeviceReservations.length >= 2) {
+        console.log('❌ BLOQUÉ - Limite quotidienne par appareil atteinte:', {
+          sessionId,
+          reservationsToday: dailyDeviceReservations.length,
+          reservations: dailyDeviceReservations
+        });
+        
+        return {
+          canReserve: false,
+          reason: `Limite quotidienne atteinte : maximum 2 réservations par appareil par jour. Vous avez déjà fait ${dailyDeviceReservations.length} réservation(s) aujourd'hui.`
+        };
+      } else {
+        console.log(`✅ Limite quotidienne OK: ${dailyDeviceReservations?.length || 0}/2 réservations aujourd'hui`);
+      }
+
+      // 5. VÉRIFICATION TEMPORELLE ULTRA-STRICTE (plusieurs méthodes combinées)
+      console.log('5. Vérification temporelle renforcée...');
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       
       // Méthode A: Vérifier par contact (email ou téléphone) - PRIORITÉ ABSOLUE
-      console.log('4A. Vérification par contact...');
+      console.log('5A. Vérification par contact...');
       const { data: recentContactReservations, error: contactError } = await supabase
         .from('reservations')
         .select('created_at, tel, email, nom_client, ip_address, user_agent')
@@ -115,10 +144,8 @@ export function useReservationSecurity() {
       }
 
       // Méthode B: Vérifier par session/device - MÊME APPAREIL
-      console.log('4B. Vérification par appareil/session...');
-      const sessionId = getOrCreateSessionId();
+      console.log('5B. Vérification par appareil/session...');
       const currentUserAgent = navigator.userAgent;
-      const deviceFingerprint = generateDeviceFingerprint();
 
       // Vérifier les réservations récentes par session
       const { data: sessionReservations, error: sessionError } = await supabase
@@ -148,7 +175,7 @@ export function useReservationSecurity() {
       }
 
       // Méthode C: Vérifier par empreinte d'appareil (User-Agent + autres facteurs)
-      console.log('4C. Vérification par empreinte d\'appareil...');
+      console.log('5C. Vérification par empreinte d\'appareil...');
       const { data: userAgentReservations, error: uaError } = await supabase
         .from('reservations')
         .select('created_at, user_agent, tel, email')
@@ -192,7 +219,7 @@ export function useReservationSecurity() {
       }
 
       // Méthode D: Vérification par fréquence globale (protection anti-spam)
-      console.log('4D. Vérification fréquence globale...');
+      console.log('5D. Vérification fréquence globale...');
       const { data: recentGlobalReservations, error: globalError } = await supabase
         .from('reservations')
         .select('created_at')
