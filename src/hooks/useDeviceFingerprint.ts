@@ -27,8 +27,9 @@ export function useDeviceFingerprint() {
       }
       const canvasFingerprint = canvas.toDataURL();
       
-      // WebGL fingerprinting
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      // WebGL fingerprinting avec typage correct
+      const gl = canvas.getContext('webgl') as WebGLRenderingContext | null || 
+                 canvas.getContext('experimental-webgl') as WebGLRenderingContext | null;
       let webglFingerprint = '';
       if (gl) {
         const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
