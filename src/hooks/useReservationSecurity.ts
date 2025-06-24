@@ -13,7 +13,7 @@ export function useReservationSecurity() {
     email: string
   ): Promise<SecurityCheckResult> => {
     try {
-      console.log('=== DÉBUT VÉRIFICATION SÉCURITÉ ===');
+      console.log('=== DÉBUT VÉRIFICATION SÉCURITÉ RENFORCÉE ===');
       console.log('Vérification de sécurité pour:', { phone, email });
       
       // 1. Vérifier la blacklist
@@ -25,7 +25,6 @@ export function useReservationSecurity() {
 
       if (blacklistError) {
         console.error('Erreur lors de la vérification de la blacklist:', blacklistError);
-        // Ne pas bloquer en cas d'erreur de blacklist
       } else if (blacklistCheck && blacklistCheck.length > 0) {
         console.log('❌ Contact trouvé dans la blacklist:', blacklistCheck);
         return {
@@ -46,7 +45,6 @@ export function useReservationSecurity() {
 
       if (phoneError) {
         console.error('❌ Erreur lors de la vérification par téléphone:', phoneError);
-        // En cas d'erreur, on autorise la réservation pour ne pas bloquer l'utilisateur
       } else {
         console.log(`Réservations en attente par téléphone (${phone}):`, phoneReservations);
         
@@ -71,7 +69,6 @@ export function useReservationSecurity() {
 
       if (emailError) {
         console.error('❌ Erreur lors de la vérification par email:', emailError);
-        // En cas d'erreur, on autorise la réservation pour ne pas bloquer l'utilisateur
       } else {
         console.log(`Réservations en attente par email (${email}):`, emailReservations);
         
@@ -86,11 +83,12 @@ export function useReservationSecurity() {
         }
       }
 
-      // 4. Vérification de la limitation temporelle renforcée (3 méthodes)
-      console.log('4. Vérification de la limitation temporelle renforcée...');
+      // 4. VÉRIFICATION TEMPORELLE ULTRA-STRICTE (plusieurs méthodes combinées)
+      console.log('4. Vérification temporelle renforcée...');
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       
-      // Méthode 1: Vérifier par contact (email ou téléphone)
+      // Méthode A: Vérifier par contact (email ou téléphone) - PRIORITÉ ABSOLUE
+      console.log('4A. Vérification par contact...');
       const { data: recentContactReservations, error: contactError } = await supabase
         .from('reservations')
         .select('created_at, tel, email, nom_client, ip_address, user_agent')
@@ -99,14 +97,12 @@ export function useReservationSecurity() {
         .order('created_at', { ascending: false })
         .limit(1);
 
-      if (contactError) {
-        console.error('❌ Erreur lors de la vérification temporelle par contact:', contactError);
-      } else if (recentContactReservations && recentContactReservations.length > 0) {
+      if (!contactError && recentContactReservations && recentContactReservations.length > 0) {
         const lastReservation = recentContactReservations[0];
         const timeDiff = new Date().getTime() - new Date(lastReservation.created_at).getTime();
         const minutesLeft = Math.ceil((5 * 60 * 1000 - timeDiff) / (60 * 1000));
         
-        console.log('❌ Limitation temporelle activée (par contact):', {
+        console.log('❌ BLOQUÉ - Limitation temporelle par contact:', {
           lastReservation: lastReservation.created_at,
           timeDiff: timeDiff / 1000 / 60,
           minutesLeft
@@ -118,11 +114,16 @@ export function useReservationSecurity() {
         };
       }
 
-      // Méthode 2: Vérifier par session ID (existant)
+      // Méthode B: Vérifier par session/device - MÊME APPAREIL
+      console.log('4B. Vérification par appareil/session...');
       const sessionId = getOrCreateSessionId();
+      const currentUserAgent = navigator.userAgent;
+      const deviceFingerprint = generateDeviceFingerprint();
+
+      // Vérifier les réservations récentes par session
       const { data: sessionReservations, error: sessionError } = await supabase
         .from('reservations')
-        .select('created_at, ip_address')
+        .select('created_at, ip_address, user_agent, tel, email')
         .eq('ip_address', sessionId)
         .gte('created_at', fiveMinutesAgo)
         .order('created_at', { ascending: false })
@@ -133,7 +134,7 @@ export function useReservationSecurity() {
         const timeDiff = new Date().getTime() - new Date(lastReservation.created_at).getTime();
         const minutesLeft = Math.ceil((5 * 60 * 1000 - timeDiff) / (60 * 1000));
         
-        console.log('❌ Limitation temporelle activée (par session):', {
+        console.log('❌ BLOQUÉ - Même appareil détecté (session):', {
           sessionId,
           lastReservation: lastReservation.created_at,
           timeDiff: timeDiff / 1000 / 60,
@@ -142,39 +143,40 @@ export function useReservationSecurity() {
         
         return {
           canReserve: false,
-          reason: `Veuillez attendre ${minutesLeft} minute(s) avant de faire une nouvelle réservation. (Session détectée)`
+          reason: `Même appareil détecté. Veuillez attendre ${minutesLeft} minute(s) avant de faire une nouvelle réservation.`
         };
       }
 
-      // Méthode 3: Vérifier par User-Agent similaire (pour détecter le même appareil)
-      const currentUserAgent = navigator.userAgent;
+      // Méthode C: Vérifier par empreinte d'appareil (User-Agent + autres facteurs)
+      console.log('4C. Vérification par empreinte d\'appareil...');
       const { data: userAgentReservations, error: uaError } = await supabase
         .from('reservations')
-        .select('created_at, user_agent')
+        .select('created_at, user_agent, tel, email')
         .not('user_agent', 'is', null)
         .gte('created_at', fiveMinutesAgo)
         .order('created_at', { ascending: false });
 
       if (!uaError && userAgentReservations && userAgentReservations.length > 0) {
-        // Vérifier si un User-Agent similaire existe (même appareil/navigateur)
+        // Vérifier si un User-Agent très similaire existe
         const similarUA = userAgentReservations.find(res => {
           if (!res.user_agent) return false;
-          // Comparer les parties importantes du User-Agent (navigateur, OS, device)
-          const currentUAParts = extractUserAgentParts(currentUserAgent);
-          const resUAParts = extractUserAgentParts(res.user_agent);
           
-          return (
-            currentUAParts.browser === resUAParts.browser &&
-            currentUAParts.os === resUAParts.os &&
-            currentUAParts.device === resUAParts.device
-          );
+          // Comparaison stricte du User-Agent
+          const similarity = calculateUserAgentSimilarity(currentUserAgent, res.user_agent);
+          console.log('Comparaison User-Agent:', {
+            current: currentUserAgent.slice(0, 100),
+            stored: res.user_agent.slice(0, 100),
+            similarity
+          });
+          
+          return similarity > 0.9; // 90% de similarité minimum
         });
 
         if (similarUA) {
           const timeDiff = new Date().getTime() - new Date(similarUA.created_at).getTime();
           const minutesLeft = Math.ceil((5 * 60 * 1000 - timeDiff) / (60 * 1000));
           
-          console.log('❌ Limitation temporelle activée (par appareil):', {
+          console.log('❌ BLOQUÉ - Appareil similaire détecté:', {
             currentUserAgent: currentUserAgent.slice(0, 100),
             similarUserAgent: similarUA.user_agent.slice(0, 100),
             lastReservation: similarUA.created_at,
@@ -184,13 +186,29 @@ export function useReservationSecurity() {
           
           return {
             canReserve: false,
-            reason: `Veuillez attendre ${minutesLeft} minute(s) avant de faire une nouvelle réservation. (Même appareil détecté)`
+            reason: `Appareil suspect détecté. Veuillez attendre ${minutesLeft} minute(s) avant de faire une nouvelle réservation.`
           };
         }
       }
 
-      console.log('✅ Toutes les vérifications de sécurité sont passées - réservation autorisée');
-      console.log('=== FIN VÉRIFICATION SÉCURITÉ ===');
+      // Méthode D: Vérification par fréquence globale (protection anti-spam)
+      console.log('4D. Vérification fréquence globale...');
+      const { data: recentGlobalReservations, error: globalError } = await supabase
+        .from('reservations')
+        .select('created_at')
+        .gte('created_at', fiveMinutesAgo)
+        .order('created_at', { ascending: false });
+
+      if (!globalError && recentGlobalReservations && recentGlobalReservations.length >= 5) {
+        console.log('❌ BLOQUÉ - Trop de réservations récentes globalement:', recentGlobalReservations.length);
+        return {
+          canReserve: false,
+          reason: 'Système temporairement surchargé. Veuillez réessayer dans quelques minutes.'
+        };
+      }
+
+      console.log('✅ Toutes les vérifications de sécurité renforcées sont passées');
+      console.log('=== FIN VÉRIFICATION SÉCURITÉ RENFORCÉE ===');
       return { canReserve: true };
       
     } catch (error) {
@@ -221,6 +239,86 @@ function getOrCreateSessionId(): string {
   }
   
   return sessionId;
+}
+
+// Générer une empreinte d'appareil plus complexe
+function generateDeviceFingerprint(): string {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.textBaseline = 'top';
+    ctx.font = '14px Arial';
+    ctx.fillText('Device fingerprint', 2, 2);
+  }
+  
+  const fingerprint = {
+    userAgent: navigator.userAgent,
+    language: navigator.language,
+    platform: navigator.platform,
+    screenWidth: screen.width,
+    screenHeight: screen.height,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    canvas: canvas.toDataURL(),
+    memory: (navigator as any).deviceMemory || 0,
+    cores: navigator.hardwareConcurrency || 0
+  };
+  
+  return btoa(JSON.stringify(fingerprint)).slice(0, 64);
+}
+
+// Calculer la similarité entre deux User-Agents
+function calculateUserAgentSimilarity(ua1: string, ua2: string): number {
+  if (ua1 === ua2) return 1;
+  
+  // Extraire les parties importantes
+  const parts1 = extractUserAgentParts(ua1);
+  const parts2 = extractUserAgentParts(ua2);
+  
+  let score = 0;
+  let total = 0;
+  
+  // Comparer navigateur (poids: 30%)
+  if (parts1.browser === parts2.browser) score += 0.3;
+  total += 0.3;
+  
+  // Comparer OS (poids: 30%)
+  if (parts1.os === parts2.os) score += 0.3;
+  total += 0.3;
+  
+  // Comparer type d'appareil (poids: 20%)
+  if (parts1.device === parts2.device) score += 0.2;
+  total += 0.2;
+  
+  // Similarité des chaînes brutes (poids: 20%)
+  const rawSimilarity = calculateStringSimilarity(ua1, ua2);
+  score += rawSimilarity * 0.2;
+  total += 0.2;
+  
+  return score / total;
+}
+
+// Calculer la similarité entre deux chaînes
+function calculateStringSimilarity(str1: string, str2: string): number {
+  const len1 = str1.length;
+  const len2 = str2.length;
+  const matrix = Array(len2 + 1).fill(null).map(() => Array(len1 + 1).fill(null));
+  
+  for (let i = 0; i <= len1; i++) matrix[0][i] = i;
+  for (let j = 0; j <= len2; j++) matrix[j][0] = j;
+  
+  for (let j = 1; j <= len2; j++) {
+    for (let i = 1; i <= len1; i++) {
+      const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      matrix[j][i] = Math.min(
+        matrix[j][i - 1] + 1,
+        matrix[j - 1][i] + 1,
+        matrix[j - 1][i - 1] + indicator
+      );
+    }
+  }
+  
+  const distance = matrix[len2][len1];
+  return 1 - distance / Math.max(len1, len2);
 }
 
 // Extraire les parties importantes du User-Agent pour comparaison
