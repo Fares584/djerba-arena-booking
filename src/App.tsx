@@ -22,6 +22,7 @@ import Planning from "./pages/admin/Planning";
 import Stats from "./pages/admin/Stats";
 import Abonnements from "./pages/admin/Abonnements";
 import HistoriqueReservations from "./pages/admin/HistoriqueReservations";
+import BlacklistPage from "./pages/admin/BlacklistPage";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -68,6 +69,7 @@ function App() {
               <Route path="planning" element={<Planning />} />
               <Route path="stats" element={<Stats />} />
               <Route path="abonnements" element={<Abonnements />} />
+              <Route path="blacklist" element={<BlacklistPage />} />
             </Route>
             
             <Route path="*" element={<NotFound />} />

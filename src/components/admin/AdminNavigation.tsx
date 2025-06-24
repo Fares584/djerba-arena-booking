@@ -8,7 +8,8 @@ import {
   Users, 
   Settings, 
   History,
-  Home 
+  Home,
+  Shield
 } from 'lucide-react';
 
 interface AdminNavigationProps {
@@ -31,6 +32,7 @@ const AdminNavigation = ({ onMobileMenuClose }: AdminNavigationProps) => {
     { path: '/admin/terrains', label: 'Terrains', icon: MapPin },
     { path: '/admin/planning', label: 'Planning', icon: Calendar },
     { path: '/admin/abonnements', label: 'Abonnements', icon: Users },
+    { path: '/admin/blacklist', label: 'Blacklist', icon: Shield },
     { path: '/admin/stats', label: 'Statistiques', icon: BarChart3 },
   ];
 
