@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -72,39 +71,6 @@ function getHeaderColorByType(type: string): string {
   }
 }
 
-// Fonction pour vérifier si un créneau est occupé par une réservation (en tenant compte de la durée)
-function isTimeSlotOccupied(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): Reservation | null {
-  if (!reservations) return null;
-  
-  const formattedDate = format(day, 'yyyy-MM-dd');
-  
-  // Convertir le timeSlot en minutes depuis minuit pour les calculs
-  const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
-  const slotTimeInMinutes = slotHour * 60 + slotMinute;
-  
-  // Chercher une réservation qui occupe ce créneau
-  for (const reservation of reservations) {
-    if (reservation.terrain_id !== terrain.id || reservation.date !== formattedDate) {
-      continue;
-    }
-    
-    // Convertir l'heure de début de la réservation en minutes
-    const [resHour, resMinute] = reservation.heure.split(':').map(Number);
-    const resStartTimeInMinutes = resHour * 60 + resMinute;
-    
-    // Calculer l'heure de fin en ajoutant la durée (en heures)
-    const durationInMinutes = reservation.duree * 60;
-    const resEndTimeInMinutes = resStartTimeInMinutes + durationInMinutes;
-    
-    // Vérifier si le créneau actuel est dans la plage de la réservation
-    if (slotTimeInMinutes >= resStartTimeInMinutes && slotTimeInMinutes < resEndTimeInMinutes) {
-      return reservation;
-    }
-  }
-  
-  return null;
-}
-
 // Fonction pour vérifier si un créneau est occupé par une réservation et retourner les informations d'occupation
 function getTimeSlotOccupation(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): {
   reservation: Reservation | null;
@@ -165,6 +131,12 @@ function getReservationRowSpan(reservation: Reservation, terrain: Terrain, day: 
   }
   
   return Math.max(1, rowSpan);
+}
+
+// Nouvelle fonction pour vérifier si un créneau est disponible pour un terrain spécifique
+function isTimeSlotAvailableForTerrain(terrain: Terrain, day: Date, timeSlot: string): boolean {
+  const availableSlots = getTimeSlotsForTerrain(terrain, day);
+  return availableSlots.includes(timeSlot);
 }
 
 const Planning = () => {
@@ -382,7 +354,14 @@ const Planning = () => {
             return (
               <Card key={terrain.id} className="mb-8">
                 <CardHeader className={`${headerColor} text-white py-3`}>
-                  <CardTitle className="text-base md:text-lg lg:text-xl">{terrain.nom} - {terrain.type === 'foot' ? 'Football' : terrain.type === 'tennis' ? 'Tennis' : 'Padel'}</CardTitle>
+                  <CardTitle className="text-base md:text-lg lg:text-xl">
+                    {terrain.nom} - {terrain.type === 'foot' ? 'Football' : terrain.type === 'tennis' ? 'Tennis' : 'Padel'}
+                    {terrain.type === 'foot' && terrain.nom && terrain.nom.includes('6') && (
+                      <span className="text-sm ml-2 opacity-90">
+                        (Lun-Ven: 09:00-22:30, Sam: 10:00-23:30)
+                      </span>
+                    )}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                   {/* Desktop & Tablet View - Table */}
@@ -401,34 +380,22 @@ const Planning = () => {
                       {/* Créer une structure de table avec gestion des rowspan */}
                       <table className="w-full border-collapse">
                         <tbody>
-                          {/* Générer tous les créneaux possibles pour ce terrain */}
+                          {/* Générer les créneaux pour ce terrain spécifique */}
                           {(() => {
-                            // Créer un set de tous les créneaux uniques pour ce terrain en fonction des jours
-                            const allTimeSlots = new Set<string>();
-                            weekDays.forEach(day => {
-                              const daySlots = getTimeSlotsForTerrain(terrain, day);
-                              daySlots.forEach(slot => allTimeSlots.add(slot));
-                            });
-                            
-                            // Trier les créneaux par ordre chronologique
-                            const sortedTimeSlots = Array.from(allTimeSlots).sort((a, b) => {
-                              const [aHour, aMin] = a.split(':').map(Number);
-                              const [bHour, bMin] = b.split(':').map(Number);
-                              return (aHour * 60 + aMin) - (bHour * 60 + bMin);
-                            });
+                            // Utiliser les créneaux spécifiques au terrain pour le premier jour comme référence
+                            const referenceTimeSlots = getTimeSlotsForTerrain(terrain, weekDays[0]);
 
-                            return sortedTimeSlots.map((timeSlot) => (
+                            return referenceTimeSlots.map((timeSlot) => (
                               <tr key={timeSlot}>
                                 <td className="p-2 lg:p-3 border-b border-r border-gray-200 font-medium text-sm lg:text-base w-[12.5%]">
                                   {timeSlot}
                                 </td>
                                 
                                 {weekDays.map((day, dayIndex) => {
-                                  // Recalculer les slots pour chaque jour spécifique
-                                  const dayTimeSlots = getTimeSlotsForTerrain(terrain, day);
-                                  const isTimeSlotAvailable = dayTimeSlots.includes(timeSlot);
+                                  // Vérifier si ce créneau est disponible pour ce terrain ce jour-là
+                                  const isAvailable = isTimeSlotAvailableForTerrain(terrain, day, timeSlot);
                                   
-                                  if (!isTimeSlotAvailable) {
+                                  if (!isAvailable) {
                                     return (
                                       <td 
                                         key={dayIndex}
@@ -439,7 +406,7 @@ const Planning = () => {
                                     );
                                   }
                                   
-                                  // Utiliser la nouvelle fonction pour vérifier l'occupation
+                                  // Utiliser la fonction pour vérifier l'occupation
                                   const occupation = getTimeSlotOccupation(terrain, day, timeSlot, reservations || []);
                                   
                                   // Ne pas afficher les cellules qui ne sont pas le début d'une réservation multi-heures
@@ -470,7 +437,9 @@ const Planning = () => {
                                           </div>
                                           <div className="text-xs opacity-75">{occupation.reservation.duree}h</div>
                                         </div>
-                                      ) : null}
+                                      ) : (
+                                        <div className="text-xs text-center text-green-600">Libre</div>
+                                      )}
                                     </td>
                                   );
                                 })}
@@ -489,7 +458,7 @@ const Planning = () => {
                         const timeSlots = getTimeSlotsForTerrain(terrain, selectedDay);
                         
                         return timeSlots.map((timeSlot) => {
-                          // Utiliser la nouvelle fonction pour vérifier l'occupation
+                          // Utiliser la fonction pour vérifier l'occupation
                           const occupation = getTimeSlotOccupation(terrain, selectedDay, timeSlot, reservations || []);
                           
                           // Ne pas afficher les créneaux qui ne sont pas le début d'une réservation multi-heures
@@ -521,7 +490,7 @@ const Planning = () => {
                                     <div className="text-xs opacity-75">{occupation.reservation.duree}h</div>
                                   </div>
                                 ) : (
-                                  <div className="text-xs text-gray-500">Libre</div>
+                                  <div className="text-xs text-green-600">Libre</div>
                                 )}
                               </div>
                             </div>
