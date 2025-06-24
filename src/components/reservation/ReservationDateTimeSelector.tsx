@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Clock } from "lucide-react";
 import ReservationDatePicker from "@/components/ReservationDatePicker";
@@ -26,6 +26,23 @@ const ReservationDateTimeSelector: React.FC<Props> = ({
   availabilityLoading,
   selectedTerrainId
 }) => {
+  // Auto-scroll to customer info section when both date and time are selected
+  useEffect(() => {
+    if (selectedDate && selectedTime) {
+      // Small delay to ensure the customer info section is rendered
+      setTimeout(() => {
+        const customerInfoSection = document.querySelector('[data-section="customer-info"]');
+        if (customerInfoSection) {
+          customerInfoSection.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'nearest'
+          });
+        }
+      }, 300);
+    }
+  }, [selectedDate, selectedTime]);
+
   if (!selectedTerrainId) return null;
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8" data-section="date-time">

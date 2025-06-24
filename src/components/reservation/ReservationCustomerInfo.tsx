@@ -45,7 +45,7 @@ const ReservationCustomerInfo: React.FC<Props> = ({
   };
 
   return (
-    <div className="border-t pt-8">
+    <div className="border-t pt-8" data-section="customer-info">
       <h3 className="text-xl font-semibold mb-6 flex items-center">
         <User className="mr-2 h-6 w-6" />
         Informations personnelles
