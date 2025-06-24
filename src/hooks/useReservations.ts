@@ -123,19 +123,23 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
         console.log('Résultat vérification sécurité:', securityCheck);
 
         if (!securityCheck.canReserve) {
-          console.log('Réservation bloquée:', securityCheck.reason);
+          console.log('❌ Réservation bloquée:', securityCheck.reason);
           throw new Error(securityCheck.reason || 'Réservation non autorisée');
         }
 
-        console.log('Sécurité validée, création de la réservation...');
+        console.log('✅ Sécurité validée, création de la réservation...');
         
         // Créer avec statut "en_attente"
+        const reservationData = {
+          ...newReservation,
+          statut: 'en_attente' as const
+        };
+        
+        console.log('Données finales de la réservation:', reservationData);
+        
         const { data, error } = await supabase
           .from('reservations')
-          .insert({
-            ...newReservation,
-            statut: 'en_attente'
-          })
+          .insert(reservationData)
           .select(`
             *, 
             terrain:terrains(id, nom)
@@ -143,17 +147,17 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
           .single();
 
         if (error) {
-          console.error("Error creating reservation:", error);
+          console.error("❌ Error creating reservation:", error);
           throw error;
         }
 
-        console.log('Réservation créée avec succès:', data);
+        console.log('✅ Réservation créée avec succès:', data);
         console.log('=== FIN CRÉATION RÉSERVATION ===');
         toast.success("Réservation créée avec succès !");
 
         return data;
       } catch (error) {
-        console.error("Error in createReservation mutation:", error);
+        console.error("❌ Error in createReservation mutation:", error);
         throw error;
       }
     },
@@ -165,7 +169,7 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
       queryClient.invalidateQueries({ queryKey: ['reservations-history'] });
     },
     onError: (error) => {
-      console.error("Reservation creation error:", error);
+      console.error("❌ Reservation creation error:", error);
       toast.error(error.message || "Erreur lors de la création de la réservation");
     },
   });
