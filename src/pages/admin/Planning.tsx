@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -8,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, Loader2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Reservation, Terrain } from '@/lib/supabase';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
+import EditReservationForm from '@/components/admin/EditReservationForm';
 
 // Utilitaire pour générer les créneaux personnalisés Foot
 function generateTimeSlotsForFoot(startHour: number, startMinute: number, endHour: number, endMinute: number) {
@@ -111,10 +112,12 @@ const Planning = () => {
   const [startDate, setStartDate] = useState<Date>(startOfDay(new Date())); // Start with today
   const [weekDays, setWeekDays] = useState<Date[]>([]);
   const [selectedDay, setSelectedDay] = useState<Date>(new Date());
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
   // Correction ici : Récupérer toutes les réservations (ne PAS exclure les réservations d'abonnement)
-  const { data: reservations, isLoading: reservationsLoading } = useReservations({
+  const { data: reservations, isLoading: reservationsLoading, refetch: refetchReservations } = useReservations({
     terrain_id: selectedTerrain || undefined
     // On ne met PAS excludeSubscriptions:true !
   });
@@ -169,18 +172,36 @@ const Planning = () => {
     }
   };
 
+  const handleReservationClick = (reservation: Reservation) => {
+    setSelectedReservation(reservation);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    setIsEditDialogOpen(false);
+    setSelectedReservation(null);
+    refetchReservations();
+  };
+
+  const handleEditCancel = () => {
+    setIsEditDialogOpen(false);
+    setSelectedReservation(null);
+  };
+
   const getCellClassName = (reservation?: Reservation) => {
     if (!reservation) return 'bg-white hover:bg-gray-50 border border-gray-200';
     
+    const baseClasses = 'cursor-pointer transition-all duration-200 border';
+    
     switch (reservation.statut) {
       case 'confirmee':
-        return 'bg-green-100 text-green-800 border border-green-300 hover:bg-green-200';
+        return `${baseClasses} bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:shadow-md`;
       case 'en_attente':
-        return 'bg-yellow-100 text-yellow-800 border border-yellow-300 hover:bg-yellow-200';
+        return `${baseClasses} bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200 hover:shadow-md`;
       case 'annulee':
-        return 'bg-red-100 text-red-800 border border-red-300 hover:bg-red-200';
+        return `${baseClasses} bg-red-100 text-red-800 border-red-300 hover:bg-red-200 hover:shadow-md`;
       default:
-        return 'bg-white hover:bg-gray-50 border border-gray-200';
+        return `${baseClasses} bg-white hover:bg-gray-50 border-gray-200`;
     }
   };
 
@@ -333,6 +354,7 @@ const Planning = () => {
                               <div 
                                 key={dayIndex}
                                 className={`p-1 lg:p-2 border-b border-r ${getCellClassName(reservation)}`}
+                                onClick={() => reservation && handleReservationClick(reservation)}
                               >
                                 {reservation ? (
                                   <div className="text-xs">
@@ -364,6 +386,7 @@ const Planning = () => {
                           <div 
                             key={timeSlot}
                             className={`p-3 rounded-lg ${getCellClassName(reservation)}`}
+                            onClick={() => reservation && handleReservationClick(reservation)}
                           >
                             <div className="flex justify-between items-center">
                               <div className="font-medium text-sm">{timeSlot}</div>
@@ -394,6 +417,22 @@ const Planning = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Reservation Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Modifier la réservation</DialogTitle>
+          </DialogHeader>
+          {selectedReservation && (
+            <EditReservationForm
+              reservation={selectedReservation}
+              onSuccess={handleEditSuccess}
+              onCancel={handleEditCancel}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
