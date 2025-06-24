@@ -11,6 +11,7 @@ import {
   Home,
   Shield
 } from 'lucide-react';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface AdminNavigationProps {
   onMobileMenuClose?: () => void;
@@ -18,6 +19,7 @@ interface AdminNavigationProps {
 
 const AdminNavigation = ({ onMobileMenuClose }: AdminNavigationProps) => {
   const location = useLocation();
+  const { role } = useUserRole();
 
   const handleLinkClick = () => {
     if (onMobileMenuClose) {
@@ -25,16 +27,22 @@ const AdminNavigation = ({ onMobileMenuClose }: AdminNavigationProps) => {
     }
   };
 
-  const navItems = [
-    { path: '/admin', label: 'Dashboard', icon: Home, exact: true },
-    { path: '/admin/reservations', label: 'Réservations', icon: Calendar },
-    { path: '/admin/historique', label: 'Historique', icon: History },
-    { path: '/admin/terrains', label: 'Terrains', icon: MapPin },
-    { path: '/admin/planning', label: 'Planning', icon: Calendar },
-    { path: '/admin/abonnements', label: 'Abonnements', icon: Users },
-    { path: '/admin/blacklist', label: 'Blacklist', icon: Shield },
-    { path: '/admin/stats', label: 'Statistiques', icon: BarChart3 },
+  // Définir les éléments de navigation selon le rôle
+  const allNavItems = [
+    { path: '/admin', label: 'Dashboard', icon: Home, exact: true, roles: ['admin'] },
+    { path: '/admin/reservations', label: 'Réservations', icon: Calendar, roles: ['admin'] },
+    { path: '/admin/historique', label: 'Historique', icon: History, roles: ['admin'] },
+    { path: '/admin/terrains', label: 'Terrains', icon: MapPin, roles: ['admin'] },
+    { path: '/admin/planning', label: 'Planning', icon: Calendar, roles: ['admin', 'employee'] },
+    { path: '/admin/abonnements', label: 'Abonnements', icon: Users, roles: ['admin'] },
+    { path: '/admin/blacklist', label: 'Blacklist', icon: Shield, roles: ['admin'] },
+    { path: '/admin/stats', label: 'Statistiques', icon: BarChart3, roles: ['admin'] },
   ];
+
+  // Filtrer les éléments selon le rôle de l'utilisateur
+  const navItems = allNavItems.filter(item => 
+    role && item.roles.includes(role)
+  );
 
   return (
     <nav className="space-y-1">

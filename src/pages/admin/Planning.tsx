@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Reservation, Terrain } from '@/lib/supabase';
-import { useRequireAuth } from '@/hooks/useRequireAuth';
+import { useRequireRole } from '@/hooks/useRequireRole';
 
 // Utilitaire pour générer les créneaux personnalisés Foot
 function generateTimeSlotsForFoot(startHour: number, startMinute: number, endHour: number, endMinute: number) {
@@ -167,8 +167,8 @@ function getReservationRowSpan(reservation: Reservation, terrain: Terrain, day: 
 }
 
 const Planning = () => {
-  // Add authentication check
-  const { user, loading: authLoading } = useRequireAuth('/login');
+  // Permettre l'accès aux admins ET aux employés
+  const { user, loading: authLoading } = useRequireRole(['admin', 'employee']);
   
   const [selectedTerrain, setSelectedTerrain] = useState<number | null>(null);
   const [startDate, setStartDate] = useState<Date>(startOfDay(new Date())); // Start with today
@@ -299,7 +299,7 @@ const Planning = () => {
         <h1 className="text-2xl md:text-3xl font-bold">Planning des Terrains</h1>
       </div>
       
-      <div className="bg-white p-4 md:p-6 rounded-lg shadow mb-8">
+      <div className="bg-white p-4 md: rounded-lg shadow mb-8">
         <div className="flex flex-col lg:flex-row justify-between gap-4 mb-6">
           <div className="w-full lg:w-64">
             <Select 
