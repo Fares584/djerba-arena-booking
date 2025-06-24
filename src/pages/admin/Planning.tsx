@@ -71,74 +71,6 @@ function getHeaderColorByType(type: string): string {
   }
 }
 
-// Fonction pour vérifier si un créneau est occupé par une réservation (en tenant compte de la durée)
-function isTimeSlotOccupied(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): Reservation | null {
-  if (!reservations) return null;
-  
-  const formattedDate = format(day, 'yyyy-MM-dd');
-  
-  // Convertir le timeSlot en minutes depuis minuit pour les calculs
-  const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
-  const slotTimeInMinutes = slotHour * 60 + slotMinute;
-  
-  // Chercher une réservation qui occupe ce créneau
-  for (const reservation of reservations) {
-    if (reservation.terrain_id !== terrain.id || reservation.date !== formattedDate) {
-      continue;
-    }
-    
-    // Convertir l'heure de début de la réservation en minutes
-    const [resHour, resMinute] = reservation.heure.split(':').map(Number);
-    const resStartTimeInMinutes = resHour * 60 + resMinute;
-    
-    // Calculer l'heure de fin en ajoutant la durée (en heures)
-    const durationInMinutes = reservation.duree * 60;
-    const resEndTimeInMinutes = resStartTimeInMinutes + durationInMinutes;
-    
-    // Vérifier si le créneau actuel est dans la plage de la réservation
-    if (slotTimeInMinutes >= resStartTimeInMinutes && slotTimeInMinutes < resEndTimeInMinutes) {
-      return reservation;
-    }
-  }
-  
-  return null;
-}
-
-// Nouvelle fonction pour vérifier si c'est le premier créneau d'une réservation
-function isFirstSlotOfReservation(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): boolean {
-  const reservation = isTimeSlotOccupied(terrain, day, timeSlot, reservations);
-  if (!reservation) return false;
-  
-  // Vérifier si l'heure du créneau correspond exactement à l'heure de début de la réservation
-  return reservation.heure === timeSlot;
-}
-
-// Fonction pour calculer le nombre de créneaux occupés par une réservation
-function getReservationSlotSpan(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[], timeSlots: string[]): number {
-  const reservation = isTimeSlotOccupied(terrain, day, timeSlot, reservations);
-  if (!reservation || !isFirstSlotOfReservation(terrain, day, timeSlot, reservations)) {
-    return 1;
-  }
-  
-  // Calculer combien de créneaux cette réservation occupe
-  const [resHour, resMinute] = reservation.heure.split(':').map(Number);
-  const resStartTimeInMinutes = resHour * 60 + resMinute;
-  const durationInMinutes = reservation.duree * 60;
-  
-  let slotCount = 0;
-  for (const slot of timeSlots) {
-    const [slotHour, slotMinute] = slot.split(':').map(Number);
-    const slotTimeInMinutes = slotHour * 60 + slotMinute;
-    
-    if (slotTimeInMinutes >= resStartTimeInMinutes && 
-        slotTimeInMinutes < resStartTimeInMinutes + durationInMinutes) {
-      slotCount++;
-    }
-  }
-  
-  return Math.max(1, slotCount);
-}
-
 const Planning = () => {
   // Add authentication check
   const { user, loading: authLoading } = useRequireAuth('/login');
@@ -154,7 +86,6 @@ const Planning = () => {
   // Correction ici : Récupérer toutes les réservations (ne PAS exclure les réservations d'abonnement)
   const { data: reservations, isLoading: reservationsLoading } = useReservations({
     terrain_id: selectedTerrain || undefined
-    // On ne met PAS excludeSubscriptions:true !
   });
 
   // Generate array of dates for the week (today + 7 days)
@@ -221,6 +152,71 @@ const Planning = () => {
         return 'bg-white hover:bg-gray-50 border border-gray-200';
     }
   };
+
+  // Fonction améliorée pour vérifier si un créneau est occupé par une réservation
+  function isTimeSlotOccupied(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): Reservation | null {
+    if (!reservations) return null;
+    
+    const formattedDate = format(day, 'yyyy-MM-dd');
+    
+    // Convertir le timeSlot en minutes depuis minuit pour les calculs
+    const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
+    const slotTimeInMinutes = slotHour * 60 + slotMinute;
+    
+    // Chercher une réservation qui occupe ce créneau
+    for (const reservation of reservations) {
+      if (reservation.terrain_id !== terrain.id || reservation.date !== formattedDate) {
+        continue;
+      }
+      
+      // Convertir l'heure de début de la réservation en minutes
+      const [resHour, resMinute] = reservation.heure.split(':').map(Number);
+      const resStartTimeInMinutes = resHour * 60 + resMinute;
+      
+      // Calculer l'heure de fin en ajoutant la durée (en heures)
+      const durationInMinutes = reservation.duree * 60;
+      const resEndTimeInMinutes = resStartTimeInMinutes + durationInMinutes;
+      
+      // Vérifier si le créneau actuel est dans la plage de la réservation
+      if (slotTimeInMinutes >= resStartTimeInMinutes && slotTimeInMinutes < resEndTimeInMinutes) {
+        return reservation;
+      }
+    }
+    
+    return null;
+  }
+
+  // Fonction pour vérifier si c'est le premier créneau d'une réservation
+  function isFirstSlotOfReservation(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): boolean {
+    const reservation = isTimeSlotOccupied(terrain, day, timeSlot, reservations);
+    if (!reservation) return false;
+    
+    // Vérifier si l'heure du créneau correspond exactement à l'heure de début de la réservation
+    return reservation.heure === timeSlot;
+  }
+
+  // Fonction pour calculer le nombre de créneaux occupés par une réservation
+  function getReservationSlotSpan(reservation: Reservation, timeSlots: string[]): number {
+    if (!reservation) return 1;
+    
+    // Calculer combien de créneaux cette réservation occupe
+    const [resHour, resMinute] = reservation.heure.split(':').map(Number);
+    const resStartTimeInMinutes = resHour * 60 + resMinute;
+    const durationInMinutes = reservation.duree * 60;
+    
+    let slotCount = 0;
+    for (const slot of timeSlots) {
+      const [slotHour, slotMinute] = slot.split(':').map(Number);
+      const slotTimeInMinutes = slotHour * 60 + slotMinute;
+      
+      if (slotTimeInMinutes >= resStartTimeInMinutes && 
+          slotTimeInMinutes < resStartTimeInMinutes + durationInMinutes) {
+        slotCount++;
+      }
+    }
+    
+    return Math.max(1, slotCount);
+  }
 
   const handleReservationClick = (reservation: Reservation) => {
     setSelectedReservation(reservation);
@@ -372,45 +368,55 @@ const Planning = () => {
                         ))}
                       </div>
                       
-                      {/* Pour la vue desktop, recalculer les slots pour chaque jour */}
-                      {timeSlots.map((timeSlot) => (
-                        <div key={timeSlot} className="grid grid-cols-8">
-                          <div className="p-2 lg:p-3 border-b border-r border-gray-200 font-medium text-sm lg:text-base">
-                            {timeSlot}
-                          </div>
+                      {/* Tableau des créneaux horaires */}
+                      <div className="grid" style={{ gridTemplateColumns: 'repeat(8, 1fr)' }}>
+                        {timeSlots.map((timeSlot, timeIndex) => {
+                          const rowElements = [];
                           
-                          {weekDays.map((day, dayIndex) => {
-                            // Recalculer les slots pour chaque jour spécifique
+                          // Cellule de l'heure
+                          rowElements.push(
+                            <div key={`time-${timeSlot}`} className="p-2 lg:p-3 border-b border-r border-gray-200 font-medium text-sm lg:text-base">
+                              {timeSlot}
+                            </div>
+                          );
+                          
+                          // Cellules pour chaque jour
+                          weekDays.forEach((day, dayIndex) => {
                             const dayTimeSlots = getTimeSlotsForTerrain(terrain, day);
                             const isTimeSlotAvailable = dayTimeSlots.includes(timeSlot);
                             
                             if (!isTimeSlotAvailable) {
-                              return (
+                              rowElements.push(
                                 <div 
-                                  key={dayIndex}
+                                  key={`${dayIndex}-${timeSlot}`}
                                   className="p-1 lg:p-2 border-b border-r bg-gray-200 text-gray-500"
                                 >
                                   <div className="text-xs text-center">Non disponible</div>
                                 </div>
                               );
+                              return;
                             }
                             
-                            // Utiliser la nouvelle fonction pour vérifier l'occupation
                             const reservation = isTimeSlotOccupied(terrain, day, timeSlot, reservations || []);
                             const isFirstSlot = isFirstSlotOfReservation(terrain, day, timeSlot, reservations || []);
-                            const slotSpan = getReservationSlotSpan(terrain, day, timeSlot, reservations || [], dayTimeSlots);
                             
-                            // Si c'est une réservation mais pas le premier créneau, ne pas afficher
+                            // Si c'est une réservation mais pas le premier créneau, ne pas afficher de cellule (elle sera fusionnée)
                             if (reservation && !isFirstSlot) {
-                              return null;
+                              return; // Skip cette cellule, elle est fusionnée avec la cellule précédente
                             }
                             
-                            return (
+                            // Si c'est le premier créneau d'une réservation, calculer le span
+                            let gridRowSpan = 1;
+                            if (reservation && isFirstSlot) {
+                              gridRowSpan = getReservationSlotSpan(reservation, dayTimeSlots);
+                            }
+                            
+                            rowElements.push(
                               <div 
-                                key={dayIndex}
+                                key={`${dayIndex}-${timeSlot}`}
                                 className={`p-1 lg:p-2 border-b border-r ${getCellClassName(reservation)} ${reservation ? 'cursor-pointer hover:opacity-80' : ''}`}
-                                style={reservation && isFirstSlot ? { 
-                                  gridRowEnd: `span ${slotSpan}`,
+                                style={reservation && isFirstSlot && gridRowSpan > 1 ? { 
+                                  gridRow: `span ${gridRowSpan}`,
                                   zIndex: 1
                                 } : {}}
                                 onClick={() => reservation && handleReservationClick(reservation)}
@@ -425,12 +431,16 @@ const Planning = () => {
                                     </div>
                                     <div className="text-xs opacity-75">{reservation.duree}h</div>
                                   </div>
+                                ) : !reservation ? (
+                                  <div className="text-xs text-center text-gray-400">Libre</div>
                                 ) : null}
                               </div>
                             );
-                          })}
-                        </div>
-                      ))}
+                          });
+                          
+                          return rowElements;
+                        })}
+                      </div>
                     </div>
                   </div>
 
@@ -438,11 +448,9 @@ const Planning = () => {
                   <div className="md:hidden p-4">
                     <div className="space-y-3">
                       {timeSlots.map((timeSlot) => {
-                        // Utiliser la nouvelle fonction pour vérifier l'occupation
                         const reservation = isTimeSlotOccupied(terrain, selectedDay, timeSlot, reservations || []);
                         const isFirstSlot = isFirstSlotOfReservation(terrain, selectedDay, timeSlot, reservations || []);
                         
-                        // Pour mobile, afficher tous les créneaux mais avec des styles différents
                         return (
                           <div 
                             key={timeSlot}
