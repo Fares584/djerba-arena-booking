@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
@@ -170,7 +169,7 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
 
         console.log('✅ Sécurité validée, création de la réservation...');
         
-        // Obtenir l'ID de session pour traçabilité
+        // Obtenir l'ID de session pour traçabilité (simplifié)
         const sessionId = getOrCreateSessionId();
         
         // Créer avec statut "en_attente" et inclure l'IP/session
@@ -221,16 +220,15 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
   });
 }
 
-// Fonction utilitaire partagée
+// Fonction utilitaire simplifiée
 function getOrCreateSessionId(): string {
   let sessionId = sessionStorage.getItem('reservation_session_id');
   
   if (!sessionId) {
     const timestamp = Date.now().toString();
     const random = Math.random().toString(36).substring(2);
-    const userAgent = navigator.userAgent.slice(0, 50);
     
-    sessionId = btoa(`${timestamp}-${random}-${userAgent}`).slice(0, 32);
+    sessionId = btoa(`${timestamp}-${random}`).slice(0, 32);
     sessionStorage.setItem('reservation_session_id', sessionId);
   }
   
