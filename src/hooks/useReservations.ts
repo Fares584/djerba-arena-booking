@@ -1,8 +1,8 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { useReservationSecurity } from './useReservationSecurity';
 
 export function useReservations(filters?: { 
   terrain_id?: number; 
@@ -104,10 +104,23 @@ export function useReservationsHistory(filters?: {
 
 export function useCreateReservation(options?: { onSuccess?: () => void }) {
   const queryClient = useQueryClient();
+  const { checkReservationLimits } = useReservationSecurity();
 
   return useMutation({
     mutationFn: async (newReservation: Omit<Reservation, 'id' | 'created_at' | 'updated_at'>) => {
       try {
+        console.log('Vérification des limites de sécurité...');
+        
+        // Vérification des limites de sécurité
+        const securityCheck = await checkReservationLimits(
+          newReservation.tel,
+          newReservation.email
+        );
+
+        if (!securityCheck.canReserve) {
+          throw new Error(securityCheck.reason || 'Réservation non autorisée');
+        }
+
         console.log('Création de la réservation avec les données:', newReservation);
         
         // Créer avec statut "en_attente"
@@ -146,7 +159,7 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
     },
     onError: (error) => {
       console.error("Reservation creation error:", error);
-      toast.error("Erreur lors de la création de la réservation");
+      toast.error(error.message || "Erreur lors de la création de la réservation");
     },
   });
 }

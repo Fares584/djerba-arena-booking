@@ -116,6 +116,33 @@ export type Database = {
         }
         Relationships: []
       }
+      blacklist: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: number
+          reason: string | null
+          type: string
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: number
+          reason?: string | null
+          type: string
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: number
+          reason?: string | null
+          type?: string
+          value?: string
+        }
+        Relationships: []
+      }
       reservations: {
         Row: {
           abonnement_id: number | null
@@ -127,12 +154,14 @@ export type Database = {
           email: string
           heure: string
           id: number
+          ip_address: unknown | null
           nom_client: string
           remarque: string | null
           statut: string
           tel: string
           terrain_id: number
           updated_at: string | null
+          user_agent: string | null
         }
         Insert: {
           abonnement_id?: number | null
@@ -144,12 +173,14 @@ export type Database = {
           email: string
           heure: string
           id?: number
+          ip_address?: unknown | null
           nom_client: string
           remarque?: string | null
           statut: string
           tel: string
           terrain_id: number
           updated_at?: string | null
+          user_agent?: string | null
         }
         Update: {
           abonnement_id?: number | null
@@ -161,12 +192,14 @@ export type Database = {
           email?: string
           heure?: string
           id?: number
+          ip_address?: unknown | null
           nom_client?: string
           remarque?: string | null
           statut?: string
           tel?: string
           terrain_id?: number
           updated_at?: string | null
+          user_agent?: string | null
         }
         Relationships: [
           {
