@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppSetting } from '@/hooks/useAppSettings';
@@ -8,7 +9,7 @@ interface SecurityCheckResult {
 }
 
 export function useReservationSecurity() {
-  const { data: securitySetting } = useAppSetting('security_limits_enabled');
+  const { data: securitySetting, isLoading } = useAppSetting('security_limits_enabled');
   const isSecurityEnabled = securitySetting?.setting_value === 'true';
 
   const checkReservationLimits = async (
@@ -19,6 +20,12 @@ export function useReservationSecurity() {
       console.log('=== DÉBUT VÉRIFICATION SÉCURITÉ ===');
       console.log('Sécurité activée:', isSecurityEnabled);
       console.log('Vérification pour:', { phone, email });
+
+      // Si la sécurité est en cours de chargement, autoriser par défaut
+      if (isLoading) {
+        console.log('⏳ Paramètres de sécurité en cours de chargement - Réservation autorisée');
+        return { canReserve: true };
+      }
 
       // Si la sécurité est désactivée, autoriser directement
       if (!isSecurityEnabled) {
