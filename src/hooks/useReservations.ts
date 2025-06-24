@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
@@ -29,7 +28,6 @@ export function useReservations(filters?: {
           query = query.eq('statut', filters.statut);
         }
         
-        // Exclure les réservations d'abonnement si demandé
         if (filters?.excludeSubscriptions) {
           query = query.is('abonnement_id', null);
         }
@@ -41,10 +39,8 @@ export function useReservations(filters?: {
           throw error;
         }
         
-        // Filtrer pour ne garder que les réservations actuelles et futures (pas annulées)
         const now = new Date();
         const currentReservations = (data as Reservation[]).filter(reservation => {
-          // Si la réservation est annulée, elle va directement en historique
           if (reservation.statut === 'annulee') {
             return false;
           }
@@ -54,12 +50,10 @@ export function useReservations(filters?: {
           const reservationStart = new Date(reservationDate);
           reservationStart.setHours(hours, minutes, 0, 0);
           
-          // Ajouter la durée pour obtenir l'heure de fin
           const reservationEnd = new Date(reservationStart);
           reservationEnd.setHours(reservationEnd.getHours() + Math.floor(reservation.duree));
           reservationEnd.setMinutes(reservationEnd.getMinutes() + ((reservation.duree % 1) * 60));
           
-          // Garder si la réservation n'est pas encore terminée
           return reservationEnd > now;
         });
         
@@ -93,7 +87,6 @@ export function useReservationsHistory(filters?: {
           query = query.eq('statut', filters.statut);
         }
         
-        // Exclure les réservations d'abonnement si demandé
         if (filters?.excludeSubscriptions) {
           query = query.is('abonnement_id', null);
         }
@@ -105,27 +98,22 @@ export function useReservationsHistory(filters?: {
           throw error;
         }
         
-        // Filtrer pour l'historique : réservations annulées OU réservations confirmées terminées
         const now = new Date();
         const historyReservations = (data as Reservation[]).filter(reservation => {
-          // Si la réservation est annulée, elle va en historique peu importe la date
           if (reservation.statut === 'annulee') {
             return true;
           }
           
-          // Pour les autres statuts (confirmée), vérifier si elle est passée
           if (reservation.statut === 'confirmee') {
             const reservationDate = new Date(reservation.date);
             const [hours, minutes] = reservation.heure.split(':').map(Number);
             const reservationStart = new Date(reservationDate);
             reservationStart.setHours(hours, minutes, 0, 0);
             
-            // Ajouter la durée pour obtenir l'heure de fin
             const reservationEnd = new Date(reservationStart);
             reservationEnd.setHours(reservationEnd.getHours() + Math.floor(reservation.duree));
             reservationEnd.setMinutes(reservationEnd.getMinutes() + ((reservation.duree % 1) * 60));
             
-            // Garder si la réservation est terminée
             return reservationEnd <= now;
           }
           
@@ -153,7 +141,7 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
         console.log('Données de réservation:', newReservation);
         console.log('Mode admin:', options?.isAdminCreation);
         
-        // Vérification des limites de sécurité avec le bon paramètre isAdminCreation
+        // Vérification des limites de sécurité améliorée
         console.log('Vérification des limites de sécurité...');
         const securityCheck = await checkReservationLimits(
           newReservation.tel,
@@ -170,15 +158,15 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
 
         console.log('✅ Sécurité validée, création de la réservation...');
         
-        // Obtenir l'ID de session pour traçabilité
+        // Obtenir l'ID de session pour traçabilité uniquement
         const sessionId = getOrCreateSessionId();
         
-        // Créer avec statut "en_attente" et inclure l'IP/session
+        // Créer avec statut "en_attente"
         const reservationData = {
           ...newReservation,
           statut: 'en_attente' as const,
-          ip_address: sessionId, // Utiliser l'ID de session comme identifiant
-          user_agent: navigator.userAgent.slice(0, 255) // Limiter la taille
+          ip_address: sessionId, // Utilisé uniquement pour traçabilité
+          user_agent: navigator.userAgent.slice(0, 255)
         };
         
         console.log('Données finales de la réservation:', reservationData);
@@ -221,16 +209,14 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
   });
 }
 
-// Fonction utilitaire partagée
+// Fonction utilitaire pour l'ID de session (traçabilité uniquement)
 function getOrCreateSessionId(): string {
   let sessionId = sessionStorage.getItem('reservation_session_id');
   
   if (!sessionId) {
     const timestamp = Date.now().toString();
     const random = Math.random().toString(36).substring(2);
-    const userAgent = navigator.userAgent.slice(0, 50);
-    
-    sessionId = btoa(`${timestamp}-${random}-${userAgent}`).slice(0, 32);
+    sessionId = `${timestamp}-${random}`;
     sessionStorage.setItem('reservation_session_id', sessionId);
   }
   
