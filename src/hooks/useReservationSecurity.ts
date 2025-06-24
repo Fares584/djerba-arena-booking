@@ -10,12 +10,20 @@ interface SecurityCheckResult {
 export function useReservationSecurity() {
   const checkReservationLimits = async (
     phone: string, 
-    email: string
+    email: string,
+    isAdminCreation: boolean = false
   ): Promise<SecurityCheckResult> => {
     try {
       console.log('=== DÉBUT VÉRIFICATION SÉCURITÉ RENFORCÉE ===');
-      console.log('Vérification de sécurité pour:', { phone, email });
+      console.log('Vérification de sécurité pour:', { phone, email, isAdminCreation });
       
+      // Si c'est une création admin, contourner toutes les vérifications
+      if (isAdminCreation) {
+        console.log('✅ ADMIN CRÉATION - Toutes les vérifications de sécurité contournées');
+        console.log('=== FIN VÉRIFICATION SÉCURITÉ RENFORCÉE ===');
+        return { canReserve: true };
+      }
+
       // 1. Vérifier la blacklist
       console.log('1. Vérification de la blacklist...');
       const { data: blacklistCheck, error: blacklistError } = await supabase

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useAppSetting } from '@/hooks/useAppSettings';
 import { useCreateReservation } from '@/hooks/useReservations';
+import { useReservationSecurity } from '@/hooks/useReservationSecurity';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -46,6 +47,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
   const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
   const createReservation = useCreateReservation();
+  const { checkReservationLimits } = useReservationSecurity();
 
   // Get selected terrain object
   const selectedTerrain = terrains?.find(t => t.id === selectedField);
@@ -155,7 +157,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     }
   }, [selectedDate, isFoot6]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validation des champs
@@ -172,6 +174,14 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     
     if (!selectedField || !selectedDate || !selectedTime || !name || !email || !phone) {
       toast.error("Veuillez remplir tous les champs obligatoires.");
+      return;
+    }
+
+    // Vérification de sécurité avec paramètre isAdminCreation = true
+    const securityCheck = await checkReservationLimits(phone, email, true);
+    
+    if (!securityCheck.canReserve) {
+      toast.error(securityCheck.reason || 'Réservation non autorisée');
       return;
     }
     
