@@ -53,7 +53,8 @@ export function useReservationSecurity() {
       const { data: dailyContactReservations, error: dailyError } = await supabase
         .from('reservations')
         .select('id, created_at, nom_client, tel, email')
-        .and(`tel.eq.${phone},email.eq.${email}`)
+        .eq('tel', phone)
+        .eq('email', email)
         .gte('created_at', todayStart)
         .lte('created_at', todayEnd);
 
@@ -89,7 +90,8 @@ export function useReservationSecurity() {
       const { data: recentContactReservations, error: contactError } = await supabase
         .from('reservations')
         .select('created_at, tel, email, nom_client')
-        .and(`tel.eq.${phone},email.eq.${email}`)
+        .eq('tel', phone)
+        .eq('email', email)
         .gte('created_at', fiveMinutesAgo)
         .order('created_at', { ascending: false })
         .limit(1);
