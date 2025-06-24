@@ -1,6 +1,6 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAppSetting } from '@/hooks/useAppSettings';
 
 interface SecurityCheckResult {
   canReserve: boolean;
@@ -8,13 +8,24 @@ interface SecurityCheckResult {
 }
 
 export function useReservationSecurity() {
+  const { data: securitySetting } = useAppSetting('security_limits_enabled');
+  const isSecurityEnabled = securitySetting?.setting_value === 'true';
+
   const checkReservationLimits = async (
     phone: string, 
     email: string
   ): Promise<SecurityCheckResult> => {
     try {
-      console.log('=== DÉBUT VÉRIFICATION SÉCURITÉ RENFORCÉE ===');
-      console.log('Vérification de sécurité pour:', { phone, email });
+      console.log('=== DÉBUT VÉRIFICATION SÉCURITÉ ===');
+      console.log('Sécurité activée:', isSecurityEnabled);
+      console.log('Vérification pour:', { phone, email });
+
+      // Si la sécurité est désactivée, autoriser directement
+      if (!isSecurityEnabled) {
+        console.log('✅ Sécurité désactivée - Réservation autorisée');
+        console.log('=== FIN VÉRIFICATION SÉCURITÉ ===');
+        return { canReserve: true };
+      }
       
       // 1. Vérifier la blacklist
       console.log('1. Vérification de la blacklist...');
@@ -206,7 +217,7 @@ export function useReservationSecurity() {
       }
 
       console.log('✅ Toutes les vérifications de sécurité renforcées sont passées');
-      console.log('=== FIN VÉRIFICATION SÉCURITÉ RENFORCÉE ===');
+      console.log('=== FIN VÉRIFICATION SÉCURITÉ ===');
       return { canReserve: true };
       
     } catch (error) {
