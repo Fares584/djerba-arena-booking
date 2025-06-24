@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -47,7 +46,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
   const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
-  const createReservation = useCreateReservation();
+  const createReservation = useCreateReservation({ isAdminCreation: true });
   const { checkReservationLimits } = useReservationSecurity();
 
   // Get selected terrain object
@@ -178,17 +177,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       return;
     }
 
-    // IMPORTANT: Passer explicitement isAdminCreation = true pour les créations admin
-    console.log('🔧 ADMIN FORM: Création de réservation admin avec isAdminCreation = true');
-    const securityCheck = await checkReservationLimits(phone, email, true);
-    
-    if (!securityCheck.canReserve) {
-      console.error('❌ Sécurité bloquée même pour admin:', securityCheck);
-      toast.error(securityCheck.reason || 'Réservation non autorisée');
-      return;
-    }
-    
-    console.log('✅ ADMIN FORM: Vérification sécurité passée, création de la réservation...');
+    console.log('🔧 ADMIN FORM: Création de réservation admin - pas de vérification sécurité nécessaire');
     
     // Format date as ISO string (YYYY-MM-DD)
     const formattedDate = format(selectedDate, 'yyyy-MM-dd');

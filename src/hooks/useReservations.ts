@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
@@ -107,7 +106,7 @@ export function useReservationsHistory(filters?: {
   });
 }
 
-export function useCreateReservation(options?: { onSuccess?: () => void }) {
+export function useCreateReservation(options?: { onSuccess?: () => void; isAdminCreation?: boolean }) {
   const queryClient = useQueryClient();
   const { checkReservationLimits } = useReservationSecurity();
 
@@ -116,12 +115,14 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
       try {
         console.log('=== DÉBUT CRÉATION RÉSERVATION ===');
         console.log('Données de réservation:', newReservation);
+        console.log('Mode admin:', options?.isAdminCreation);
         
-        // Vérification des limites de sécurité
+        // Vérification des limites de sécurité avec le bon paramètre isAdminCreation
         console.log('Vérification des limites de sécurité...');
         const securityCheck = await checkReservationLimits(
           newReservation.tel,
-          newReservation.email
+          newReservation.email,
+          options?.isAdminCreation || false
         );
 
         console.log('Résultat vérification sécurité:', securityCheck);
