@@ -4,9 +4,11 @@ import { useTerrains } from '@/hooks/useTerrains';
 import { format, addDays, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight, Loader2, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Calendar, User, Phone, Mail, Clock, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { Reservation, Terrain } from '@/lib/supabase';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
@@ -145,6 +147,8 @@ const Planning = () => {
   const [startDate, setStartDate] = useState<Date>(startOfDay(new Date())); // Start with today
   const [weekDays, setWeekDays] = useState<Date[]>([]);
   const [selectedDay, setSelectedDay] = useState<Date>(new Date());
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  const [showReservationDialog, setShowReservationDialog] = useState(false);
   
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
   // Correction ici : Récupérer toutes les réservations (ne PAS exclure les réservations d'abonnement)
@@ -215,6 +219,37 @@ const Planning = () => {
         return 'bg-red-100 text-red-800 border border-red-300 hover:bg-red-200';
       default:
         return 'bg-white hover:bg-gray-50 border border-gray-200';
+    }
+  };
+
+  const handleReservationClick = (reservation: Reservation) => {
+    setSelectedReservation(reservation);
+    setShowReservationDialog(true);
+  };
+
+  const getStatusBadgeVariant = (statut: string) => {
+    switch (statut) {
+      case 'confirmee':
+        return 'default';
+      case 'en_attente':
+        return 'secondary';
+      case 'annulee':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
+  };
+
+  const getStatusLabel = (statut: string) => {
+    switch (statut) {
+      case 'confirmee':
+        return 'Confirmée';
+      case 'en_attente':
+        return 'En attente';
+      case 'annulee':
+        return 'Annulée';
+      default:
+        return statut;
     }
   };
 
@@ -373,11 +408,12 @@ const Planning = () => {
                             return (
                               <div 
                                 key={dayIndex}
-                                className={`p-1 lg:p-2 border-b border-r ${getCellClassName(reservation)}`}
+                                className={`p-1 lg:p-2 border-b border-r ${getCellClassName(reservation)} ${reservation ? 'cursor-pointer hover:opacity-80' : ''}`}
                                 style={reservation && isFirstSlot ? { 
                                   gridRowEnd: `span ${slotSpan}`,
                                   zIndex: 1
                                 } : {}}
+                                onClick={() => reservation && handleReservationClick(reservation)}
                               >
                                 {reservation && isFirstSlot ? (
                                   <div className="text-xs h-full flex flex-col justify-center">
@@ -410,7 +446,8 @@ const Planning = () => {
                         return (
                           <div 
                             key={timeSlot}
-                            className={`p-3 rounded-lg ${getCellClassName(reservation)}`}
+                            className={`p-3 rounded-lg ${getCellClassName(reservation)} ${reservation ? 'cursor-pointer hover:opacity-80' : ''}`}
+                            onClick={() => reservation && handleReservationClick(reservation)}
                           >
                             <div className="flex justify-between items-center">
                               <div className="font-medium text-sm">{timeSlot}</div>
@@ -449,6 +486,93 @@ const Planning = () => {
           </div>
         )}
       </div>
+
+      {/* Reservation Details Dialog */}
+      <Dialog open={showReservationDialog} onOpenChange={setShowReservationDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Détails de la réservation
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedReservation && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Statut:</span>
+                <Badge variant={getStatusBadgeVariant(selectedReservation.statut)}>
+                  {getStatusLabel(selectedReservation.statut)}
+                </Badge>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <User className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <div className="font-medium">{selectedReservation.nom_client}</div>
+                    <div className="text-sm text-gray-500">Nom du client</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <Phone className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <div className="font-medium">{selectedReservation.tel}</div>
+                    <div className="text-sm text-gray-500">Téléphone</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <Mail className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <div className="font-medium">{selectedReservation.email}</div>
+                    <div className="text-sm text-gray-500">Email</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <CalendarDays className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <div className="font-medium">
+                      {format(new Date(selectedReservation.date), 'dd MMMM yyyy', { locale: fr })}
+                    </div>
+                    <div className="text-sm text-gray-500">Date de réservation</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <div className="font-medium">
+                      {selectedReservation.heure} - {selectedReservation.duree}h
+                    </div>
+                    <div className="text-sm text-gray-500">Heure et durée</div>
+                  </div>
+                </div>
+                
+                {selectedReservation.remarque && (
+                  <div className="pt-2 border-t">
+                    <div className="text-sm font-medium text-gray-700 mb-1">Remarques:</div>
+                    <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                      {selectedReservation.remarque}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowReservationDialog(false)}
+                >
+                  Fermer
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
