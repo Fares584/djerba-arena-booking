@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -35,56 +34,8 @@ export function useReservationSecurity() {
         console.log('✅ Contact non présent dans la blacklist');
       }
 
-      // 2. Vérifier les limites par téléphone (max 2 réservations en attente)
-      console.log('2. Vérification des limites par téléphone...');
-      const { data: phoneReservations, error: phoneError } = await supabase
-        .from('reservations')
-        .select('id, statut, created_at, nom_client')
-        .eq('tel', phone)
-        .eq('statut', 'en_attente');
-
-      if (phoneError) {
-        console.error('❌ Erreur lors de la vérification par téléphone:', phoneError);
-      } else {
-        console.log(`Réservations en attente par téléphone (${phone}):`, phoneReservations);
-        
-        if (phoneReservations && phoneReservations.length >= 2) {
-          console.log('❌ Limite atteinte par téléphone:', phoneReservations.length, 'réservations en attente');
-          return {
-            canReserve: false,
-            reason: 'Limite atteinte : maximum 2 réservations en attente par numéro de téléphone.'
-          };
-        } else {
-          console.log(`✅ Téléphone OK: ${phoneReservations?.length || 0}/2 réservations en attente`);
-        }
-      }
-
-      // 3. Vérifier les limites par email (max 2 réservations en attente)
-      console.log('3. Vérification des limites par email...');
-      const { data: emailReservations, error: emailError } = await supabase
-        .from('reservations')
-        .select('id, statut, created_at, nom_client')
-        .eq('email', email)
-        .eq('statut', 'en_attente');
-
-      if (emailError) {
-        console.error('❌ Erreur lors de la vérification par email:', emailError);
-      } else {
-        console.log(`Réservations en attente par email (${email}):`, emailReservations);
-        
-        if (emailReservations && emailReservations.length >= 2) {
-          console.log('❌ Limite atteinte par email:', emailReservations.length, 'réservations en attente');
-          return {
-            canReserve: false,
-            reason: 'Limite atteinte : maximum 2 réservations en attente par email.'
-          };
-        } else {
-          console.log(`✅ Email OK: ${emailReservations?.length || 0}/2 réservations en attente`);
-        }
-      }
-
-      // 4. NOUVELLE VÉRIFICATION : Limite quotidienne par appareil (max 2 réservations par jour)
-      console.log('4. Vérification de la limite quotidienne par appareil...');
+      // 2. VÉRIFICATION : Limite quotidienne par appareil (max 2 réservations par jour)
+      console.log('2. Vérification de la limite quotidienne par appareil...');
       const sessionId = getOrCreateSessionId();
       const today = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
       const todayStart = `${today}T00:00:00.000Z`;
@@ -112,12 +63,12 @@ export function useReservationSecurity() {
         console.log(`✅ Limite quotidienne OK: ${dailyDeviceReservations?.length || 0}/2 réservations aujourd'hui`);
       }
 
-      // 5. VÉRIFICATION TEMPORELLE ULTRA-STRICTE (plusieurs méthodes combinées)
-      console.log('5. Vérification temporelle renforcée...');
+      // 3. VÉRIFICATION TEMPORELLE ULTRA-STRICTE (plusieurs méthodes combinées)
+      console.log('3. Vérification temporelle renforcée...');
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       
       // Méthode A: Vérifier par contact (email ou téléphone) - PRIORITÉ ABSOLUE
-      console.log('5A. Vérification par contact...');
+      console.log('3A. Vérification par contact...');
       const { data: recentContactReservations, error: contactError } = await supabase
         .from('reservations')
         .select('created_at, tel, email, nom_client, ip_address, user_agent')
@@ -144,7 +95,7 @@ export function useReservationSecurity() {
       }
 
       // Méthode B: Vérifier par session/device - MÊME APPAREIL
-      console.log('5B. Vérification par appareil/session...');
+      console.log('3B. Vérification par appareil/session...');
       const currentUserAgent = navigator.userAgent;
 
       // Vérifier les réservations récentes par session
@@ -175,7 +126,7 @@ export function useReservationSecurity() {
       }
 
       // Méthode C: Vérifier par empreinte d'appareil (User-Agent + autres facteurs)
-      console.log('5C. Vérification par empreinte d\'appareil...');
+      console.log('3C. Vérification par empreinte d\'appareil...');
       const { data: userAgentReservations, error: uaError } = await supabase
         .from('reservations')
         .select('created_at, user_agent, tel, email')
@@ -219,7 +170,7 @@ export function useReservationSecurity() {
       }
 
       // Méthode D: Vérification par fréquence globale (protection anti-spam)
-      console.log('5D. Vérification fréquence globale...');
+      console.log('3D. Vérification fréquence globale...');
       const { data: recentGlobalReservations, error: globalError } = await supabase
         .from('reservations')
         .select('created_at')
