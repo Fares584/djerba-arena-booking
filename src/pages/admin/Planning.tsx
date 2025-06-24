@@ -1,14 +1,13 @@
+
 import { useState, useEffect } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
 import { format, addDays, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight, Loader2, Calendar, User, Phone, Mail, Clock, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import { Reservation, Terrain } from '@/lib/supabase';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
@@ -71,6 +70,39 @@ function getHeaderColorByType(type: string): string {
   }
 }
 
+// Fonction pour vérifier si un créneau est occupé par une réservation (en tenant compte de la durée)
+function isTimeSlotOccupied(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): Reservation | null {
+  if (!reservations) return null;
+  
+  const formattedDate = format(day, 'yyyy-MM-dd');
+  
+  // Convertir le timeSlot en minutes depuis minuit pour les calculs
+  const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
+  const slotTimeInMinutes = slotHour * 60 + slotMinute;
+  
+  // Chercher une réservation qui occupe ce créneau
+  for (const reservation of reservations) {
+    if (reservation.terrain_id !== terrain.id || reservation.date !== formattedDate) {
+      continue;
+    }
+    
+    // Convertir l'heure de début de la réservation en minutes
+    const [resHour, resMinute] = reservation.heure.split(':').map(Number);
+    const resStartTimeInMinutes = resHour * 60 + resMinute;
+    
+    // Calculer l'heure de fin en ajoutant la durée (en heures)
+    const durationInMinutes = reservation.duree * 60;
+    const resEndTimeInMinutes = resStartTimeInMinutes + durationInMinutes;
+    
+    // Vérifier si le créneau actuel est dans la plage de la réservation
+    if (slotTimeInMinutes >= resStartTimeInMinutes && slotTimeInMinutes < resEndTimeInMinutes) {
+      return reservation;
+    }
+  }
+  
+  return null;
+}
+
 const Planning = () => {
   // Add authentication check
   const { user, loading: authLoading } = useRequireAuth('/login');
@@ -79,13 +111,12 @@ const Planning = () => {
   const [startDate, setStartDate] = useState<Date>(startOfDay(new Date())); // Start with today
   const [weekDays, setWeekDays] = useState<Date[]>([]);
   const [selectedDay, setSelectedDay] = useState<Date>(new Date());
-  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
-  const [showReservationDialog, setShowReservationDialog] = useState(false);
   
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
   // Correction ici : Récupérer toutes les réservations (ne PAS exclure les réservations d'abonnement)
   const { data: reservations, isLoading: reservationsLoading } = useReservations({
     terrain_id: selectedTerrain || undefined
+    // On ne met PAS excludeSubscriptions:true !
   });
 
   // Generate array of dates for the week (today + 7 days)
@@ -150,102 +181,6 @@ const Planning = () => {
         return 'bg-red-100 text-red-800 border border-red-300 hover:bg-red-200';
       default:
         return 'bg-white hover:bg-gray-50 border border-gray-200';
-    }
-  };
-
-  // Fonction améliorée pour vérifier si un créneau est occupé par une réservation
-  function isTimeSlotOccupied(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): Reservation | null {
-    if (!reservations) return null;
-    
-    const formattedDate = format(day, 'yyyy-MM-dd');
-    
-    // Convertir le timeSlot en minutes depuis minuit pour les calculs
-    const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
-    const slotTimeInMinutes = slotHour * 60 + slotMinute;
-    
-    // Chercher une réservation qui occupe ce créneau
-    for (const reservation of reservations) {
-      if (reservation.terrain_id !== terrain.id || reservation.date !== formattedDate) {
-        continue;
-      }
-      
-      // Convertir l'heure de début de la réservation en minutes
-      const [resHour, resMinute] = reservation.heure.split(':').map(Number);
-      const resStartTimeInMinutes = resHour * 60 + resMinute;
-      
-      // Calculer l'heure de fin en ajoutant la durée (en heures)
-      const durationInMinutes = reservation.duree * 60;
-      const resEndTimeInMinutes = resStartTimeInMinutes + durationInMinutes;
-      
-      // Vérifier si le créneau actuel est dans la plage de la réservation
-      if (slotTimeInMinutes >= resStartTimeInMinutes && slotTimeInMinutes < resEndTimeInMinutes) {
-        return reservation;
-      }
-    }
-    
-    return null;
-  }
-
-  // Fonction pour vérifier si c'est le premier créneau d'une réservation
-  function isFirstSlotOfReservation(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): boolean {
-    const reservation = isTimeSlotOccupied(terrain, day, timeSlot, reservations);
-    if (!reservation) return false;
-    
-    // Vérifier si l'heure du créneau correspond exactement à l'heure de début de la réservation
-    return reservation.heure === timeSlot;
-  }
-
-  // Fonction pour calculer le nombre de créneaux occupés par une réservation
-  function getReservationSlotSpan(reservation: Reservation, timeSlots: string[]): number {
-    if (!reservation) return 1;
-    
-    // Calculer combien de créneaux cette réservation occupe
-    const [resHour, resMinute] = reservation.heure.split(':').map(Number);
-    const resStartTimeInMinutes = resHour * 60 + resMinute;
-    const durationInMinutes = reservation.duree * 60;
-    
-    let slotCount = 0;
-    for (const slot of timeSlots) {
-      const [slotHour, slotMinute] = slot.split(':').map(Number);
-      const slotTimeInMinutes = slotHour * 60 + slotMinute;
-      
-      if (slotTimeInMinutes >= resStartTimeInMinutes && 
-          slotTimeInMinutes < resStartTimeInMinutes + durationInMinutes) {
-        slotCount++;
-      }
-    }
-    
-    return Math.max(1, slotCount);
-  }
-
-  const handleReservationClick = (reservation: Reservation) => {
-    setSelectedReservation(reservation);
-    setShowReservationDialog(true);
-  };
-
-  const getStatusBadgeVariant = (statut: string) => {
-    switch (statut) {
-      case 'confirmee':
-        return 'default';
-      case 'en_attente':
-        return 'secondary';
-      case 'annulee':
-        return 'destructive';
-      default:
-        return 'outline';
-    }
-  };
-
-  const getStatusLabel = (statut: string) => {
-    switch (statut) {
-      case 'confirmee':
-        return 'Confirmée';
-      case 'en_attente':
-        return 'En attente';
-      case 'annulee':
-        return 'Annulée';
-      default:
-        return statut;
     }
   };
 
@@ -368,61 +303,39 @@ const Planning = () => {
                         ))}
                       </div>
                       
-                      {/* Tableau des créneaux horaires */}
-                      <div className="grid" style={{ gridTemplateColumns: 'repeat(8, 1fr)' }}>
-                        {timeSlots.map((timeSlot, timeIndex) => {
-                          const rowElements = [];
+                      {/* Pour la vue desktop, recalculer les slots pour chaque jour */}
+                      {timeSlots.map((timeSlot) => (
+                        <div key={timeSlot} className="grid grid-cols-8">
+                          <div className="p-2 lg:p-3 border-b border-r border-gray-200 font-medium text-sm lg:text-base">
+                            {timeSlot}
+                          </div>
                           
-                          // Cellule de l'heure
-                          rowElements.push(
-                            <div key={`time-${timeSlot}`} className="p-2 lg:p-3 border-b border-r border-gray-200 font-medium text-sm lg:text-base">
-                              {timeSlot}
-                            </div>
-                          );
-                          
-                          // Cellules pour chaque jour
-                          weekDays.forEach((day, dayIndex) => {
+                          {weekDays.map((day, dayIndex) => {
+                            // Recalculer les slots pour chaque jour spécifique
                             const dayTimeSlots = getTimeSlotsForTerrain(terrain, day);
                             const isTimeSlotAvailable = dayTimeSlots.includes(timeSlot);
                             
                             if (!isTimeSlotAvailable) {
-                              rowElements.push(
+                              return (
                                 <div 
-                                  key={`${dayIndex}-${timeSlot}`}
+                                  key={dayIndex}
                                   className="p-1 lg:p-2 border-b border-r bg-gray-200 text-gray-500"
                                 >
                                   <div className="text-xs text-center">Non disponible</div>
                                 </div>
                               );
-                              return;
                             }
                             
+                            // Utiliser la nouvelle fonction pour vérifier l'occupation
                             const reservation = isTimeSlotOccupied(terrain, day, timeSlot, reservations || []);
-                            const isFirstSlot = isFirstSlotOfReservation(terrain, day, timeSlot, reservations || []);
                             
-                            // Si c'est une réservation mais pas le premier créneau, ne pas afficher de cellule (elle sera fusionnée)
-                            if (reservation && !isFirstSlot) {
-                              return; // Skip cette cellule, elle est fusionnée avec la cellule précédente
-                            }
-                            
-                            // Si c'est le premier créneau d'une réservation, calculer le span
-                            let gridRowSpan = 1;
-                            if (reservation && isFirstSlot) {
-                              gridRowSpan = getReservationSlotSpan(reservation, dayTimeSlots);
-                            }
-                            
-                            rowElements.push(
+                            return (
                               <div 
-                                key={`${dayIndex}-${timeSlot}`}
-                                className={`p-1 lg:p-2 border-b border-r ${getCellClassName(reservation)} ${reservation ? 'cursor-pointer hover:opacity-80' : ''}`}
-                                style={reservation && isFirstSlot && gridRowSpan > 1 ? { 
-                                  gridRow: `span ${gridRowSpan}`,
-                                  zIndex: 1
-                                } : {}}
-                                onClick={() => reservation && handleReservationClick(reservation)}
+                                key={dayIndex}
+                                className={`p-1 lg:p-2 border-b border-r ${getCellClassName(reservation)}`}
                               >
-                                {reservation && isFirstSlot ? (
-                                  <div className="text-xs h-full flex flex-col justify-center">
+                                {reservation ? (
+                                  <div className="text-xs">
                                     <div className="font-medium truncate" title={reservation.nom_client}>
                                       {reservation.nom_client}
                                     </div>
@@ -431,16 +344,12 @@ const Planning = () => {
                                     </div>
                                     <div className="text-xs opacity-75">{reservation.duree}h</div>
                                   </div>
-                                ) : !reservation ? (
-                                  <div className="text-xs text-center text-gray-400">Libre</div>
                                 ) : null}
                               </div>
                             );
-                          });
-                          
-                          return rowElements;
-                        })}
-                      </div>
+                          })}
+                        </div>
+                      ))}
                     </div>
                   </div>
 
@@ -448,30 +357,21 @@ const Planning = () => {
                   <div className="md:hidden p-4">
                     <div className="space-y-3">
                       {timeSlots.map((timeSlot) => {
+                        // Utiliser la nouvelle fonction pour vérifier l'occupation
                         const reservation = isTimeSlotOccupied(terrain, selectedDay, timeSlot, reservations || []);
-                        const isFirstSlot = isFirstSlotOfReservation(terrain, selectedDay, timeSlot, reservations || []);
                         
                         return (
                           <div 
                             key={timeSlot}
-                            className={`p-3 rounded-lg ${getCellClassName(reservation)} ${reservation ? 'cursor-pointer hover:opacity-80' : ''}`}
-                            onClick={() => reservation && handleReservationClick(reservation)}
+                            className={`p-3 rounded-lg ${getCellClassName(reservation)}`}
                           >
                             <div className="flex justify-between items-center">
                               <div className="font-medium text-sm">{timeSlot}</div>
                               {reservation ? (
                                 <div className="text-right">
-                                  {isFirstSlot ? (
-                                    <>
-                                      <div className="font-medium text-sm">{reservation.nom_client}</div>
-                                      <div className="text-xs text-gray-600">{reservation.tel}</div>
-                                      <div className="text-xs opacity-75">{reservation.duree}h</div>
-                                    </>
-                                  ) : (
-                                    <div className="text-xs text-gray-500 italic">
-                                      (suite de {reservation.heure})
-                                    </div>
-                                  )}
+                                  <div className="font-medium text-sm">{reservation.nom_client}</div>
+                                  <div className="text-xs text-gray-600">{reservation.tel}</div>
+                                  <div className="text-xs opacity-75">{reservation.duree}h</div>
                                 </div>
                               ) : (
                                 <div className="text-xs text-gray-500">Libre</div>
@@ -494,93 +394,6 @@ const Planning = () => {
           </div>
         )}
       </div>
-
-      {/* Reservation Details Dialog */}
-      <Dialog open={showReservationDialog} onOpenChange={setShowReservationDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Détails de la réservation
-            </DialogTitle>
-          </DialogHeader>
-          
-          {selectedReservation && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Statut:</span>
-                <Badge variant={getStatusBadgeVariant(selectedReservation.statut)}>
-                  {getStatusLabel(selectedReservation.statut)}
-                </Badge>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <User className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <div className="font-medium">{selectedReservation.nom_client}</div>
-                    <div className="text-sm text-gray-500">Nom du client</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <div className="font-medium">{selectedReservation.tel}</div>
-                    <div className="text-sm text-gray-500">Téléphone</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <div className="font-medium">{selectedReservation.email}</div>
-                    <div className="text-sm text-gray-500">Email</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <CalendarDays className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <div className="font-medium">
-                      {format(new Date(selectedReservation.date), 'dd MMMM yyyy', { locale: fr })}
-                    </div>
-                    <div className="text-sm text-gray-500">Date de réservation</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <div className="font-medium">
-                      {selectedReservation.heure} - {selectedReservation.duree}h
-                    </div>
-                    <div className="text-sm text-gray-500">Heure et durée</div>
-                  </div>
-                </div>
-                
-                {selectedReservation.remarque && (
-                  <div className="pt-2 border-t">
-                    <div className="text-sm font-medium text-gray-700 mb-1">Remarques:</div>
-                    <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                      {selectedReservation.remarque}
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex justify-end pt-4 border-t">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowReservationDialog(false)}
-                >
-                  Fermer
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
