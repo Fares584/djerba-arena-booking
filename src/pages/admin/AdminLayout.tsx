@@ -1,27 +1,18 @@
 
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
-import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { LogOut, Menu, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import AdminNavigation from '@/components/admin/AdminNavigation';
 
 const AdminLayout = () => {
-  const { user } = useRequireAuth();
-  const { role, loading: roleLoading } = useUserRole();
+  useRequireAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // Rediriger les employés vers le planning par défaut
-  useEffect(() => {
-    if (!roleLoading && role === 'employee' && location.pathname === '/admin') {
-      navigate('/admin/planning');
-    }
-  }, [role, roleLoading, location.pathname, navigate]);
 
   const handleLogout = async () => {
     try {
@@ -35,17 +26,6 @@ const AdminLayout = () => {
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
-  };
-
-  const getRoleLabel = (role: string | null) => {
-    switch (role) {
-      case 'admin':
-        return 'Administrateur';
-      case 'employee':
-        return 'Employé';
-      default:
-        return '';
-    }
   };
 
   return (
@@ -62,12 +42,7 @@ const AdminLayout = () => {
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">Administration</h1>
-              {role && (
-                <p className="text-sm text-gray-500">{getRoleLabel(role)} - {user?.email}</p>
-              )}
-            </div>
+            <h1 className="text-xl font-semibold text-gray-900">Administration</h1>
           </div>
           <div className="flex justify-end ml-auto pl-8">
             <Button 
