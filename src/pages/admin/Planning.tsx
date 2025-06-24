@@ -7,10 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, Loader2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Reservation, Terrain } from '@/lib/supabase';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
-import EditReservationForm from '@/components/admin/EditReservationForm';
 
 // Utilitaire pour générer les créneaux personnalisés Foot
 function generateTimeSlotsForFoot(startHour: number, startMinute: number, endHour: number, endMinute: number) {
@@ -104,6 +102,41 @@ function isTimeSlotOccupied(terrain: Terrain, day: Date, timeSlot: string, reser
   return null;
 }
 
+// Nouvelle fonction pour vérifier si c'est le premier créneau d'une réservation
+function isFirstSlotOfReservation(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): boolean {
+  const reservation = isTimeSlotOccupied(terrain, day, timeSlot, reservations);
+  if (!reservation) return false;
+  
+  // Vérifier si l'heure du créneau correspond exactement à l'heure de début de la réservation
+  return reservation.heure === timeSlot;
+}
+
+// Fonction pour calculer le nombre de créneaux occupés par une réservation
+function getReservationSlotSpan(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[], timeSlots: string[]): number {
+  const reservation = isTimeSlotOccupied(terrain, day, timeSlot, reservations);
+  if (!reservation || !isFirstSlotOfReservation(terrain, day, timeSlot, reservations)) {
+    return 1;
+  }
+  
+  // Calculer combien de créneaux cette réservation occupe
+  const [resHour, resMinute] = reservation.heure.split(':').map(Number);
+  const resStartTimeInMinutes = resHour * 60 + resMinute;
+  const durationInMinutes = reservation.duree * 60;
+  
+  let slotCount = 0;
+  for (const slot of timeSlots) {
+    const [slotHour, slotMinute] = slot.split(':').map(Number);
+    const slotTimeInMinutes = slotHour * 60 + slotMinute;
+    
+    if (slotTimeInMinutes >= resStartTimeInMinutes && 
+        slotTimeInMinutes < resStartTimeInMinutes + durationInMinutes) {
+      slotCount++;
+    }
+  }
+  
+  return Math.max(1, slotCount);
+}
+
 const Planning = () => {
   // Add authentication check
   const { user, loading: authLoading } = useRequireAuth('/login');
@@ -112,12 +145,10 @@ const Planning = () => {
   const [startDate, setStartDate] = useState<Date>(startOfDay(new Date())); // Start with today
   const [weekDays, setWeekDays] = useState<Date[]>([]);
   const [selectedDay, setSelectedDay] = useState<Date>(new Date());
-  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
   // Correction ici : Récupérer toutes les réservations (ne PAS exclure les réservations d'abonnement)
-  const { data: reservations, isLoading: reservationsLoading, refetch: refetchReservations } = useReservations({
+  const { data: reservations, isLoading: reservationsLoading } = useReservations({
     terrain_id: selectedTerrain || undefined
     // On ne met PAS excludeSubscriptions:true !
   });
@@ -172,36 +203,18 @@ const Planning = () => {
     }
   };
 
-  const handleReservationClick = (reservation: Reservation) => {
-    setSelectedReservation(reservation);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleEditSuccess = () => {
-    setIsEditDialogOpen(false);
-    setSelectedReservation(null);
-    refetchReservations();
-  };
-
-  const handleEditCancel = () => {
-    setIsEditDialogOpen(false);
-    setSelectedReservation(null);
-  };
-
   const getCellClassName = (reservation?: Reservation) => {
     if (!reservation) return 'bg-white hover:bg-gray-50 border border-gray-200';
     
-    const baseClasses = 'cursor-pointer transition-all duration-200 border';
-    
     switch (reservation.statut) {
       case 'confirmee':
-        return `${baseClasses} bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:shadow-md`;
+        return 'bg-green-100 text-green-800 border border-green-300 hover:bg-green-200';
       case 'en_attente':
-        return `${baseClasses} bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200 hover:shadow-md`;
+        return 'bg-yellow-100 text-yellow-800 border border-yellow-300 hover:bg-yellow-200';
       case 'annulee':
-        return `${baseClasses} bg-red-100 text-red-800 border-red-300 hover:bg-red-200 hover:shadow-md`;
+        return 'bg-red-100 text-red-800 border border-red-300 hover:bg-red-200';
       default:
-        return `${baseClasses} bg-white hover:bg-gray-50 border-gray-200`;
+        return 'bg-white hover:bg-gray-50 border border-gray-200';
     }
   };
 
@@ -349,15 +362,25 @@ const Planning = () => {
                             
                             // Utiliser la nouvelle fonction pour vérifier l'occupation
                             const reservation = isTimeSlotOccupied(terrain, day, timeSlot, reservations || []);
+                            const isFirstSlot = isFirstSlotOfReservation(terrain, day, timeSlot, reservations || []);
+                            const slotSpan = getReservationSlotSpan(terrain, day, timeSlot, reservations || [], dayTimeSlots);
+                            
+                            // Si c'est une réservation mais pas le premier créneau, ne pas afficher
+                            if (reservation && !isFirstSlot) {
+                              return null;
+                            }
                             
                             return (
                               <div 
                                 key={dayIndex}
                                 className={`p-1 lg:p-2 border-b border-r ${getCellClassName(reservation)}`}
-                                onClick={() => reservation && handleReservationClick(reservation)}
+                                style={reservation && isFirstSlot ? { 
+                                  gridRowEnd: `span ${slotSpan}`,
+                                  zIndex: 1
+                                } : {}}
                               >
-                                {reservation ? (
-                                  <div className="text-xs">
+                                {reservation && isFirstSlot ? (
+                                  <div className="text-xs h-full flex flex-col justify-center">
                                     <div className="font-medium truncate" title={reservation.nom_client}>
                                       {reservation.nom_client}
                                     </div>
@@ -381,20 +404,29 @@ const Planning = () => {
                       {timeSlots.map((timeSlot) => {
                         // Utiliser la nouvelle fonction pour vérifier l'occupation
                         const reservation = isTimeSlotOccupied(terrain, selectedDay, timeSlot, reservations || []);
+                        const isFirstSlot = isFirstSlotOfReservation(terrain, selectedDay, timeSlot, reservations || []);
                         
+                        // Pour mobile, afficher tous les créneaux mais avec des styles différents
                         return (
                           <div 
                             key={timeSlot}
                             className={`p-3 rounded-lg ${getCellClassName(reservation)}`}
-                            onClick={() => reservation && handleReservationClick(reservation)}
                           >
                             <div className="flex justify-between items-center">
                               <div className="font-medium text-sm">{timeSlot}</div>
                               {reservation ? (
                                 <div className="text-right">
-                                  <div className="font-medium text-sm">{reservation.nom_client}</div>
-                                  <div className="text-xs text-gray-600">{reservation.tel}</div>
-                                  <div className="text-xs opacity-75">{reservation.duree}h</div>
+                                  {isFirstSlot ? (
+                                    <>
+                                      <div className="font-medium text-sm">{reservation.nom_client}</div>
+                                      <div className="text-xs text-gray-600">{reservation.tel}</div>
+                                      <div className="text-xs opacity-75">{reservation.duree}h</div>
+                                    </>
+                                  ) : (
+                                    <div className="text-xs text-gray-500 italic">
+                                      (suite de {reservation.heure})
+                                    </div>
+                                  )}
                                 </div>
                               ) : (
                                 <div className="text-xs text-gray-500">Libre</div>
@@ -417,22 +449,6 @@ const Planning = () => {
           </div>
         )}
       </div>
-
-      {/* Edit Reservation Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Modifier la réservation</DialogTitle>
-          </DialogHeader>
-          {selectedReservation && (
-            <EditReservationForm
-              reservation={selectedReservation}
-              onSuccess={handleEditSuccess}
-              onCancel={handleEditCancel}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
