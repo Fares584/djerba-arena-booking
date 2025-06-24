@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useReservationSecurity } from './useReservationSecurity';
+import { useDeviceFingerprint } from './useDeviceFingerprint';
 
 export function useReservations(filters?: { 
   terrain_id?: number; 
@@ -133,6 +134,7 @@ export function useReservationsHistory(filters?: {
 export function useCreateReservation(options?: { onSuccess?: () => void; isAdminCreation?: boolean }) {
   const queryClient = useQueryClient();
   const { checkReservationLimits } = useReservationSecurity();
+  const { getDeviceFingerprint } = useDeviceFingerprint();
 
   return useMutation({
     mutationFn: async (newReservation: Omit<Reservation, 'id' | 'created_at' | 'updated_at'>) => {
@@ -141,7 +143,7 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
         console.log('Données de réservation:', newReservation);
         console.log('Mode admin:', options?.isAdminCreation);
         
-        // Vérification des limites de sécurité améliorée
+        // Vérification des limites de sécurité renforcée
         console.log('Vérification des limites de sécurité...');
         const securityCheck = await checkReservationLimits(
           newReservation.tel,
@@ -158,18 +160,21 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
 
         console.log('✅ Sécurité validée, création de la réservation...');
         
-        // Obtenir l'ID de session pour traçabilité uniquement
-        const sessionId = getOrCreateSessionId();
+        // Obtenir le fingerprint de l'appareil pour traçabilité et limitation
+        const deviceFingerprint = getDeviceFingerprint();
         
-        // Créer avec statut "en_attente"
+        // Créer avec statut "en_attente" et fingerprint de l'appareil
         const reservationData = {
           ...newReservation,
           statut: 'en_attente' as const,
-          ip_address: sessionId, // Utilisé uniquement pour traçabilité
+          ip_address: deviceFingerprint, // Stocke le fingerprint de l'appareil
           user_agent: navigator.userAgent.slice(0, 255)
         };
         
-        console.log('Données finales de la réservation:', reservationData);
+        console.log('Données finales de la réservation:', {
+          ...reservationData,
+          ip_address: `device_${deviceFingerprint.slice(0, 8)}...` // Affichage tronqué pour la console
+        });
         
         const { data, error } = await supabase
           .from('reservations')
@@ -207,18 +212,4 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
       toast.error(error.message || "Erreur lors de la création de la réservation");
     },
   });
-}
-
-// Fonction utilitaire pour l'ID de session (traçabilité uniquement)
-function getOrCreateSessionId(): string {
-  let sessionId = sessionStorage.getItem('reservation_session_id');
-  
-  if (!sessionId) {
-    const timestamp = Date.now().toString();
-    const random = Math.random().toString(36).substring(2);
-    sessionId = `${timestamp}-${random}`;
-    sessionStorage.setItem('reservation_session_id', sessionId);
-  }
-  
-  return sessionId;
 }
