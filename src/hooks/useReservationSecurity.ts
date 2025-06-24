@@ -86,14 +86,14 @@ export function useReservationSecurity() {
         }
       }
 
-      // 4. Vérifier la limitation temporelle globale (5 minutes par IP)
-      console.log('4. Vérification de la limitation temporelle globale...');
+      // 4. Vérification de la limitation temporelle renforcée (3 méthodes)
+      console.log('4. Vérification de la limitation temporelle renforcée...');
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       
-      // D'abord vérifier par contact (email ou téléphone)
+      // Méthode 1: Vérifier par contact (email ou téléphone)
       const { data: recentContactReservations, error: contactError } = await supabase
         .from('reservations')
-        .select('created_at, tel, email, nom_client')
+        .select('created_at, tel, email, nom_client, ip_address, user_agent')
         .or(`tel.eq.${phone},email.eq.${email}`)
         .gte('created_at', fiveMinutesAgo)
         .order('created_at', { ascending: false })
@@ -118,47 +118,75 @@ export function useReservationSecurity() {
         };
       }
 
-      // Ensuite vérifier globalement (pour empêcher le contournement en changeant email/tel)
-      const { data: allRecentReservations, error: globalError } = await supabase
+      // Méthode 2: Vérifier par session ID (existant)
+      const sessionId = getOrCreateSessionId();
+      const { data: sessionReservations, error: sessionError } = await supabase
         .from('reservations')
         .select('created_at, ip_address')
+        .eq('ip_address', sessionId)
+        .gte('created_at', fiveMinutesAgo)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!sessionError && sessionReservations && sessionReservations.length > 0) {
+        const lastReservation = sessionReservations[0];
+        const timeDiff = new Date().getTime() - new Date(lastReservation.created_at).getTime();
+        const minutesLeft = Math.ceil((5 * 60 * 1000 - timeDiff) / (60 * 1000));
+        
+        console.log('❌ Limitation temporelle activée (par session):', {
+          sessionId,
+          lastReservation: lastReservation.created_at,
+          timeDiff: timeDiff / 1000 / 60,
+          minutesLeft
+        });
+        
+        return {
+          canReserve: false,
+          reason: `Veuillez attendre ${minutesLeft} minute(s) avant de faire une nouvelle réservation. (Session détectée)`
+        };
+      }
+
+      // Méthode 3: Vérifier par User-Agent similaire (pour détecter le même appareil)
+      const currentUserAgent = navigator.userAgent;
+      const { data: userAgentReservations, error: uaError } = await supabase
+        .from('reservations')
+        .select('created_at, user_agent')
+        .not('user_agent', 'is', null)
         .gte('created_at', fiveMinutesAgo)
         .order('created_at', { ascending: false });
 
-      if (globalError) {
-        console.error('❌ Erreur lors de la vérification temporelle globale:', globalError);
-      } else if (allRecentReservations && allRecentReservations.length > 0) {
-        // Obtenir l'IP actuelle (approximative via navigator si disponible)
-        // Note: En production, l'IP devrait être stockée côté serveur
-        const userIP = await getUserIP();
-        
-        if (userIP) {
-          const recentFromSameIP = allRecentReservations.filter(res => 
-            res.ip_address === userIP
-          );
+      if (!uaError && userAgentReservations && userAgentReservations.length > 0) {
+        // Vérifier si un User-Agent similaire existe (même appareil/navigateur)
+        const similarUA = userAgentReservations.find(res => {
+          if (!res.user_agent) return false;
+          // Comparer les parties importantes du User-Agent (navigateur, OS, device)
+          const currentUAParts = extractUserAgentParts(currentUserAgent);
+          const resUAParts = extractUserAgentParts(res.user_agent);
           
-          if (recentFromSameIP.length > 0) {
-            const lastReservation = recentFromSameIP[0];
-            const timeDiff = new Date().getTime() - new Date(lastReservation.created_at).getTime();
-            const minutesLeft = Math.ceil((5 * 60 * 1000 - timeDiff) / (60 * 1000));
-            
-            console.log('❌ Limitation temporelle activée (par IP):', {
-              userIP,
-              lastReservation: lastReservation.created_at,
-              timeDiff: timeDiff / 1000 / 60,
-              minutesLeft
-            });
-            
-            return {
-              canReserve: false,
-              reason: `Veuillez attendre ${minutesLeft} minute(s) avant de faire une nouvelle réservation. (Limitation par session)`
-            };
-          }
+          return (
+            currentUAParts.browser === resUAParts.browser &&
+            currentUAParts.os === resUAParts.os &&
+            currentUAParts.device === resUAParts.device
+          );
+        });
+
+        if (similarUA) {
+          const timeDiff = new Date().getTime() - new Date(similarUA.created_at).getTime();
+          const minutesLeft = Math.ceil((5 * 60 * 1000 - timeDiff) / (60 * 1000));
+          
+          console.log('❌ Limitation temporelle activée (par appareil):', {
+            currentUserAgent: currentUserAgent.slice(0, 100),
+            similarUserAgent: similarUA.user_agent.slice(0, 100),
+            lastReservation: similarUA.created_at,
+            timeDiff: timeDiff / 1000 / 60,
+            minutesLeft
+          });
+          
+          return {
+            canReserve: false,
+            reason: `Veuillez attendre ${minutesLeft} minute(s) avant de faire une nouvelle réservation. (Même appareil détecté)`
+          };
         }
-        
-        console.log('✅ Pas de réservations récentes pour cette session');
-      } else {
-        console.log('✅ Pas de réservations récentes dans les 5 dernières minutes');
       }
 
       console.log('✅ Toutes les vérifications de sécurité sont passées - réservation autorisée');
@@ -178,19 +206,6 @@ export function useReservationSecurity() {
   return { checkReservationLimits };
 }
 
-// Fonction pour obtenir l'IP de l'utilisateur
-async function getUserIP(): Promise<string | null> {
-  try {
-    // Méthode simple pour obtenir une empreinte de session
-    // En production, l'IP devrait être obtenue côté serveur
-    const sessionId = getOrCreateSessionId();
-    return sessionId;
-  } catch (error) {
-    console.error('Erreur lors de l\'obtention de l\'IP:', error);
-    return null;
-  }
-}
-
 // Créer ou récupérer un ID de session unique pour cette session de navigateur
 function getOrCreateSessionId(): string {
   let sessionId = sessionStorage.getItem('reservation_session_id');
@@ -206,4 +221,31 @@ function getOrCreateSessionId(): string {
   }
   
   return sessionId;
+}
+
+// Extraire les parties importantes du User-Agent pour comparaison
+function extractUserAgentParts(userAgent: string) {
+  const ua = userAgent.toLowerCase();
+  
+  // Détecter le navigateur
+  let browser = 'unknown';
+  if (ua.includes('chrome')) browser = 'chrome';
+  else if (ua.includes('firefox')) browser = 'firefox';
+  else if (ua.includes('safari')) browser = 'safari';
+  else if (ua.includes('edge')) browser = 'edge';
+  
+  // Détecter l'OS
+  let os = 'unknown';
+  if (ua.includes('windows')) os = 'windows';
+  else if (ua.includes('mac')) os = 'mac';
+  else if (ua.includes('linux')) os = 'linux';
+  else if (ua.includes('android')) os = 'android';
+  else if (ua.includes('ios') || ua.includes('iphone') || ua.includes('ipad')) os = 'ios';
+  
+  // Détecter le type d'appareil
+  let device = 'desktop';
+  if (ua.includes('mobile')) device = 'mobile';
+  else if (ua.includes('tablet') || ua.includes('ipad')) device = 'tablet';
+  
+  return { browser, os, device };
 }
