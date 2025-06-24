@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -376,8 +377,6 @@ const Planning = () => {
         
         {terrains && filteredTerrains && filteredTerrains.length > 0 ? (
           filteredTerrains.map(terrain => {
-            // Récupère dynamiquement la liste de créneaux selon le terrain et le jour sélectionné
-            const timeSlots = getTimeSlotsForTerrain(terrain, selectedDay);
             const headerColor = getHeaderColorByType(terrain.type);
 
             return (
@@ -402,65 +401,82 @@ const Planning = () => {
                       {/* Créer une structure de table avec gestion des rowspan */}
                       <table className="w-full border-collapse">
                         <tbody>
-                          {timeSlots.map((timeSlot) => (
-                            <tr key={timeSlot}>
-                              <td className="p-2 lg:p-3 border-b border-r border-gray-200 font-medium text-sm lg:text-base w-[12.5%]">
-                                {timeSlot}
-                              </td>
-                              
-                              {weekDays.map((day, dayIndex) => {
-                                // Recalculer les slots pour chaque jour spécifique
-                                const dayTimeSlots = getTimeSlotsForTerrain(terrain, day);
-                                const isTimeSlotAvailable = dayTimeSlots.includes(timeSlot);
+                          {/* Générer tous les créneaux possibles pour ce terrain */}
+                          {(() => {
+                            // Créer un set de tous les créneaux uniques pour ce terrain en fonction des jours
+                            const allTimeSlots = new Set<string>();
+                            weekDays.forEach(day => {
+                              const daySlots = getTimeSlotsForTerrain(terrain, day);
+                              daySlots.forEach(slot => allTimeSlots.add(slot));
+                            });
+                            
+                            // Trier les créneaux par ordre chronologique
+                            const sortedTimeSlots = Array.from(allTimeSlots).sort((a, b) => {
+                              const [aHour, aMin] = a.split(':').map(Number);
+                              const [bHour, bMin] = b.split(':').map(Number);
+                              return (aHour * 60 + aMin) - (bHour * 60 + bMin);
+                            });
+
+                            return sortedTimeSlots.map((timeSlot) => (
+                              <tr key={timeSlot}>
+                                <td className="p-2 lg:p-3 border-b border-r border-gray-200 font-medium text-sm lg:text-base w-[12.5%]">
+                                  {timeSlot}
+                                </td>
                                 
-                                if (!isTimeSlotAvailable) {
+                                {weekDays.map((day, dayIndex) => {
+                                  // Recalculer les slots pour chaque jour spécifique
+                                  const dayTimeSlots = getTimeSlotsForTerrain(terrain, day);
+                                  const isTimeSlotAvailable = dayTimeSlots.includes(timeSlot);
+                                  
+                                  if (!isTimeSlotAvailable) {
+                                    return (
+                                      <td 
+                                        key={dayIndex}
+                                        className="p-1 lg:p-2 border-b border-r bg-gray-200 text-gray-500 w-[12.5%]"
+                                      >
+                                        <div className="text-xs text-center">Non disponible</div>
+                                      </td>
+                                    );
+                                  }
+                                  
+                                  // Utiliser la nouvelle fonction pour vérifier l'occupation
+                                  const occupation = getTimeSlotOccupation(terrain, day, timeSlot, reservations || []);
+                                  
+                                  // Ne pas afficher les cellules qui ne sont pas le début d'une réservation multi-heures
+                                  if (occupation.reservation && !occupation.shouldShow) {
+                                    return null;
+                                  }
+                                  
+                                  const rowSpan = occupation.reservation && occupation.isStart 
+                                    ? getReservationRowSpan(occupation.reservation, terrain, day)
+                                    : 1;
+                                  
                                   return (
                                     <td 
                                       key={dayIndex}
-                                      className="p-1 lg:p-2 border-b border-r bg-gray-200 text-gray-500 w-[12.5%]"
+                                      className={`p-1 lg:p-2 border-b border-r w-[12.5%] ${getCellClassName(occupation.reservation)} ${
+                                        occupation.reservation ? 'cursor-pointer hover:opacity-80' : ''
+                                      }`}
+                                      rowSpan={rowSpan}
+                                      onClick={() => occupation.reservation && handleReservationClick(occupation.reservation)}
                                     >
-                                      <div className="text-xs text-center">Non disponible</div>
+                                      {occupation.reservation ? (
+                                        <div className="text-xs">
+                                          <div className="font-medium truncate" title={occupation.reservation.nom_client}>
+                                            {occupation.reservation.nom_client}
+                                          </div>
+                                          <div className="text-gray-600 truncate" title={occupation.reservation.tel}>
+                                            {occupation.reservation.tel}
+                                          </div>
+                                          <div className="text-xs opacity-75">{occupation.reservation.duree}h</div>
+                                        </div>
+                                      ) : null}
                                     </td>
                                   );
-                                }
-                                
-                                // Utiliser la nouvelle fonction pour vérifier l'occupation
-                                const occupation = getTimeSlotOccupation(terrain, day, timeSlot, reservations || []);
-                                
-                                // Ne pas afficher les cellules qui ne sont pas le début d'une réservation multi-heures
-                                if (occupation.reservation && !occupation.shouldShow) {
-                                  return null;
-                                }
-                                
-                                const rowSpan = occupation.reservation && occupation.isStart 
-                                  ? getReservationRowSpan(occupation.reservation, terrain, day)
-                                  : 1;
-                                
-                                return (
-                                  <td 
-                                    key={dayIndex}
-                                    className={`p-1 lg:p-2 border-b border-r w-[12.5%] ${getCellClassName(occupation.reservation)} ${
-                                      occupation.reservation ? 'cursor-pointer hover:opacity-80' : ''
-                                    }`}
-                                    rowSpan={rowSpan}
-                                    onClick={() => occupation.reservation && handleReservationClick(occupation.reservation)}
-                                  >
-                                    {occupation.reservation ? (
-                                      <div className="text-xs">
-                                        <div className="font-medium truncate" title={occupation.reservation.nom_client}>
-                                          {occupation.reservation.nom_client}
-                                        </div>
-                                        <div className="text-gray-600 truncate" title={occupation.reservation.tel}>
-                                          {occupation.reservation.tel}
-                                        </div>
-                                        <div className="text-xs opacity-75">{occupation.reservation.duree}h</div>
-                                      </div>
-                                    ) : null}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          ))}
+                                })}
+                              </tr>
+                            ));
+                          })()}
                         </tbody>
                       </table>
                     </div>
@@ -469,45 +485,49 @@ const Planning = () => {
                   {/* Mobile View - Cards */}
                   <div className="md:hidden p-4">
                     <div className="space-y-3">
-                      {timeSlots.map((timeSlot) => {
-                        // Utiliser la nouvelle fonction pour vérifier l'occupation
-                        const occupation = getTimeSlotOccupation(terrain, selectedDay, timeSlot, reservations || []);
+                      {(() => {
+                        const timeSlots = getTimeSlotsForTerrain(terrain, selectedDay);
                         
-                        // Ne pas afficher les créneaux qui ne sont pas le début d'une réservation multi-heures
-                        if (occupation.reservation && !occupation.shouldShow) {
-                          return null;
-                        }
-                        
-                        return (
-                          <div 
-                            key={timeSlot}
-                            className={`p-3 rounded-lg ${getCellClassName(occupation.reservation)} ${
-                              occupation.reservation ? 'cursor-pointer hover:opacity-80' : ''
-                            }`}
-                            onClick={() => occupation.reservation && handleReservationClick(occupation.reservation)}
-                          >
-                            <div className="flex justify-between items-center">
-                              <div className="font-medium text-sm">
-                                {timeSlot}
-                                {occupation.reservation && occupation.reservation.duree > 1 && (
-                                  <span className="text-xs text-gray-500 ml-2">
-                                    - {String(parseInt(timeSlot.split(':')[0]) + occupation.reservation.duree).padStart(2, '0')}:{timeSlot.split(':')[1]}
-                                  </span>
+                        return timeSlots.map((timeSlot) => {
+                          // Utiliser la nouvelle fonction pour vérifier l'occupation
+                          const occupation = getTimeSlotOccupation(terrain, selectedDay, timeSlot, reservations || []);
+                          
+                          // Ne pas afficher les créneaux qui ne sont pas le début d'une réservation multi-heures
+                          if (occupation.reservation && !occupation.shouldShow) {
+                            return null;
+                          }
+                          
+                          return (
+                            <div 
+                              key={timeSlot}
+                              className={`p-3 rounded-lg ${getCellClassName(occupation.reservation)} ${
+                                occupation.reservation ? 'cursor-pointer hover:opacity-80' : ''
+                              }`}
+                              onClick={() => occupation.reservation && handleReservationClick(occupation.reservation)}
+                            >
+                              <div className="flex justify-between items-center">
+                                <div className="font-medium text-sm">
+                                  {timeSlot}
+                                  {occupation.reservation && occupation.reservation.duree > 1 && (
+                                    <span className="text-xs text-gray-500 ml-2">
+                                      - {String(parseInt(timeSlot.split(':')[0]) + occupation.reservation.duree).padStart(2, '0')}:{timeSlot.split(':')[1]}
+                                    </span>
+                                  )}
+                                </div>
+                                {occupation.reservation ? (
+                                  <div className="text-right">
+                                    <div className="font-medium text-sm">{occupation.reservation.nom_client}</div>
+                                    <div className="text-xs text-gray-600">{occupation.reservation.tel}</div>
+                                    <div className="text-xs opacity-75">{occupation.reservation.duree}h</div>
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-gray-500">Libre</div>
                                 )}
                               </div>
-                              {occupation.reservation ? (
-                                <div className="text-right">
-                                  <div className="font-medium text-sm">{occupation.reservation.nom_client}</div>
-                                  <div className="text-xs text-gray-600">{occupation.reservation.tel}</div>
-                                  <div className="text-xs opacity-75">{occupation.reservation.duree}h</div>
-                                </div>
-                              ) : (
-                                <div className="text-xs text-gray-500">Libre</div>
-                              )}
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        });
+                      })()}
                     </div>
                   </div>
                 </CardContent>
