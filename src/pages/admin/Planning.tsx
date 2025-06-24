@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, Loader2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Reservation, Terrain } from '@/lib/supabase';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
@@ -216,21 +215,17 @@ const Planning = () => {
             </Button>
           </div>
 
-          {/* Mobile Week Navigation with Swipe */}
-          <div className="flex md:hidden items-center justify-center">
-            <Carousel className="w-full max-w-xs">
-              <CarouselContent>
-                <CarouselItem>
-                  <div className="text-center">
-                    <span className="text-sm font-medium">
-                      Du {format(startDate, 'dd/MM', { locale: fr })} au {format(weekDays[6] || addDays(startDate, 6), 'dd/MM', { locale: fr })}
-                    </span>
-                  </div>
-                </CarouselItem>
-              </CarouselContent>
-              <CarouselPrevious onClick={goToPreviousWeek} className="left-0" />
-              <CarouselNext onClick={goToNextWeek} className="right-0" />
-            </Carousel>
+          {/* Mobile Day Navigation */}
+          <div className="flex md:hidden items-center justify-between">
+            <Button variant="outline" size="sm" onClick={goToPreviousDay}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm font-medium px-4">
+              {format(selectedDay, 'EEEE dd/MM', { locale: fr })}
+            </span>
+            <Button variant="outline" size="sm" onClick={goToNextDay}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
         </div>
         
@@ -241,171 +236,141 @@ const Planning = () => {
           </h2>
         </div>
 
-        {/* Mobile Day Selector with Swipe */}
+        {/* Mobile Day Selector */}
         <div className="md:hidden mb-4">
-          <Carousel className="w-full">
-            <CarouselContent className="-ml-2 md:-ml-4">
-              {weekDays.map((day, index) => (
-                <CarouselItem key={index} className="pl-2 md:pl-4 basis-1/7">
-                  <button
-                    onClick={() => setSelectedDay(day)}
-                    className={`p-2 rounded text-xs font-medium w-full ${
-                      format(day, 'yyyy-MM-dd') === format(selectedDay, 'yyyy-MM-dd')
-                        ? 'bg-sport-green text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <div>{format(day, 'EEE', { locale: fr })}</div>
-                    <div>{format(day, 'dd')}</div>
-                  </button>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-          </Carousel>
+          <div className="grid grid-cols-7 gap-1">
+            {weekDays.map((day, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedDay(day)}
+                className={`p-2 rounded text-xs font-medium ${
+                  format(day, 'yyyy-MM-dd') === format(selectedDay, 'yyyy-MM-dd')
+                    ? 'bg-sport-green text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <div>{format(day, 'EEE', { locale: fr })}</div>
+                <div>{format(day, 'dd')}</div>
+              </button>
+            ))}
+          </div>
         </div>
         
         {terrains && filteredTerrains && filteredTerrains.length > 0 ? (
-          <div className="md:hidden">
-            {/* Mobile Terrain Carousel */}
-            <Carousel className="w-full">
-              <CarouselContent>
-                {filteredTerrains.map(terrain => {
-                  const timeSlots = getTimeSlotsForTerrain(terrain, selectedDay);
-                  const headerColor = getHeaderColorByType(terrain.type);
+          filteredTerrains.map(terrain => {
+            // Récupère dynamiquement la liste de créneaux selon le terrain et le jour sélectionné
+            const timeSlots = getTimeSlotsForTerrain(terrain, selectedDay);
+            const headerColor = getHeaderColorByType(terrain.type);
 
-                  return (
-                    <CarouselItem key={terrain.id}>
-                      <Card>
-                        <CardHeader className={`${headerColor} text-white py-3`}>
-                          <CardTitle className="text-base">{terrain.nom} - {terrain.type === 'foot' ? 'Football' : terrain.type === 'tennis' ? 'Tennis' : 'Padel'}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-4">
-                          <div className="space-y-3">
-                            {timeSlots.map((timeSlot) => {
-                              const reservationsForSlot = getReservationsForSlot(terrain, selectedDay, timeSlot);
-                              const reservation = reservationsForSlot[0];
-                              
-                              return (
-                                <div 
-                                  key={timeSlot}
-                                  className={`p-3 rounded-lg ${getCellClassName(reservation)}`}
-                                >
-                                  <div className="flex justify-between items-center">
-                                    <div className="font-medium text-sm">{timeSlot}</div>
-                                    {reservation ? (
-                                      <div className="text-right">
-                                        <div className="font-medium text-sm">{reservation.nom_client}</div>
-                                        <div className="text-xs text-gray-600">{reservation.tel}</div>
-                                        <div className="text-xs opacity-75">{reservation.duree}h</div>
-                                      </div>
-                                    ) : (
-                                      <div className="text-xs text-gray-500">Libre</div>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </CarouselItem>
-                  );
-                })}
-              </CarouselContent>
-              {filteredTerrains.length > 1 && (
-                <>
-                  <CarouselPrevious />
-                  <CarouselNext />
-                </>
-              )}
-            </Carousel>
-          </div>
-        ) : null}
-
-        {/* Desktop View */}
-        <div className="hidden md:block">
-          {terrains && filteredTerrains && filteredTerrains.length > 0 ? (
-            filteredTerrains.map(terrain => {
-              const timeSlots = getTimeSlotsForTerrain(terrain, selectedDay);
-              const headerColor = getHeaderColorByType(terrain.type);
-
-              return (
-                <Card key={terrain.id} className="mb-8">
-                  <CardHeader className={`${headerColor} text-white py-3`}>
-                    <CardTitle className="text-base md:text-lg lg:text-xl">{terrain.nom} - {terrain.type === 'foot' ? 'Football' : terrain.type === 'tennis' ? 'Tennis' : 'Padel'}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <div className="min-w-[600px] lg:min-w-[800px]">
-                        <div className="grid grid-cols-8 bg-gray-100">
-                          <div className="p-2 lg:p-3 border-b border-r border-gray-200 font-medium text-sm lg:text-base">Heure</div>
-                          {weekDays.map((day, index) => (
-                            <div key={index} className="p-2 lg:p-3 border-b border-r border-gray-200 text-center font-medium text-xs lg:text-sm">
-                              <div>{format(day, 'EEE', { locale: fr })}</div>
-                              <div>{format(day, 'dd/MM')}</div>
-                            </div>
-                          ))}
-                        </div>
-                        
-                        {timeSlots.map((timeSlot) => (
-                          <div key={timeSlot} className="grid grid-cols-8">
-                            <div className="p-2 lg:p-3 border-b border-r border-gray-200 font-medium text-sm lg:text-base">
-                              {timeSlot}
-                            </div>
-                            
-                            {weekDays.map((day, dayIndex) => {
-                              const dayTimeSlots = getTimeSlotsForTerrain(terrain, day);
-                              const isTimeSlotAvailable = dayTimeSlots.includes(timeSlot);
-                              
-                              if (!isTimeSlotAvailable) {
-                                return (
-                                  <div 
-                                    key={dayIndex}
-                                    className="p-1 lg:p-2 border-b border-r bg-gray-200 text-gray-500"
-                                  >
-                                    <div className="text-xs text-center">Non disponible</div>
-                                  </div>
-                                );
-                              }
-                              
-                              const reservationsForSlot = getReservationsForSlot(terrain, day, timeSlot);
-                              const reservation = reservationsForSlot[0];
-                              
-                              return (
-                                <div 
-                                  key={dayIndex}
-                                  className={`p-1 lg:p-2 border-b border-r ${getCellClassName(reservation)}`}
-                                >
-                                  {reservation ? (
-                                    <div className="text-xs">
-                                      <div className="font-medium truncate" title={reservation.nom_client}>
-                                        {reservation.nom_client}
-                                      </div>
-                                      <div className="text-gray-600 truncate" title={reservation.tel}>
-                                        {reservation.tel}
-                                      </div>
-                                      <div className="text-xs opacity-75">{reservation.duree}h</div>
-                                    </div>
-                                  ) : null}
-                                </div>
-                              );
-                            })}
+            return (
+              <Card key={terrain.id} className="mb-8">
+                <CardHeader className={`${headerColor} text-white py-3`}>
+                  <CardTitle className="text-base md:text-lg lg:text-xl">{terrain.nom} - {terrain.type === 'foot' ? 'Football' : terrain.type === 'tennis' ? 'Tennis' : 'Padel'}</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {/* Desktop & Tablet View - Table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <div className="min-w-[600px] lg:min-w-[800px]">
+                      <div className="grid grid-cols-8 bg-gray-100">
+                        <div className="p-2 lg:p-3 border-b border-r border-gray-200 font-medium text-sm lg:text-base">Heure</div>
+                        {weekDays.map((day, index) => (
+                          <div key={index} className="p-2 lg:p-3 border-b border-r border-gray-200 text-center font-medium text-xs lg:text-sm">
+                            <div>{format(day, 'EEE', { locale: fr })}</div>
+                            <div>{format(day, 'dd/MM')}</div>
                           </div>
                         ))}
                       </div>
+                      
+                      {/* Pour la vue desktop, recalculer les slots pour chaque jour */}
+                      {timeSlots.map((timeSlot) => (
+                        <div key={timeSlot} className="grid grid-cols-8">
+                          <div className="p-2 lg:p-3 border-b border-r border-gray-200 font-medium text-sm lg:text-base">
+                            {timeSlot}
+                          </div>
+                          
+                          {weekDays.map((day, dayIndex) => {
+                            // Recalculer les slots pour chaque jour spécifique
+                            const dayTimeSlots = getTimeSlotsForTerrain(terrain, day);
+                            const isTimeSlotAvailable = dayTimeSlots.includes(timeSlot);
+                            
+                            if (!isTimeSlotAvailable) {
+                              return (
+                                <div 
+                                  key={dayIndex}
+                                  className="p-1 lg:p-2 border-b border-r bg-gray-200 text-gray-500"
+                                >
+                                  <div className="text-xs text-center">Non disponible</div>
+                                </div>
+                              );
+                            }
+                            
+                            const reservationsForSlot = getReservationsForSlot(terrain, day, timeSlot);
+                            const reservation = reservationsForSlot[0];
+                            
+                            return (
+                              <div 
+                                key={dayIndex}
+                                className={`p-1 lg:p-2 border-b border-r ${getCellClassName(reservation)}`}
+                              >
+                                {reservation ? (
+                                  <div className="text-xs">
+                                    <div className="font-medium truncate" title={reservation.nom_client}>
+                                      {reservation.nom_client}
+                                    </div>
+                                    <div className="text-gray-600 truncate" title={reservation.tel}>
+                                      {reservation.tel}
+                                    </div>
+                                    <div className="text-xs opacity-75">{reservation.duree}h</div>
+                                  </div>
+                                ) : null}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })
-          ) : (
-            <div className="text-center py-10">
-              <Calendar className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-xl font-medium text-gray-900">Aucun terrain</h3>
-              <p className="mt-1 text-gray-500">Il n'y a pas encore de terrains à afficher.</p>
-            </div>
-          )}
-        </div>
+                  </div>
+
+                  {/* Mobile View - Cards */}
+                  <div className="md:hidden p-4">
+                    <div className="space-y-3">
+                      {timeSlots.map((timeSlot) => {
+                        const reservationsForSlot = getReservationsForSlot(terrain, selectedDay, timeSlot);
+                        const reservation = reservationsForSlot[0];
+                        
+                        return (
+                          <div 
+                            key={timeSlot}
+                            className={`p-3 rounded-lg ${getCellClassName(reservation)}`}
+                          >
+                            <div className="flex justify-between items-center">
+                              <div className="font-medium text-sm">{timeSlot}</div>
+                              {reservation ? (
+                                <div className="text-right">
+                                  <div className="font-medium text-sm">{reservation.nom_client}</div>
+                                  <div className="text-xs text-gray-600">{reservation.tel}</div>
+                                  <div className="text-xs opacity-75">{reservation.duree}h</div>
+                                </div>
+                              ) : (
+                                <div className="text-xs text-gray-500">Libre</div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })
+        ) : (
+          <div className="text-center py-10">
+            <Calendar className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-xl font-medium text-gray-900">Aucun terrain</h3>
+            <p className="mt-1 text-gray-500">Il n'y a pas encore de terrains à afficher.</p>
+          </div>
+        )}
       </div>
     </div>
   );
