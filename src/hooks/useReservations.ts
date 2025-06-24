@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
@@ -40,9 +41,14 @@ export function useReservations(filters?: {
           throw error;
         }
         
-        // Filtrer pour ne garder que les réservations actuelles et futures
+        // Filtrer pour ne garder que les réservations actuelles et futures (pas annulées)
         const now = new Date();
         const currentReservations = (data as Reservation[]).filter(reservation => {
+          // Si la réservation est annulée, elle va directement en historique
+          if (reservation.statut === 'annulee') {
+            return false;
+          }
+          
           const reservationDate = new Date(reservation.date);
           const [hours, minutes] = reservation.heure.split(':').map(Number);
           const reservationStart = new Date(reservationDate);
@@ -67,7 +73,7 @@ export function useReservations(filters?: {
   });
 }
 
-// Hook pour l'historique des réservations - réservations terminées
+// Hook pour l'historique des réservations - réservations terminées ou annulées
 export function useReservationsHistory(filters?: { 
   terrain_id?: number; 
   statut?: string;
@@ -99,21 +105,31 @@ export function useReservationsHistory(filters?: {
           throw error;
         }
         
-        // Filtrer pour ne garder que les réservations terminées (confirmées ou annulées ET passées)
+        // Filtrer pour l'historique : réservations annulées OU réservations confirmées terminées
         const now = new Date();
         const historyReservations = (data as Reservation[]).filter(reservation => {
-          const reservationDate = new Date(reservation.date);
-          const [hours, minutes] = reservation.heure.split(':').map(Number);
-          const reservationStart = new Date(reservationDate);
-          reservationStart.setHours(hours, minutes, 0, 0);
+          // Si la réservation est annulée, elle va en historique peu importe la date
+          if (reservation.statut === 'annulee') {
+            return true;
+          }
           
-          // Ajouter la durée pour obtenir l'heure de fin
-          const reservationEnd = new Date(reservationStart);
-          reservationEnd.setHours(reservationEnd.getHours() + Math.floor(reservation.duree));
-          reservationEnd.setMinutes(reservationEnd.getMinutes() + ((reservation.duree % 1) * 60));
+          // Pour les autres statuts (confirmée), vérifier si elle est passée
+          if (reservation.statut === 'confirmee') {
+            const reservationDate = new Date(reservation.date);
+            const [hours, minutes] = reservation.heure.split(':').map(Number);
+            const reservationStart = new Date(reservationDate);
+            reservationStart.setHours(hours, minutes, 0, 0);
+            
+            // Ajouter la durée pour obtenir l'heure de fin
+            const reservationEnd = new Date(reservationStart);
+            reservationEnd.setHours(reservationEnd.getHours() + Math.floor(reservation.duree));
+            reservationEnd.setMinutes(reservationEnd.getMinutes() + ((reservation.duree % 1) * 60));
+            
+            // Garder si la réservation est terminée
+            return reservationEnd <= now;
+          }
           
-          // Garder si la réservation est terminée ET (confirmée ou annulée)
-          return reservationEnd <= now && (reservation.statut === 'confirmee' || reservation.statut === 'annulee');
+          return false;
         });
         
         return historyReservations;
