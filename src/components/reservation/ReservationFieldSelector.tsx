@@ -38,7 +38,7 @@ const ReservationFieldSelector: React.FC<Props> = ({
 
   if (!selectedType) return null;
   return (
-    <div className="mb-8">
+    <div className="mb-8" data-section="terrain">
       <Label className="text-lg font-semibold mb-4 block">
         Terrain *
       </Label>
