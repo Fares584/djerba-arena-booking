@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Reservation, Terrain } from '@/lib/supabase';
-import { useRequireRole } from '@/hooks/useRequireRole';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 // Utilitaire pour générer les créneaux personnalisés Foot
 function generateTimeSlotsForFoot(startHour: number, startMinute: number, endHour: number, endMinute: number) {
@@ -167,8 +167,8 @@ function getReservationRowSpan(reservation: Reservation, terrain: Terrain, day: 
 }
 
 const Planning = () => {
-  // Autoriser l'accès aux admins et employés
-  const { role, loading: authLoading } = useRequireRole(['admin', 'employee']);
+  // Add authentication check
+  const { user, loading: authLoading } = useRequireAuth('/login');
   
   const [selectedTerrain, setSelectedTerrain] = useState<number | null>(null);
   const [startDate, setStartDate] = useState<Date>(startOfDay(new Date())); // Start with today
@@ -181,6 +181,7 @@ const Planning = () => {
   // Correction ici : Récupérer toutes les réservations (ne PAS exclure les réservations d'abonnement)
   const { data: reservations, isLoading: reservationsLoading } = useReservations({
     terrain_id: selectedTerrain || undefined
+    // On ne met PAS excludeSubscriptions:true !
   });
 
   // Generate array of dates for the week (today + 7 days)
