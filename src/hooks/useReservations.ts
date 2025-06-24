@@ -33,14 +33,8 @@ export function useReservations(filters?: {
           query = query.is('abonnement_id', null);
         }
         
-        // Toujours exclure les réservations passées (sauf si une date spécifique est demandée)
-        if (!filters?.date) {
-          const today = new Date().toISOString().split('T')[0];
-          query = query.gte('date', today);
-        }
-        
-        // Exclure les réservations annulées de la vue principale
-        query = query.neq('statut', 'annulee');
+        // SUPPRIMÉ: Plus de filtrage automatique des dates passées ou statuts
+        // L'admin peut maintenant voir toutes les réservations
         
         const { data, error } = await query.order('date', { ascending: true }).order('heure', { ascending: true });
         
@@ -59,7 +53,7 @@ export function useReservations(filters?: {
   });
 }
 
-// Nouveau hook pour l'historique des réservations
+// Hook pour l'historique des réservations - maintenant identique au hook principal
 export function useReservationsHistory(filters?: { 
   terrain_id?: number; 
   statut?: string;
@@ -84,10 +78,8 @@ export function useReservationsHistory(filters?: {
           query = query.is('abonnement_id', null);
         }
         
-        const today = new Date().toISOString().split('T')[0];
-        
-        // Inclure les réservations passées ET les réservations annulées
-        query = query.or(`date.lt.${today},statut.eq.annulee`);
+        // SUPPRIMÉ: Plus de filtrage automatique
+        // Toutes les réservations sont maintenant visibles pour l'admin
         
         const { data, error } = await query.order('date', { ascending: false }).order('heure', { ascending: false });
         

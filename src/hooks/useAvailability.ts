@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
@@ -26,6 +25,8 @@ export function useReservations(filters?: {
         if (filters?.statut) {
           query = query.eq('statut', filters.statut);
         }
+        
+        // SUPPRIMÉ: Plus de filtrage automatique des statuts
         
         const { data, error } = await query.order('date', { ascending: true }).order('heure', { ascending: true });
         
@@ -81,7 +82,7 @@ export function useAvailability({
   });
 }
 
-// Check if a specific time slot is available
+// Check if a specific time slot is available - garde la logique existante pour la disponibilité
 export function isTimeSlotAvailable(
   reservations: Reservation[] | undefined,
   terrainId: number,
@@ -91,8 +92,7 @@ export function isTimeSlotAvailable(
 ): boolean {
   if (!reservations) return true;
   
-  // Only consider 'en_attente' and 'confirmee' reservations as occupying the slot
-  // 'annulee' reservations don't block availability
+  // Seules les réservations confirmées et en attente bloquent la disponibilité
   const activeReservations = reservations.filter(
     r => r.terrain_id === terrainId && 
          r.date === date && 
