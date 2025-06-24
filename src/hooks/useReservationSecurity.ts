@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -34,33 +35,84 @@ export function useReservationSecurity() {
         console.log('✅ Contact non présent dans la blacklist');
       }
 
-      // 2. VÉRIFICATION : Limite quotidienne par appareil (max 2 réservations par jour)
-      console.log('2. Vérification de la limite quotidienne par appareil...');
-      const sessionId = getOrCreateSessionId();
-      const today = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
+      // 2. VÉRIFICATION RENFORCÉE : Limite quotidienne par empreinte d'appareil
+      console.log('2. Vérification de la limite quotidienne par empreinte d\'appareil...');
+      const deviceFingerprint = generateAdvancedDeviceFingerprint();
+      const today = new Date().toISOString().split('T')[0];
       const todayStart = `${today}T00:00:00.000Z`;
       const todayEnd = `${today}T23:59:59.999Z`;
 
+      // Vérifier TOUTES les méthodes d'identification d'appareil
+      const sessionId = getOrCreateSessionId();
+      const currentUserAgent = navigator.userAgent;
+
+      console.log('Identifiants de l\'appareil:', {
+        sessionId: sessionId.slice(0, 20) + '...',
+        fingerprint: deviceFingerprint.slice(0, 20) + '...',
+        userAgent: currentUserAgent.slice(0, 50) + '...'
+      });
+
+      // Recherche combinée par plusieurs critères d'identification
       const { data: dailyDeviceReservations, error: dailyError } = await supabase
         .from('reservations')
-        .select('id, created_at, ip_address, nom_client, tel, email')
-        .eq('ip_address', sessionId)
+        .select('id, created_at, ip_address, user_agent, nom_client, tel, email')
+        .or(`ip_address.eq.${sessionId},user_agent.eq.${currentUserAgent}`)
         .gte('created_at', todayStart)
         .lte('created_at', todayEnd);
 
-      if (!dailyError && dailyDeviceReservations && dailyDeviceReservations.length >= 2) {
+      if (dailyError) {
+        console.error('Erreur lors de la vérification quotidienne:', dailyError);
+      }
+
+      // Compter les réservations uniques (éviter les doublons)
+      const uniqueReservations = new Set();
+      let totalReservationsToday = 0;
+
+      if (dailyDeviceReservations) {
+        dailyDeviceReservations.forEach(res => {
+          const key = `${res.tel}-${res.email}-${res.created_at}`;
+          if (!uniqueReservations.has(key)) {
+            uniqueReservations.add(key);
+            totalReservationsToday++;
+          }
+        });
+      }
+
+      // Vérification supplémentaire par similarité User-Agent (protection contre changement d'onglet)
+      const { data: allTodayReservations, error: allTodayError } = await supabase
+        .from('reservations')
+        .select('user_agent, created_at, tel, email')
+        .gte('created_at', todayStart)
+        .lte('created_at', todayEnd)
+        .not('user_agent', 'is', null);
+
+      if (!allTodayError && allTodayReservations) {
+        allTodayReservations.forEach(res => {
+          if (res.user_agent && calculateUserAgentSimilarity(currentUserAgent, res.user_agent) > 0.95) {
+            const key = `${res.tel}-${res.email}-${res.created_at}`;
+            if (!uniqueReservations.has(key)) {
+              uniqueReservations.add(key);
+              totalReservationsToday++;
+            }
+          }
+        });
+      }
+
+      console.log(`Réservations détectées aujourd'hui: ${totalReservationsToday}/2`);
+
+      if (totalReservationsToday >= 2) {
         console.log('❌ BLOQUÉ - Limite quotidienne par appareil atteinte:', {
-          sessionId,
-          reservationsToday: dailyDeviceReservations.length,
-          reservations: dailyDeviceReservations
+          totalReservationsToday,
+          deviceFingerprint: deviceFingerprint.slice(0, 20) + '...',
+          sessionId: sessionId.slice(0, 20) + '...'
         });
         
         return {
           canReserve: false,
-          reason: `Limite quotidienne atteinte : maximum 2 réservations par appareil par jour. Vous avez déjà fait ${dailyDeviceReservations.length} réservation(s) aujourd'hui.`
+          reason: `Limite quotidienne atteinte : maximum 2 réservations par appareil par jour. Vous avez déjà fait ${totalReservationsToday} réservation(s) aujourd'hui.`
         };
       } else {
-        console.log(`✅ Limite quotidienne OK: ${dailyDeviceReservations?.length || 0}/2 réservations aujourd'hui`);
+        console.log(`✅ Limite quotidienne OK: ${totalReservationsToday}/2 réservations aujourd'hui`);
       }
 
       // 3. VÉRIFICATION TEMPORELLE ULTRA-STRICTE (plusieurs méthodes combinées)
@@ -94,83 +146,51 @@ export function useReservationSecurity() {
         };
       }
 
-      // Méthode B: Vérifier par session/device - MÊME APPAREIL
-      console.log('3B. Vérification par appareil/session...');
-      const currentUserAgent = navigator.userAgent;
+      // Méthode B: Vérification renforcée par empreinte d'appareil (tous onglets confondus)
+      console.log('3B. Vérification par empreinte d\'appareil renforcée...');
 
-      // Vérifier les réservations récentes par session
-      const { data: sessionReservations, error: sessionError } = await supabase
+      // Vérifier les réservations récentes par plusieurs critères
+      const { data: recentDeviceReservations, error: deviceError } = await supabase
         .from('reservations')
         .select('created_at, ip_address, user_agent, tel, email')
-        .eq('ip_address', sessionId)
-        .gte('created_at', fiveMinutesAgo)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (!sessionError && sessionReservations && sessionReservations.length > 0) {
-        const lastReservation = sessionReservations[0];
-        const timeDiff = new Date().getTime() - new Date(lastReservation.created_at).getTime();
-        const minutesLeft = Math.ceil((5 * 60 * 1000 - timeDiff) / (60 * 1000));
-        
-        console.log('❌ BLOQUÉ - Même appareil détecté (session):', {
-          sessionId,
-          lastReservation: lastReservation.created_at,
-          timeDiff: timeDiff / 1000 / 60,
-          minutesLeft
-        });
-        
-        return {
-          canReserve: false,
-          reason: `Même appareil détecté. Veuillez attendre ${minutesLeft} minute(s) avant de faire une nouvelle réservation.`
-        };
-      }
-
-      // Méthode C: Vérifier par empreinte d'appareil (User-Agent + autres facteurs)
-      console.log('3C. Vérification par empreinte d\'appareil...');
-      const { data: userAgentReservations, error: uaError } = await supabase
-        .from('reservations')
-        .select('created_at, user_agent, tel, email')
-        .not('user_agent', 'is', null)
         .gte('created_at', fiveMinutesAgo)
         .order('created_at', { ascending: false });
 
-      if (!uaError && userAgentReservations && userAgentReservations.length > 0) {
-        // Vérifier si un User-Agent très similaire existe
-        const similarUA = userAgentReservations.find(res => {
+      if (!deviceError && recentDeviceReservations && recentDeviceReservations.length > 0) {
+        // Vérifier par session ID exacte
+        const exactSessionMatch = recentDeviceReservations.find(res => res.ip_address === sessionId);
+        
+        // Vérifier par User-Agent exact
+        const exactUserAgentMatch = recentDeviceReservations.find(res => res.user_agent === currentUserAgent);
+        
+        // Vérifier par similarité User-Agent très élevée (même appareil, possiblement autre onglet)
+        const similarUserAgentMatch = recentDeviceReservations.find(res => {
           if (!res.user_agent) return false;
-          
-          // Comparaison stricte du User-Agent
-          const similarity = calculateUserAgentSimilarity(currentUserAgent, res.user_agent);
-          console.log('Comparaison User-Agent:', {
-            current: currentUserAgent.slice(0, 100),
-            stored: res.user_agent.slice(0, 100),
-            similarity
-          });
-          
-          return similarity > 0.9; // 90% de similarité minimum
+          return calculateUserAgentSimilarity(currentUserAgent, res.user_agent) > 0.98;
         });
 
-        if (similarUA) {
-          const timeDiff = new Date().getTime() - new Date(similarUA.created_at).getTime();
+        const suspiciousReservation = exactSessionMatch || exactUserAgentMatch || similarUserAgentMatch;
+
+        if (suspiciousReservation) {
+          const timeDiff = new Date().getTime() - new Date(suspiciousReservation.created_at).getTime();
           const minutesLeft = Math.ceil((5 * 60 * 1000 - timeDiff) / (60 * 1000));
           
-          console.log('❌ BLOQUÉ - Appareil similaire détecté:', {
-            currentUserAgent: currentUserAgent.slice(0, 100),
-            similarUserAgent: similarUA.user_agent.slice(0, 100),
-            lastReservation: similarUA.created_at,
+          console.log('❌ BLOQUÉ - Même appareil détecté (multi-onglets):', {
+            matchType: exactSessionMatch ? 'session' : exactUserAgentMatch ? 'userAgent' : 'similar',
+            lastReservation: suspiciousReservation.created_at,
             timeDiff: timeDiff / 1000 / 60,
             minutesLeft
           });
           
           return {
             canReserve: false,
-            reason: `Appareil suspect détecté. Veuillez attendre ${minutesLeft} minute(s) avant de faire une nouvelle réservation.`
+            reason: `Même appareil détecté. Veuillez attendre ${minutesLeft} minute(s) avant de faire une nouvelle réservation.`
           };
         }
       }
 
-      // Méthode D: Vérification par fréquence globale (protection anti-spam)
-      console.log('3D. Vérification fréquence globale...');
+      // Méthode C: Vérification par fréquence globale (protection anti-spam)
+      console.log('3C. Vérification fréquence globale...');
       const { data: recentGlobalReservations, error: globalError } = await supabase
         .from('reservations')
         .select('created_at')
@@ -219,66 +239,81 @@ function getOrCreateSessionId(): string {
   return sessionId;
 }
 
-// Générer une empreinte d'appareil plus complexe
-function generateDeviceFingerprint(): string {
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  if (ctx) {
-    ctx.textBaseline = 'top';
-    ctx.font = '14px Arial';
-    ctx.fillText('Device fingerprint', 2, 2);
+// Générer une empreinte d'appareil plus complexe et stable
+function generateAdvancedDeviceFingerprint(): string {
+  try {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    let canvasFingerprint = '';
+    
+    if (ctx) {
+      ctx.textBaseline = 'top';
+      ctx.font = '14px Arial';
+      ctx.fillText('Device fingerprint test', 2, 2);
+      canvasFingerprint = canvas.toDataURL();
+    }
+    
+    // Collecter plus d'informations pour une empreinte unique
+    const fingerprint = {
+      userAgent: navigator.userAgent,
+      language: navigator.language,
+      languages: navigator.languages?.join(',') || '',
+      platform: navigator.platform,
+      screenWidth: screen.width,
+      screenHeight: screen.height,
+      screenDepth: screen.colorDepth,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      canvas: canvasFingerprint.slice(0, 100), // Limiter la taille
+      memory: (navigator as any).deviceMemory || 0,
+      cores: navigator.hardwareConcurrency || 0,
+      cookieEnabled: navigator.cookieEnabled,
+      doNotTrack: navigator.doNotTrack || '',
+      pixelRatio: window.devicePixelRatio || 1
+    };
+    
+    return btoa(JSON.stringify(fingerprint)).slice(0, 64);
+  } catch (error) {
+    console.warn('Erreur lors de la génération de l\'empreinte:', error);
+    // Fallback simple
+    return btoa(`${navigator.userAgent}-${screen.width}x${screen.height}-${Date.now()}`).slice(0, 64);
   }
-  
-  const fingerprint = {
-    userAgent: navigator.userAgent,
-    language: navigator.language,
-    platform: navigator.platform,
-    screenWidth: screen.width,
-    screenHeight: screen.height,
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    canvas: canvas.toDataURL(),
-    memory: (navigator as any).deviceMemory || 0,
-    cores: navigator.hardwareConcurrency || 0
-  };
-  
-  return btoa(JSON.stringify(fingerprint)).slice(0, 64);
 }
 
-// Calculer la similarité entre deux User-Agents
+// Calculer la similarité entre deux User-Agents (version améliorée)
 function calculateUserAgentSimilarity(ua1: string, ua2: string): number {
   if (ua1 === ua2) return 1;
+  if (!ua1 || !ua2) return 0;
   
-  // Extraire les parties importantes
-  const parts1 = extractUserAgentParts(ua1);
-  const parts2 = extractUserAgentParts(ua2);
+  // Comparaison par segments importants
+  const segments1 = ua1.split(/[\s\/\(\)]+/);
+  const segments2 = ua2.split(/[\s\/\(\)]+/);
   
-  let score = 0;
-  let total = 0;
+  let matches = 0;
+  const totalSegments = Math.max(segments1.length, segments2.length);
   
-  // Comparer navigateur (poids: 30%)
-  if (parts1.browser === parts2.browser) score += 0.3;
-  total += 0.3;
+  segments1.forEach(segment => {
+    if (segment.length > 2 && segments2.includes(segment)) {
+      matches++;
+    }
+  });
   
-  // Comparer OS (poids: 30%)
-  if (parts1.os === parts2.os) score += 0.3;
-  total += 0.3;
+  const segmentSimilarity = matches / totalSegments;
   
-  // Comparer type d'appareil (poids: 20%)
-  if (parts1.device === parts2.device) score += 0.2;
-  total += 0.2;
+  // Comparaison par distance de Levenshtein pour affiner
+  const levenshteinSimilarity = calculateStringSimilarity(ua1, ua2);
   
-  // Similarité des chaînes brutes (poids: 20%)
-  const rawSimilarity = calculateStringSimilarity(ua1, ua2);
-  score += rawSimilarity * 0.2;
-  total += 0.2;
-  
-  return score / total;
+  // Moyenne pondérée (priorité aux segments)
+  return (segmentSimilarity * 0.7) + (levenshteinSimilarity * 0.3);
 }
 
-// Calculer la similarité entre deux chaînes
+// Calculer la similarité entre deux chaînes avec l'algorithme de Levenshtein
 function calculateStringSimilarity(str1: string, str2: string): number {
   const len1 = str1.length;
   const len2 = str2.length;
+  
+  if (len1 === 0) return len2 === 0 ? 1 : 0;
+  if (len2 === 0) return 0;
+  
   const matrix = Array(len2 + 1).fill(null).map(() => Array(len1 + 1).fill(null));
   
   for (let i = 0; i <= len1; i++) matrix[0][i] = i;
@@ -297,31 +332,4 @@ function calculateStringSimilarity(str1: string, str2: string): number {
   
   const distance = matrix[len2][len1];
   return 1 - distance / Math.max(len1, len2);
-}
-
-// Extraire les parties importantes du User-Agent pour comparaison
-function extractUserAgentParts(userAgent: string) {
-  const ua = userAgent.toLowerCase();
-  
-  // Détecter le navigateur
-  let browser = 'unknown';
-  if (ua.includes('chrome')) browser = 'chrome';
-  else if (ua.includes('firefox')) browser = 'firefox';
-  else if (ua.includes('safari')) browser = 'safari';
-  else if (ua.includes('edge')) browser = 'edge';
-  
-  // Détecter l'OS
-  let os = 'unknown';
-  if (ua.includes('windows')) os = 'windows';
-  else if (ua.includes('mac')) os = 'mac';
-  else if (ua.includes('linux')) os = 'linux';
-  else if (ua.includes('android')) os = 'android';
-  else if (ua.includes('ios') || ua.includes('iphone') || ua.includes('ipad')) os = 'ios';
-  
-  // Détecter le type d'appareil
-  let device = 'desktop';
-  if (ua.includes('mobile')) device = 'mobile';
-  else if (ua.includes('tablet') || ua.includes('ipad')) device = 'tablet';
-  
-  return { browser, os, device };
 }
