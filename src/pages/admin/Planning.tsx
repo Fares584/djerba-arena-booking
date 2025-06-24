@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -100,41 +101,6 @@ function isTimeSlotOccupied(terrain: Terrain, day: Date, timeSlot: string, reser
   }
   
   return null;
-}
-
-// Nouvelle fonction pour vérifier si c'est le premier créneau d'une réservation
-function isFirstSlotOfReservation(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): boolean {
-  const reservation = isTimeSlotOccupied(terrain, day, timeSlot, reservations);
-  if (!reservation) return false;
-  
-  // Vérifier si l'heure du créneau correspond exactement à l'heure de début de la réservation
-  return reservation.heure === timeSlot;
-}
-
-// Fonction pour calculer le nombre de créneaux occupés par une réservation
-function getReservationSlotSpan(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[], timeSlots: string[]): number {
-  const reservation = isTimeSlotOccupied(terrain, day, timeSlot, reservations);
-  if (!reservation || !isFirstSlotOfReservation(terrain, day, timeSlot, reservations)) {
-    return 1;
-  }
-  
-  // Calculer combien de créneaux cette réservation occupe
-  const [resHour, resMinute] = reservation.heure.split(':').map(Number);
-  const resStartTimeInMinutes = resHour * 60 + resMinute;
-  const durationInMinutes = reservation.duree * 60;
-  
-  let slotCount = 0;
-  for (const slot of timeSlots) {
-    const [slotHour, slotMinute] = slot.split(':').map(Number);
-    const slotTimeInMinutes = slotHour * 60 + slotMinute;
-    
-    if (slotTimeInMinutes >= resStartTimeInMinutes && 
-        slotTimeInMinutes < resStartTimeInMinutes + durationInMinutes) {
-      slotCount++;
-    }
-  }
-  
-  return Math.max(1, slotCount);
 }
 
 const Planning = () => {
@@ -362,25 +328,14 @@ const Planning = () => {
                             
                             // Utiliser la nouvelle fonction pour vérifier l'occupation
                             const reservation = isTimeSlotOccupied(terrain, day, timeSlot, reservations || []);
-                            const isFirstSlot = isFirstSlotOfReservation(terrain, day, timeSlot, reservations || []);
-                            const slotSpan = getReservationSlotSpan(terrain, day, timeSlot, reservations || [], dayTimeSlots);
-                            
-                            // Si c'est une réservation mais pas le premier créneau, ne pas afficher
-                            if (reservation && !isFirstSlot) {
-                              return null;
-                            }
                             
                             return (
                               <div 
                                 key={dayIndex}
                                 className={`p-1 lg:p-2 border-b border-r ${getCellClassName(reservation)}`}
-                                style={reservation && isFirstSlot ? { 
-                                  gridRowEnd: `span ${slotSpan}`,
-                                  zIndex: 1
-                                } : {}}
                               >
-                                {reservation && isFirstSlot ? (
-                                  <div className="text-xs h-full flex flex-col justify-center">
+                                {reservation ? (
+                                  <div className="text-xs">
                                     <div className="font-medium truncate" title={reservation.nom_client}>
                                       {reservation.nom_client}
                                     </div>
@@ -404,9 +359,7 @@ const Planning = () => {
                       {timeSlots.map((timeSlot) => {
                         // Utiliser la nouvelle fonction pour vérifier l'occupation
                         const reservation = isTimeSlotOccupied(terrain, selectedDay, timeSlot, reservations || []);
-                        const isFirstSlot = isFirstSlotOfReservation(terrain, selectedDay, timeSlot, reservations || []);
                         
-                        // Pour mobile, afficher tous les créneaux mais avec des styles différents
                         return (
                           <div 
                             key={timeSlot}
@@ -416,17 +369,9 @@ const Planning = () => {
                               <div className="font-medium text-sm">{timeSlot}</div>
                               {reservation ? (
                                 <div className="text-right">
-                                  {isFirstSlot ? (
-                                    <>
-                                      <div className="font-medium text-sm">{reservation.nom_client}</div>
-                                      <div className="text-xs text-gray-600">{reservation.tel}</div>
-                                      <div className="text-xs opacity-75">{reservation.duree}h</div>
-                                    </>
-                                  ) : (
-                                    <div className="text-xs text-gray-500 italic">
-                                      (suite de {reservation.heure})
-                                    </div>
-                                  )}
+                                  <div className="font-medium text-sm">{reservation.nom_client}</div>
+                                  <div className="text-xs text-gray-600">{reservation.tel}</div>
+                                  <div className="text-xs opacity-75">{reservation.duree}h</div>
                                 </div>
                               ) : (
                                 <div className="text-xs text-gray-500">Libre</div>
