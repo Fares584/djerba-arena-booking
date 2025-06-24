@@ -154,7 +154,7 @@ export type Database = {
           email: string
           heure: string
           id: number
-          ip_address: unknown | null
+          ip_address: string | null
           nom_client: string
           remarque: string | null
           statut: string
@@ -173,7 +173,7 @@ export type Database = {
           email: string
           heure: string
           id?: number
-          ip_address?: unknown | null
+          ip_address?: string | null
           nom_client: string
           remarque?: string | null
           statut: string
@@ -192,7 +192,7 @@ export type Database = {
           email?: string
           heure?: string
           id?: number
-          ip_address?: unknown | null
+          ip_address?: string | null
           nom_client?: string
           remarque?: string | null
           statut?: string
