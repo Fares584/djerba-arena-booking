@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -5,6 +6,7 @@ import Footer from '@/components/Footer';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useCreateReservation } from '@/hooks/useReservations';
 import { useAvailability } from '@/hooks/useAvailability';
+import { useAppSetting } from '@/hooks/useAppSettings';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -55,6 +57,7 @@ const Reservation = () => {
 
   // -------- 1. Declare hooks first, so allTerrains exists! -----------
   const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
+  const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
   const createReservation = useCreateReservation({
     onSuccess: () => {
       setShowSuccessDialog(true);
@@ -140,7 +143,7 @@ const Reservation = () => {
     if (!selectedTerrain || !selectedTime) return 0;
 
     const effectiveDuration = parseFloat(getEffectiveDuration());
-    const globalNightStartTime = '19:00'; // peut rester statique
+    const globalNightStartTime = nightTimeSetting?.setting_value || '17:00';
 
     // Pour les terrains de football : tarif fixe pour 1h30, pas de calcul par heure
     if (selectedTerrain.type === 'foot') {
