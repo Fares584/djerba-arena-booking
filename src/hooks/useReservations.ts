@@ -33,9 +33,6 @@ export function useReservations(filters?: {
           query = query.is('abonnement_id', null);
         }
         
-        // SUPPRIMÉ: Plus de filtrage automatique des dates passées ou statuts
-        // L'admin peut maintenant voir toutes les réservations
-        
         const { data, error } = await query.order('date', { ascending: true }).order('heure', { ascending: true });
         
         if (error) {
@@ -43,7 +40,24 @@ export function useReservations(filters?: {
           throw error;
         }
         
-        return data as Reservation[];
+        // Filtrer pour ne garder que les réservations actuelles et futures
+        const now = new Date();
+        const currentReservations = (data as Reservation[]).filter(reservation => {
+          const reservationDate = new Date(reservation.date);
+          const [hours, minutes] = reservation.heure.split(':').map(Number);
+          const reservationStart = new Date(reservationDate);
+          reservationStart.setHours(hours, minutes, 0, 0);
+          
+          // Ajouter la durée pour obtenir l'heure de fin
+          const reservationEnd = new Date(reservationStart);
+          reservationEnd.setHours(reservationEnd.getHours() + Math.floor(reservation.duree));
+          reservationEnd.setMinutes(reservationEnd.getMinutes() + ((reservation.duree % 1) * 60));
+          
+          // Garder si la réservation n'est pas encore terminée
+          return reservationEnd > now;
+        });
+        
+        return currentReservations;
       } catch (error) {
         console.error("Error in useReservations hook:", error);
         toast.error("Erreur lors du chargement des réservations");
@@ -53,7 +67,7 @@ export function useReservations(filters?: {
   });
 }
 
-// Hook pour l'historique des réservations - maintenant identique au hook principal
+// Hook pour l'historique des réservations - réservations terminées
 export function useReservationsHistory(filters?: { 
   terrain_id?: number; 
   statut?: string;
@@ -78,9 +92,6 @@ export function useReservationsHistory(filters?: {
           query = query.is('abonnement_id', null);
         }
         
-        // SUPPRIMÉ: Plus de filtrage automatique
-        // Toutes les réservations sont maintenant visibles pour l'admin
-        
         const { data, error } = await query.order('date', { ascending: false }).order('heure', { ascending: false });
         
         if (error) {
@@ -88,7 +99,24 @@ export function useReservationsHistory(filters?: {
           throw error;
         }
         
-        return data as Reservation[];
+        // Filtrer pour ne garder que les réservations terminées (confirmées ou annulées ET passées)
+        const now = new Date();
+        const historyReservations = (data as Reservation[]).filter(reservation => {
+          const reservationDate = new Date(reservation.date);
+          const [hours, minutes] = reservation.heure.split(':').map(Number);
+          const reservationStart = new Date(reservationDate);
+          reservationStart.setHours(hours, minutes, 0, 0);
+          
+          // Ajouter la durée pour obtenir l'heure de fin
+          const reservationEnd = new Date(reservationStart);
+          reservationEnd.setHours(reservationEnd.getHours() + Math.floor(reservation.duree));
+          reservationEnd.setMinutes(reservationEnd.getMinutes() + ((reservation.duree % 1) * 60));
+          
+          // Garder si la réservation est terminée ET (confirmée ou annulée)
+          return reservationEnd <= now && (reservation.statut === 'confirmee' || reservation.statut === 'annulee');
+        });
+        
+        return historyReservations;
       } catch (error) {
         console.error("Error in useReservationsHistory hook:", error);
         toast.error("Erreur lors du chargement de l'historique des réservations");
