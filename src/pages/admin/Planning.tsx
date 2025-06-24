@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -7,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, Loader2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Reservation, Terrain } from '@/lib/supabase';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
@@ -215,17 +217,27 @@ const Planning = () => {
             </Button>
           </div>
 
-          {/* Mobile Day Navigation */}
-          <div className="flex md:hidden items-center justify-between">
-            <Button variant="outline" size="sm" onClick={goToPreviousDay}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm font-medium px-4">
-              {format(selectedDay, 'EEEE dd/MM', { locale: fr })}
-            </span>
-            <Button variant="outline" size="sm" onClick={goToNextDay}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+          {/* Mobile Week Navigation with Swipe */}
+          <div className="md:hidden">
+            <Carousel className="w-full max-w-xs mx-auto">
+              <CarouselContent>
+                <CarouselItem>
+                  <div className="flex items-center justify-center p-2">
+                    <span className="text-sm font-medium">
+                      Semaine du {format(startDate, 'dd/MM/yyyy', { locale: fr })}
+                    </span>
+                  </div>
+                </CarouselItem>
+              </CarouselContent>
+              <CarouselPrevious 
+                onClick={goToPreviousWeek}
+                className="left-0"
+              />
+              <CarouselNext 
+                onClick={goToNextWeek}
+                className="right-0"
+              />
+            </Carousel>
           </div>
         </div>
         
@@ -236,24 +248,27 @@ const Planning = () => {
           </h2>
         </div>
 
-        {/* Mobile Day Selector */}
+        {/* Mobile Day Selector with Swipe */}
         <div className="md:hidden mb-4">
-          <div className="grid grid-cols-7 gap-1">
-            {weekDays.map((day, index) => (
-              <button
-                key={index}
-                onClick={() => setSelectedDay(day)}
-                className={`p-2 rounded text-xs font-medium ${
-                  format(day, 'yyyy-MM-dd') === format(selectedDay, 'yyyy-MM-dd')
-                    ? 'bg-sport-green text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                <div>{format(day, 'EEE', { locale: fr })}</div>
-                <div>{format(day, 'dd')}</div>
-              </button>
-            ))}
-          </div>
+          <Carousel className="w-full">
+            <CarouselContent className="-ml-2 md:-ml-4">
+              {weekDays.map((day, index) => (
+                <CarouselItem key={index} className="pl-2 md:pl-4 basis-1/7">
+                  <button
+                    onClick={() => setSelectedDay(day)}
+                    className={`p-2 rounded text-xs font-medium w-full ${
+                      format(day, 'yyyy-MM-dd') === format(selectedDay, 'yyyy-MM-dd')
+                        ? 'bg-sport-green text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <div>{format(day, 'EEE', { locale: fr })}</div>
+                    <div>{format(day, 'dd')}</div>
+                  </button>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
         </div>
         
         {terrains && filteredTerrains && filteredTerrains.length > 0 ? (
