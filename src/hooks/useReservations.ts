@@ -40,6 +40,9 @@ export function useReservations(filters?: {
           query = query.gte('date', today);
         }
         
+        // Exclure les réservations annulées de la vue principale
+        query = query.neq('statut', 'annulee');
+        
         const { data, error } = await query.order('date', { ascending: true }).order('heure', { ascending: true });
         
         if (error) {
@@ -82,9 +85,10 @@ export function useReservationsHistory(filters?: {
           query = query.is('abonnement_id', null);
         }
         
-        // Inclure uniquement les réservations passées
         const today = new Date().toISOString().split('T')[0];
-        query = query.lt('date', today);
+        
+        // Inclure les réservations passées ET les réservations annulées
+        query = query.or(`date.lt.${today},statut.eq.annulee`);
         
         const { data, error } = await query.order('date', { ascending: false }).order('heure', { ascending: false });
         

@@ -8,11 +8,10 @@ import { Reservation } from '@/lib/supabase';
 import ReservationCard from '@/components/admin/ReservationCard';
 
 const HistoriqueReservations = () => {
-  // Afficher uniquement les réservations passées confirmées
+  // Afficher les réservations passées confirmées ET les réservations annulées
   // Exclure les réservations d'abonnement
   const { data: reservations, isLoading } = useReservationsHistory({ 
-    excludeSubscriptions: true, 
-    statut: 'confirmee' 
+    excludeSubscriptions: true
   });
   const { data: terrains } = useTerrains();
   const [searchTerm, setSearchTerm] = useState('');
@@ -80,7 +79,7 @@ const HistoriqueReservations = () => {
           <p className="mt-1 text-gray-500">
             {searchTerm 
               ? `Aucune réservation dans l'historique ne correspond à "${searchTerm}"`
-              : "Il n'y a pas encore de réservations passées à afficher."
+              : "Il n'y a pas encore de réservations dans l'historique."
             }
           </p>
         </div>
