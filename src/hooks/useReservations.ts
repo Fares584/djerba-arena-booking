@@ -129,10 +129,15 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
 
         console.log('✅ Sécurité validée, création de la réservation...');
         
-        // Créer avec statut "en_attente"
+        // Obtenir l'ID de session pour traçabilité
+        const sessionId = getOrCreateSessionId();
+        
+        // Créer avec statut "en_attente" et inclure l'IP/session
         const reservationData = {
           ...newReservation,
-          statut: 'en_attente' as const
+          statut: 'en_attente' as const,
+          ip_address: sessionId, // Utiliser l'ID de session comme identifiant
+          user_agent: navigator.userAgent.slice(0, 255) // Limiter la taille
         };
         
         console.log('Données finales de la réservation:', reservationData);
@@ -173,4 +178,20 @@ export function useCreateReservation(options?: { onSuccess?: () => void }) {
       toast.error(error.message || "Erreur lors de la création de la réservation");
     },
   });
+}
+
+// Fonction utilitaire partagée
+function getOrCreateSessionId(): string {
+  let sessionId = sessionStorage.getItem('reservation_session_id');
+  
+  if (!sessionId) {
+    const timestamp = Date.now().toString();
+    const random = Math.random().toString(36).substring(2);
+    const userAgent = navigator.userAgent.slice(0, 50);
+    
+    sessionId = btoa(`${timestamp}-${random}-${userAgent}`).slice(0, 32);
+    sessionStorage.setItem('reservation_session_id', sessionId);
+  }
+  
+  return sessionId;
 }
