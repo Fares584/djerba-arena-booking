@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -177,13 +178,17 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       return;
     }
 
-    // Vérification de sécurité avec paramètre isAdminCreation = true
+    // IMPORTANT: Passer explicitement isAdminCreation = true pour les créations admin
+    console.log('🔧 ADMIN FORM: Création de réservation admin avec isAdminCreation = true');
     const securityCheck = await checkReservationLimits(phone, email, true);
     
     if (!securityCheck.canReserve) {
+      console.error('❌ Sécurité bloquée même pour admin:', securityCheck);
       toast.error(securityCheck.reason || 'Réservation non autorisée');
       return;
     }
+    
+    console.log('✅ ADMIN FORM: Vérification sécurité passée, création de la réservation...');
     
     // Format date as ISO string (YYYY-MM-DD)
     const formattedDate = format(selectedDate, 'yyyy-MM-dd');
@@ -201,6 +206,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       remarque: message || undefined
     }, {
       onSuccess: () => {
+        console.log('✅ ADMIN FORM: Réservation créée avec succès');
         onSuccess();
       }
     });

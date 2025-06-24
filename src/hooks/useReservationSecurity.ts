@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -17,7 +16,7 @@ export function useReservationSecurity() {
       console.log('=== DÉBUT VÉRIFICATION SÉCURITÉ RENFORCÉE ===');
       console.log('Vérification de sécurité pour:', { phone, email, isAdminCreation });
       
-      // Si c'est une création admin, contourner toutes les vérifications
+      // Si c'est une création admin, contourner TOUTES les vérifications immédiatement
       if (isAdminCreation) {
         console.log('✅ ADMIN CRÉATION - Toutes les vérifications de sécurité contournées');
         console.log('=== FIN VÉRIFICATION SÉCURITÉ RENFORCÉE ===');
