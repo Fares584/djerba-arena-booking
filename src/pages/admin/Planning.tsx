@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -69,6 +70,39 @@ function getHeaderColorByType(type: string): string {
   }
 }
 
+// Fonction pour vérifier si un créneau est occupé par une réservation (en tenant compte de la durée)
+function isTimeSlotOccupied(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): Reservation | null {
+  if (!reservations) return null;
+  
+  const formattedDate = format(day, 'yyyy-MM-dd');
+  
+  // Convertir le timeSlot en minutes depuis minuit pour les calculs
+  const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
+  const slotTimeInMinutes = slotHour * 60 + slotMinute;
+  
+  // Chercher une réservation qui occupe ce créneau
+  for (const reservation of reservations) {
+    if (reservation.terrain_id !== terrain.id || reservation.date !== formattedDate) {
+      continue;
+    }
+    
+    // Convertir l'heure de début de la réservation en minutes
+    const [resHour, resMinute] = reservation.heure.split(':').map(Number);
+    const resStartTimeInMinutes = resHour * 60 + resMinute;
+    
+    // Calculer l'heure de fin en ajoutant la durée (en heures)
+    const durationInMinutes = reservation.duree * 60;
+    const resEndTimeInMinutes = resStartTimeInMinutes + durationInMinutes;
+    
+    // Vérifier si le créneau actuel est dans la plage de la réservation
+    if (slotTimeInMinutes >= resStartTimeInMinutes && slotTimeInMinutes < resEndTimeInMinutes) {
+      return reservation;
+    }
+  }
+  
+  return null;
+}
+
 const Planning = () => {
   // Add authentication check
   const { user, loading: authLoading } = useRequireAuth('/login');
@@ -133,18 +167,6 @@ const Planning = () => {
       setStartDate(newStartDate);
       setSelectedDay(newStartDate);
     }
-  };
-
-  const getReservationsForSlot = (terrain: Terrain, day: Date, timeSlot: string) => {
-    if (!reservations) return [];
-    
-    const formattedDate = format(day, 'yyyy-MM-dd');
-    
-    return reservations.filter(res => 
-      res.terrain_id === terrain.id && 
-      res.date === formattedDate && 
-      res.heure === timeSlot
-    );
   };
 
   const getCellClassName = (reservation?: Reservation) => {
@@ -304,8 +326,8 @@ const Planning = () => {
                               );
                             }
                             
-                            const reservationsForSlot = getReservationsForSlot(terrain, day, timeSlot);
-                            const reservation = reservationsForSlot[0];
+                            // Utiliser la nouvelle fonction pour vérifier l'occupation
+                            const reservation = isTimeSlotOccupied(terrain, day, timeSlot, reservations || []);
                             
                             return (
                               <div 
@@ -335,8 +357,8 @@ const Planning = () => {
                   <div className="md:hidden p-4">
                     <div className="space-y-3">
                       {timeSlots.map((timeSlot) => {
-                        const reservationsForSlot = getReservationsForSlot(terrain, selectedDay, timeSlot);
-                        const reservation = reservationsForSlot[0];
+                        // Utiliser la nouvelle fonction pour vérifier l'occupation
+                        const reservation = isTimeSlotOccupied(terrain, selectedDay, timeSlot, reservations || []);
                         
                         return (
                           <div 
