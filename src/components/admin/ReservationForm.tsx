@@ -17,12 +17,6 @@ import { isNightTime, calculatePrice } from '@/lib/supabase';
 import { validateName, validateTunisianPhone, validateEmail } from '@/lib/validation';
 import { toast } from 'sonner';
 
-// Available time slots
-const timeSlots = [
-  '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', 
-  '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
-];
-
 // Duration options
 const durationOptions = [
   { value: '1', label: '1 heure' },
