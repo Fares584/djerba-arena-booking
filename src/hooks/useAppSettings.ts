@@ -60,22 +60,13 @@ export function useUpdateAppSetting() {
   return useMutation({
     mutationFn: async ({ settingName, settingValue }: { settingName: string; settingValue: string }) => {
       try {
-        console.log('Tentative de mise à jour du paramètre:', { settingName, settingValue });
-        
-        // Utiliser upsert (INSERT ... ON CONFLICT) pour créer ou mettre à jour
         const { data, error } = await supabase
           .from('app_settings')
-          .upsert(
-            { 
-              setting_name: settingName,
-              setting_value: settingValue,
-              updated_at: new Date().toISOString()
-            },
-            { 
-              onConflict: 'setting_name',
-              ignoreDuplicates: false
-            }
-          )
+          .update({ 
+            setting_value: settingValue,
+            updated_at: new Date().toISOString()
+          })
+          .eq('setting_name', settingName)
           .select()
           .single();
         
@@ -84,7 +75,6 @@ export function useUpdateAppSetting() {
           throw error;
         }
         
-        console.log('Paramètre mis à jour avec succès:', data);
         return data;
       } catch (error) {
         console.error("Error in updateAppSetting mutation:", error);

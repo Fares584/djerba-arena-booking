@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -6,13 +5,12 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Plus, Calendar, Search, Settings } from 'lucide-react';
+import { Loader2, Plus, Calendar, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
 import ReservationForm from '@/components/admin/ReservationForm';
 import EditReservationForm from '@/components/admin/EditReservationForm';
 import ReservationCard from '@/components/admin/ReservationCard';
-import SecuritySettingsToggle from '@/components/admin/SecuritySettingsToggle';
 
 const Reservations = () => {
   // Afficher toutes les réservations (en_attente, confirmée, etc.) sauf abonnements
@@ -20,7 +18,6 @@ const Reservations = () => {
   const { data: terrains } = useTerrains();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -120,39 +117,22 @@ const Reservations = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold">Gestion des Réservations</h1>
         
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Settings className="h-4 w-4" />
-                Paramètres
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Paramètres de Sécurité</DialogTitle>
-              </DialogHeader>
-              <SecuritySettingsToggle />
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-sport-green hover:bg-sport-dark">
-                <Plus className="mr-2 h-4 w-4" />
-                Nouvelle Réservation
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl h-[90vh] w-[95vw] sm:w-full">
-              <DialogHeader>
-                <DialogTitle>Ajouter une Réservation</DialogTitle>
-              </DialogHeader>
-              <div className="flex-1 overflow-y-auto">
-                <ReservationForm onSuccess={handleReservationAdded} />
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-sport-green hover:bg-sport-dark">
+              <Plus className="mr-2 h-4 w-4" />
+              Nouvelle Réservation
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl h-[90vh] w-[95vw] sm:w-full">
+            <DialogHeader>
+              <DialogTitle>Ajouter une Réservation</DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto">
+              <ReservationForm onSuccess={handleReservationAdded} />
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Search Bar */}
