@@ -30,8 +30,8 @@ const AdminLayout = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header - scrollable */}
-      <header className="bg-white shadow-sm border-b relative">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
             <Button
@@ -62,12 +62,11 @@ const AdminLayout = () => {
         {/* Sidebar */}
         <aside className={`
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-          lg:translate-x-0 lg:static lg:block w-64 bg-white border-r
-          lg:transition-none
-          fixed top-0 left-0 z-50 h-screen
-          transition-transform duration-200 ease-in-out
+          lg:translate-x-0 fixed lg:static top-[73px] left-0 z-50 w-64 bg-white border-r
+          transition-transform duration-200 ease-in-out lg:transition-none
+          flex flex-col h-[calc(100vh-73px)]
         `}>
-          <div className="p-6 h-full">
+          <div className="p-6 flex-1">
             <AdminNavigation onMobileMenuClose={closeMobileMenu} />
           </div>
         </aside>
@@ -75,7 +74,7 @@ const AdminLayout = () => {
         {/* Mobile overlay */}
         {isMobileMenuOpen && (
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden top-[73px]"
             onClick={() => setIsMobileMenuOpen(false)}
           />
         )}
