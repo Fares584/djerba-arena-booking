@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import TerrainSelector from "@/components/TerrainSelector";
@@ -19,6 +19,23 @@ const ReservationFieldSelector: React.FC<Props> = ({
   selectedTerrainId,
   setSelectedTerrainId,
 }) => {
+  // Auto-scroll to date/time section when terrain is selected
+  useEffect(() => {
+    if (selectedTerrainId) {
+      // Small delay to ensure the date/time section is rendered
+      setTimeout(() => {
+        const dateTimeSection = document.querySelector('[data-section="date-time"]');
+        if (dateTimeSection) {
+          dateTimeSection.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start',
+            inline: 'nearest'
+          });
+        }
+      }, 300);
+    }
+  }, [selectedTerrainId]);
+
   if (!selectedType) return null;
   return (
     <div className="mb-8">
