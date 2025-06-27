@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -508,7 +507,8 @@ const Planning = () => {
                               <div className="flex justify-between items-center">
                                 <div className="font-medium text-sm">
                                   {timeSlot}
-                                  {occupation.reservation && occupation.reservation.duree > 1 && (
+                                  {/* Afficher l'heure de fin seulement pour les terrains non-football ET avec durée > 1h */}
+                                  {occupation.reservation && terrain.type !== 'foot' && occupation.reservation.duree > 1 && (
                                     <span className="text-xs text-gray-500 ml-2">
                                       - {String(parseInt(timeSlot.split(':')[0]) + occupation.reservation.duree).padStart(2, '0')}:{timeSlot.split(':')[1]}
                                     </span>
