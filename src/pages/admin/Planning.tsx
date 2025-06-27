@@ -485,7 +485,7 @@ const Planning = () => {
                   <div className="md:hidden p-4">
                     <div className="space-y-3">
                       {(() => {
-                        // Appliquer la même logique d'exception du samedi pour mobile
+                        // Appliquer la même logique d'exception du samedi pour mobile en passant selectedDay
                         const timeSlots = getTimeSlotsForTerrain(terrain, selectedDay);
                         
                         return timeSlots.map((timeSlot) => {
