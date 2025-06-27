@@ -486,6 +486,7 @@ const Planning = () => {
                   <div className="md:hidden p-4">
                     <div className="space-y-3">
                       {(() => {
+                        // Utiliser la même fonction que pour le desktop pour obtenir les créneaux corrects
                         const timeSlots = getTimeSlotsForTerrain(terrain, selectedDay);
                         
                         return timeSlots.map((timeSlot) => {
