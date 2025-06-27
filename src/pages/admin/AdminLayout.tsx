@@ -2,27 +2,13 @@
 import { Outlet } from 'react-router-dom';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
 import AdminNavigation from '@/components/admin/AdminNavigation';
 
 const AdminLayout = () => {
   useRequireAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      toast.success('Déconnexion réussie');
-      navigate('/');
-    } catch (error) {
-      toast.error('Erreur lors de la déconnexion');
-    }
-  };
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
@@ -43,17 +29,6 @@ const AdminLayout = () => {
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
             <h1 className="text-xl font-semibold text-gray-900">Administration</h1>
-          </div>
-          <div className="flex justify-end ml-auto pl-8">
-            <Button 
-              onClick={handleLogout} 
-              variant="outline" 
-              size="sm" 
-              className="px-2 py-1 text-xs border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700"
-            >
-              <LogOut className="h-3 w-3 mr-1" />
-              Déconnexion
-            </Button>
           </div>
         </div>
       </header>
