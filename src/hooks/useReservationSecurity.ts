@@ -30,23 +30,43 @@ export function useReservationSecurity() {
       const deviceFingerprint = getDeviceFingerprint();
       console.log('Fingerprint de l\'appareil:', deviceFingerprint);
 
-      // 1. Vérifier la blacklist - CORRECTION DE LA REQUÊTE
+      // 1. Vérifier la blacklist - CORRECTION AVEC REQUÊTES SÉPARÉES
       console.log('1. Vérification de la blacklist...');
-      const { data: blacklistCheck, error: blacklistError } = await supabase
+      
+      // Vérifier le téléphone
+      const { data: phoneBlacklist, error: phoneError } = await supabase
         .from('blacklist')
         .select('*')
-        .or(`and(type.eq.phone,value.eq.${phone}),and(type.eq.email,value.eq.${email})`);
+        .eq('type', 'phone')
+        .eq('value', phone);
 
-      if (blacklistError) {
-        console.error('Erreur lors de la vérification de la blacklist:', blacklistError);
-      } else if (blacklistCheck && blacklistCheck.length > 0) {
-        console.log('❌ Contact trouvé dans la blacklist:', blacklistCheck);
-        const blacklistedItem = blacklistCheck[0];
+      if (phoneError) {
+        console.error('Erreur lors de la vérification téléphone blacklist:', phoneError);
+      } else if (phoneBlacklist && phoneBlacklist.length > 0) {
+        console.log('❌ Téléphone trouvé dans la blacklist:', phoneBlacklist);
         return {
           canReserve: false,
-          reason: `Ce ${blacklistedItem.type === 'phone' ? 'numéro de téléphone' : 'email'} est bloqué. Contactez l'administration.`
+          reason: 'Ce numéro de téléphone est bloqué. Contactez l\'administration.'
         };
       }
+
+      // Vérifier l'email
+      const { data: emailBlacklist, error: emailError } = await supabase
+        .from('blacklist')
+        .select('*')
+        .eq('type', 'email')
+        .eq('value', email);
+
+      if (emailError) {
+        console.error('Erreur lors de la vérification email blacklist:', emailError);
+      } else if (emailBlacklist && emailBlacklist.length > 0) {
+        console.log('❌ Email trouvé dans la blacklist:', emailBlacklist);
+        return {
+          canReserve: false,
+          reason: 'Cette adresse email est bloquée. Contactez l\'administration.'
+        };
+      }
+
       console.log('✅ Contact non présent dans la blacklist');
 
       // 2. Vérification des limites par contact (email + téléphone)
