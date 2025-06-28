@@ -114,7 +114,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const emailResponse = await resend.emails.send({
       from: "Centre Sportif <notifications@resend.dev>",
-      to: ["admin@centresportif.com"], // Remplacez par l'email de l'admin
+      to: ["planetsports25@gmail.com"],
       subject: `🏟️ Nouvelle réservation - ${terrain.nom} le ${dateFormatted}`,
       html: emailHtml,
     });
