@@ -6,6 +6,7 @@ import { useReservationSecurity } from './useReservationSecurity';
 import { useDeviceFingerprint } from './useDeviceFingerprint';
 import { useReservationNotification } from './useReservationNotification';
 import { useTerrains } from './useTerrains';
+import { normalizeTunisianPhone } from '@/lib/validation';
 
 export function useReservations(filters?: { 
   terrain_id?: number; 
@@ -155,11 +156,15 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
         });
         console.log('👤 Mode admin:', options?.isAdminCreation);
         
+        // Normaliser le téléphone avant toute vérification
+        const normalizedPhone = normalizeTunisianPhone(newReservation.tel);
+        console.log('📞 Téléphone normalisé pour réservation:', normalizedPhone);
+        
         // ==================== DOUBLE VÉRIFICATION SÉCURITÉ ====================
         console.log('🔐 DOUBLE VÉRIFICATION SÉCURITÉ (HOOK)');
         
         const securityCheck = await checkReservationLimits(
-          newReservation.tel,
+          newReservation.tel, // On passe le téléphone original, la normalisation se fait dans le hook
           newReservation.email,
           options?.isAdminCreation || false
         );
@@ -174,17 +179,20 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
 
         console.log('✅ Double vérification sécurité réussie');
         
-        // Création effective de la réservation
+        // Création effective de la réservation avec le téléphone normalisé
         const deviceFingerprint = getDeviceFingerprint();
         
         const reservationData = {
           ...newReservation,
+          tel: normalizedPhone, // Stocker le téléphone normalisé
+          email: newReservation.email.trim().toLowerCase(),
           statut: 'en_attente' as const,
           ip_address: deviceFingerprint,
           user_agent: navigator.userAgent.slice(0, 255)
         };
         
         console.log('💾 Insertion en base de données...');
+        console.log('💾 Téléphone qui sera stocké:', normalizedPhone);
         
         const { data, error } = await supabase
           .from('reservations')

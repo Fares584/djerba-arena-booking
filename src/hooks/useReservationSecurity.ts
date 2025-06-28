@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useDeviceFingerprint } from './useDeviceFingerprint';
+import { normalizeTunisianPhone } from '@/lib/validation';
 
 interface SecurityCheckResult {
   canReserve: boolean;
@@ -18,42 +19,41 @@ export function useReservationSecurity() {
   ): Promise<SecurityCheckResult> => {
     try {
       console.log('🔐 === DÉBUT VÉRIFICATION SÉCURITÉ COMPLÈTE ===');
-      console.log('📞 Téléphone à vérifier:', phone);
+      console.log('📞 Téléphone brut reçu:', phone);
       console.log('📧 Email à vérifier:', email);
       console.log('👤 Mode admin:', isAdminCreation);
       
-      // Nettoyer les données d'entrée
-      const cleanPhone = phone.trim();
+      // Normaliser le téléphone vers 8 chiffres
+      const normalizedPhone = normalizeTunisianPhone(phone);
       const cleanEmail = email.trim().toLowerCase();
       
-      console.log('🧹 Données nettoyées:');
-      console.log('  - Téléphone propre:', cleanPhone);
-      console.log('  - Email propre:', cleanEmail);
+      console.log('📞 Téléphone normalisé (8 chiffres):', normalizedPhone);
+      console.log('📧 Email nettoyé:', cleanEmail);
 
       // ==================== VÉRIFICATION BLACKLIST OBLIGATOIRE ====================
       console.log('🚫 1. VÉRIFICATION BLACKLIST (TOUJOURS ACTIVE)');
       
-      // Vérifier téléphone dans blacklist
-      console.log('🔍 Recherche téléphone dans blacklist...');
+      // Vérifier téléphone dans blacklist avec le numéro normalisé
+      console.log('🔍 Recherche téléphone normalisé dans blacklist...');
       const { data: phoneBlacklistData, error: phoneBlacklistError } = await supabase
         .from('blacklist')
         .select('*')
         .eq('type', 'phone')
-        .eq('value', cleanPhone);
+        .eq('value', normalizedPhone);
 
       if (phoneBlacklistError) {
         console.error('❌ Erreur vérification téléphone blacklist:', phoneBlacklistError);
         throw new Error('Erreur de vérification de sécurité');
       }
 
-      console.log('📋 Résultat recherche téléphone:', phoneBlacklistData);
+      console.log('📋 Résultat recherche téléphone normalisé:', phoneBlacklistData);
 
       if (phoneBlacklistData && phoneBlacklistData.length > 0) {
         console.log('🚫 TÉLÉPHONE BLOQUÉ DÉTECTÉ:', phoneBlacklistData[0]);
         console.log('❌ === RÉSERVATION REFUSÉE - TÉLÉPHONE BLACKLISTÉ ===');
         return {
           canReserve: false,
-          reason: `Ce numéro de téléphone (${cleanPhone}) est bloqué définitivement. Contactez l'administration.`
+          reason: `Ce numéro de téléphone (${phone}) est bloqué définitivement. Contactez l'administration.`
         };
       }
 
@@ -97,11 +97,11 @@ export function useReservationSecurity() {
       const todayStart = `${today}T00:00:00.000Z`;
       const todayEnd = `${today}T23:59:59.999Z`;
 
-      // Vérification limites quotidiennes par contact
+      // Vérification limites quotidiennes par contact - utiliser le téléphone normalisé
       const { data: contactReservations, error: contactError } = await supabase
         .from('reservations')
         .select('id, created_at, tel, email, nom_client')
-        .eq('tel', cleanPhone)
+        .eq('tel', normalizedPhone)
         .eq('email', cleanEmail)
         .gte('created_at', todayStart)
         .lte('created_at', todayEnd);
@@ -144,12 +144,12 @@ export function useReservationSecurity() {
         };
       }
 
-      // Vérifications temporelles
+      // Vérifications temporelles - utiliser le téléphone normalisé
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       const { data: recentContactReservations } = await supabase
         .from('reservations')
         .select('created_at')
-        .eq('tel', cleanPhone)
+        .eq('tel', normalizedPhone)
         .eq('email', cleanEmail)
         .gte('created_at', fiveMinutesAgo)
         .order('created_at', { ascending: false })

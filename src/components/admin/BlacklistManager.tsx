@@ -12,6 +12,7 @@ import { Trash2, Plus, Shield, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { normalizeTunisianPhone } from '@/lib/validation';
 
 const BlacklistManager = () => {
   const { blacklist, isLoading, addToBlacklist, removeFromBlacklist } = useBlacklist();
@@ -29,20 +30,27 @@ const BlacklistManager = () => {
       return;
     }
 
-    // Nettoyer la valeur
-    const cleanValue = newEntry.type === 'email' 
-      ? newEntry.value.trim().toLowerCase()
-      : newEntry.value.trim();
-
-    // Validation basique
-    if (newEntry.type === 'phone' && !/^\d{8}$/.test(cleanValue)) {
-      toast.error('Le numéro de téléphone doit contenir exactement 8 chiffres');
-      return;
-    }
-
-    if (newEntry.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanValue)) {
-      toast.error('L\'adresse email n\'est pas valide');
-      return;
+    // Nettoyer et normaliser la valeur
+    let cleanValue: string;
+    
+    if (newEntry.type === 'email') {
+      cleanValue = newEntry.value.trim().toLowerCase();
+      // Validation email
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanValue)) {
+        toast.error('L\'adresse email n\'est pas valide');
+        return;
+      }
+    } else {
+      // Pour les téléphones, normaliser vers 8 chiffres
+      cleanValue = normalizeTunisianPhone(newEntry.value);
+      console.log('📞 Téléphone original:', newEntry.value);
+      console.log('📞 Téléphone normalisé pour blacklist:', cleanValue);
+      
+      // Validation téléphone normalisé
+      if (!/^\d{8}$/.test(cleanValue)) {
+        toast.error('Le numéro de téléphone doit être un numéro tunisien valide (8 chiffres)');
+        return;
+      }
     }
 
     addToBlacklist.mutate({
@@ -123,12 +131,12 @@ const BlacklistManager = () => {
                   id="value"
                   value={newEntry.value}
                   onChange={(e) => setNewEntry({ ...newEntry, value: e.target.value })}
-                  placeholder={newEntry.type === 'phone' ? 'Ex: 27339837' : 'email@example.com'}
+                  placeholder={newEntry.type === 'phone' ? 'Ex: 27339837, +21627339837, ou 21627339837' : 'email@example.com'}
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   {newEntry.type === 'phone' 
-                    ? 'Saisissez uniquement les 8 chiffres du numéro tunisien'
+                    ? 'Accepte tous les formats tunisiens : 8 chiffres, +216xxxxxxxx, ou 216xxxxxxxx'
                     : 'Saisissez l\'adresse email complète'
                   }
                 </p>
@@ -167,7 +175,8 @@ const BlacklistManager = () => {
               <h3 className="font-medium text-blue-900">Comment fonctionne la blacklist ?</h3>
               <p className="text-sm text-blue-700 mt-1">
                 Les contacts ajoutés à cette liste ne pourront plus effectuer de réservations, 
-                même via l'interface publique. La vérification se fait automatiquement lors de chaque tentative de réservation.
+                même via l'interface publique. Tous les formats de numéros tunisiens sont automatiquement 
+                normalisés (8 chiffres uniquement) pour une protection maximale.
               </p>
             </div>
           </div>
@@ -184,6 +193,11 @@ const BlacklistManager = () => {
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-lg">
                         {entry.type === 'phone' ? '📞' : '📧'} {entry.value}
+                        {entry.type === 'phone' && (
+                          <span className="text-xs text-gray-500 ml-2">
+                            (format normalisé : 8 chiffres)
+                          </span>
+                        )}
                       </span>
                       <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
                         {entry.type === 'phone' ? 'Téléphone' : 'Email'} bloqué

@@ -1,3 +1,22 @@
+// Fonction pour normaliser un numéro tunisien vers 8 chiffres
+export const normalizeTunisianPhone = (phone: string): string => {
+  if (!phone) return '';
+  
+  // Enlever tous les espaces et caractères non numériques sauf le +
+  let cleanPhone = phone.replace(/\s+/g, '').replace(/[^\d+]/g, '');
+  
+  // Si le numéro commence par +216, enlever +216
+  if (cleanPhone.startsWith('+216')) {
+    cleanPhone = cleanPhone.substring(4);
+  }
+  // Si le numéro commence par 216, enlever 216
+  else if (cleanPhone.startsWith('216')) {
+    cleanPhone = cleanPhone.substring(3);
+  }
+  
+  // Retourner seulement les 8 chiffres
+  return cleanPhone.length >= 8 ? cleanPhone.substring(0, 8) : cleanPhone;
+};
 
 // Validation du nom - seulement des lettres et espaces, max 40 caractères
 export const validateName = (name: string): string | null => {
