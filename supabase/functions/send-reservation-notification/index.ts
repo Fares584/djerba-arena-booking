@@ -40,6 +40,12 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log("📧 Envoi d'email pour la réservation:", reservation.id);
     console.log("🔑 Clé API Resend configurée:", Deno.env.get("RESEND_API_KEY") ? "✅ Oui" : "❌ Non");
+    console.log("📧 Email destinataire: planetsports25@gmail.com");
+
+    // Vérification de la clé API
+    if (!Deno.env.get("RESEND_API_KEY")) {
+      throw new Error("Clé API Resend manquante");
+    }
 
     // Format de la date en français
     const dateFormatted = new Date(reservation.date).toLocaleDateString('fr-FR', {
@@ -113,8 +119,10 @@ const handler = async (req: Request): Promise<Response> => {
       </div>
     `;
 
+    console.log("📤 Tentative d'envoi de l'email...");
+
     const emailResponse = await resend.emails.send({
-      from: "Planet Sports 25 <notifications@resend.dev>",
+      from: "Planet Sports 25 <onboarding@resend.dev>",
       to: ["planetsports25@gmail.com"],
       subject: `🏟️ Nouvelle réservation - ${terrain.nom} le ${dateFormatted}`,
       html: emailHtml,
@@ -123,7 +131,11 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("✅ Email envoyé avec succès:", emailResponse);
 
     return new Response(
-      JSON.stringify({ success: true, emailId: emailResponse.data?.id }),
+      JSON.stringify({ 
+        success: true, 
+        emailId: emailResponse.data?.id,
+        message: "Email de notification envoyé avec succès"
+      }),
       {
         status: 200,
         headers: {
@@ -134,8 +146,18 @@ const handler = async (req: Request): Promise<Response> => {
     );
   } catch (error: any) {
     console.error("❌ Erreur lors de l'envoi de l'email:", error);
+    console.error("❌ Détails de l'erreur:", {
+      message: error.message,
+      name: error.name,
+      stack: error.stack
+    });
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        success: false,
+        details: "Vérifiez les logs pour plus d'informations"
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
