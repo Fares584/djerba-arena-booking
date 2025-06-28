@@ -30,32 +30,24 @@ export function useReservationSecurity() {
       const deviceFingerprint = getDeviceFingerprint();
       console.log('Fingerprint de l\'appareil:', deviceFingerprint);
 
-      // 1. Vérifier la blacklist
+      // 1. Vérifier la blacklist - CORRECTION DE LA REQUÊTE
       console.log('1. Vérification de la blacklist...');
       const { data: blacklistCheck, error: blacklistError } = await supabase
         .from('blacklist')
         .select('*')
-        .or(`type.eq.phone,type.eq.email,type.eq.device`)
-        .or(`value.eq.${phone},value.eq.${email},value.eq.${deviceFingerprint}`);
+        .or(`and(type.eq.phone,value.eq.${phone}),and(type.eq.email,value.eq.${email})`);
 
       if (blacklistError) {
         console.error('Erreur lors de la vérification de la blacklist:', blacklistError);
       } else if (blacklistCheck && blacklistCheck.length > 0) {
-        const isBlacklisted = blacklistCheck.some(item => 
-          (item.type === 'phone' && item.value === phone) ||
-          (item.type === 'email' && item.value === email) ||
-          (item.type === 'device' && item.value === deviceFingerprint)
-        );
-        
-        if (isBlacklisted) {
-          console.log('❌ Contact/Appareil trouvé dans la blacklist:', blacklistCheck);
-          return {
-            canReserve: false,
-            reason: 'Ce contact ou cet appareil est bloqué. Contactez l\'administration.'
-          };
-        }
+        console.log('❌ Contact trouvé dans la blacklist:', blacklistCheck);
+        const blacklistedItem = blacklistCheck[0];
+        return {
+          canReserve: false,
+          reason: `Ce ${blacklistedItem.type === 'phone' ? 'numéro de téléphone' : 'email'} est bloqué. Contactez l'administration.`
+        };
       }
-      console.log('✅ Contact/Appareil non présent dans la blacklist');
+      console.log('✅ Contact non présent dans la blacklist');
 
       // 2. Vérification des limites par contact (email + téléphone)
       console.log('2. Vérification des limites par contact...');
