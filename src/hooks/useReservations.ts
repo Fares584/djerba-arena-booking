@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
@@ -7,7 +6,6 @@ import { useReservationSecurity } from './useReservationSecurity';
 import { useDeviceFingerprint } from './useDeviceFingerprint';
 import { useReservationNotification } from './useReservationNotification';
 import { useTerrains } from './useTerrains';
-import { normalizeTunisianPhone } from '@/lib/validation';
 
 export function useReservations(filters?: { 
   terrain_id?: number; 
@@ -145,54 +143,42 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
   return useMutation({
     mutationFn: async (newReservation: Omit<Reservation, 'id' | 'created_at' | 'updated_at'>) => {
       try {
-        console.log('🔄 === DÉBUT CRÉATION RÉSERVATION (HOOK) ===');
-        console.log('📝 Données reçues:', {
-          nom_client: newReservation.nom_client,
-          tel: newReservation.tel,
-          email: newReservation.email,
-          terrain_id: newReservation.terrain_id,
-          date: newReservation.date,
-          heure: newReservation.heure,
-          statut: newReservation.statut
-        });
-        console.log('👤 Mode admin:', options?.isAdminCreation);
+        console.log('=== DÉBUT CRÉATION RÉSERVATION ===');
+        console.log('Données de réservation:', newReservation);
+        console.log('Mode admin:', options?.isAdminCreation);
         
-        // Normaliser le téléphone avant toute vérification
-        const normalizedPhone = normalizeTunisianPhone(newReservation.tel);
-        console.log('📞 Téléphone normalisé pour réservation:', normalizedPhone);
-        
-        // ==================== DOUBLE VÉRIFICATION SÉCURITÉ ====================
-        console.log('🔐 DOUBLE VÉRIFICATION SÉCURITÉ (HOOK)');
-        
+        // Vérification des limites de sécurité renforcée
+        console.log('Vérification des limites de sécurité...');
         const securityCheck = await checkReservationLimits(
-          newReservation.tel, // On passe le téléphone original, la normalisation se fait dans le hook
-          newReservation.email
+          newReservation.tel,
+          newReservation.email,
+          options?.isAdminCreation || false
         );
 
-        console.log('📋 Résultat double vérification:', securityCheck);
+        console.log('Résultat vérification sécurité:', securityCheck);
 
         if (!securityCheck.canReserve) {
-          console.log('❌ === DOUBLE VÉRIFICATION ÉCHOUÉE ===');
-          console.log('🚫 Raison:', securityCheck.reason);
+          console.log('❌ Réservation bloquée:', securityCheck.reason);
           throw new Error(securityCheck.reason || 'Réservation non autorisée');
         }
 
-        console.log('✅ Double vérification sécurité réussie');
+        console.log('✅ Sécurité validée, création de la réservation...');
         
-        // Création effective de la réservation avec le téléphone normalisé
+        // Obtenir le fingerprint de l'appareil pour traçabilité et limitation
         const deviceFingerprint = getDeviceFingerprint();
         
+        // Créer avec statut "en_attente" et fingerprint de l'appareil
         const reservationData = {
           ...newReservation,
-          tel: normalizedPhone, // Stocker le téléphone normalisé
-          email: newReservation.email.trim().toLowerCase(),
           statut: 'en_attente' as const,
-          ip_address: deviceFingerprint,
+          ip_address: deviceFingerprint, // Stocke le fingerprint de l'appareil
           user_agent: navigator.userAgent.slice(0, 255)
         };
         
-        console.log('💾 Insertion en base de données...');
-        console.log('💾 Téléphone qui sera stocké:', normalizedPhone);
+        console.log('Données finales de la réservation:', {
+          ...reservationData,
+          ip_address: `device_${deviceFingerprint.slice(0, 8)}...` // Affichage tronqué pour la console
+        });
         
         const { data, error } = await supabase
           .from('reservations')
@@ -204,17 +190,17 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
           .single();
 
         if (error) {
-          console.error("❌ Erreur insertion base de données:", error);
+          console.error("❌ Error creating reservation:", error);
           throw error;
         }
 
         console.log('✅ Réservation créée avec succès:', data);
         
-        // Envoi notification
+        // Envoyer la notification email à l'admin
         if (terrains) {
           const terrain = terrains.find(t => t.id === data.terrain_id);
           if (terrain) {
-            console.log('📧 Envoi notification...');
+            console.log('📧 Envoi de la notification email...');
             sendNotification({
               reservation: {
                 id: data.id,
@@ -232,12 +218,12 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
           }
         }
         
-        console.log('🎉 === RÉSERVATION TERMINÉE AVEC SUCCÈS ===');
+        console.log('=== FIN CRÉATION RÉSERVATION ===');
         toast.success("Réservation créée avec succès !");
 
         return data;
       } catch (error) {
-        console.error("❌ ERREUR GÉNÉRALE dans createReservation:", error);
+        console.error("❌ Error in createReservation mutation:", error);
         throw error;
       }
     },
@@ -249,7 +235,7 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
       queryClient.invalidateQueries({ queryKey: ['reservations-history'] });
     },
     onError: (error) => {
-      console.error("❌ ERREUR FINALE création réservation:", error);
+      console.error("❌ Reservation creation error:", error);
       toast.error(error.message || "Erreur lors de la création de la réservation");
     },
   });

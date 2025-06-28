@@ -37,7 +37,6 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
-  const [bypassSecurity, setBypassSecurity] = useState(false);
   
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
   const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
@@ -155,8 +154,6 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('🔐 Formulaire admin - Téléphone:', phone, 'Email:', email);
-    
     // Validation des champs
     const nameError = validateName(name);
     const phoneError = validateTunisianPhone(phone);
@@ -174,45 +171,25 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       return;
     }
 
-    // Vérification blacklist (même pour admin)
-    try {
-      const securityCheck = await checkReservationLimits(
-        phone.trim(), 
-        email.trim().toLowerCase()
-      );
-      
-      console.log('📋 Résultat vérification admin:', securityCheck);
-      
-      if (!securityCheck.canReserve) {
-        console.log('❌ Contact bloqué:', securityCheck.reason);
-        toast.error(securityCheck.reason);
-        return;
-      }
-      
-      console.log('✅ Création réservation admin autorisée');
-    } catch (error) {
-      console.error('❌ Erreur vérification admin:', error);
-      toast.error('Erreur de vérification de sécurité. Veuillez réessayer.');
-      return;
-    }
+    console.log('🔧 ADMIN FORM: Création de réservation admin - pas de vérification sécurité nécessaire');
     
-    // Création de la réservation
+    // Format date as ISO string (YYYY-MM-DD)
     const formattedDate = format(selectedDate, 'yyyy-MM-dd');
     const effectiveDuration = getEffectiveDuration();
     
     createReservation.mutate({
-      nom_client: name.trim(),
-      tel: phone.trim(),
-      email: email.trim().toLowerCase(),
+      nom_client: name,
+      tel: phone,
+      email: email,
       terrain_id: selectedField,
       date: formattedDate,
       heure: selectedTime,
       duree: parseFloat(effectiveDuration),
-      statut: 'en_attente',
+      statut: 'en_attente', // Statut en attente
       remarque: message || undefined
     }, {
       onSuccess: () => {
-        console.log('✅ Réservation admin créée avec succès');
+        console.log('✅ ADMIN FORM: Réservation créée avec succès');
         onSuccess();
       }
     });
@@ -362,20 +339,6 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
               onChange={(e) => setMessage(e.target.value)}
               className="h-16 text-sm"
             />
-          </div>
-          
-          {/* Nouvelle option: Contournement de sécurité */}
-          <div className="flex items-center space-x-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
-            <input
-              type="checkbox"
-              id="bypassSecurity"
-              checked={bypassSecurity}
-              onChange={(e) => setBypassSecurity(e.target.checked)}
-              className="h-4 w-4"
-            />
-            <Label htmlFor="bypassSecurity" className="text-sm text-yellow-800">
-              Contourner la blacklist (admin uniquement)
-            </Label>
           </div>
           
           {selectedField && selectedTime && terrains && (

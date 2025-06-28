@@ -7,7 +7,6 @@ import { useTerrains } from '@/hooks/useTerrains';
 import { useCreateReservation } from '@/hooks/useReservations';
 import { useAvailability } from '@/hooks/useAvailability';
 import { useAppSetting } from '@/hooks/useAppSettings';
-import { useReservationSecurity } from '@/hooks/useReservationSecurity';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -59,7 +58,6 @@ const Reservation = () => {
   // -------- 1. Declare hooks first, so allTerrains exists! -----------
   const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
   const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
-  const { checkReservationLimits } = useReservationSecurity();
   const createReservation = useCreateReservation({
     onSuccess: () => {
       setShowSuccessDialog(true);
@@ -247,6 +245,7 @@ const Reservation = () => {
 
   const today = new Date().toISOString().split('T')[0];
 
+  // --- Modification de handleSubmit avec validation ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -262,7 +261,7 @@ const Reservation = () => {
       return;
     }
 
-    // Validation des champs obligatoires
+    // Ensure required fields are filled
     if (
       !selectedTerrainId ||
       !selectedDate ||
@@ -275,31 +274,24 @@ const Reservation = () => {
       return;
     }
 
-    // Vérification disponibilité du créneau
+    // Check slot availability
     if (!isTimeSlotAvailable(selectedTime)) {
       toast.error("Ce créneau horaire n'est pas disponible.");
       return;
     }
 
-    // Vérification des limites de sécurité (incluant blacklist)
-    const securityCheck = await checkReservationLimits(customerPhone, customerEmail);
-    if (!securityCheck.canReserve) {
-      toast.error(securityCheck.reason || 'Réservation non autorisée');
-      return;
-    }
-
-    // Création de la réservation
     const effectiveDuration = parseFloat(getEffectiveDuration());
 
+    // Créer la réservation avec statut "en_attente"
     createReservation.mutate({
-      nom_client: customerName.trim(),
-      tel: customerPhone.trim(),
-      email: customerEmail.trim().toLowerCase(),
+      nom_client: customerName,
+      tel: customerPhone,
+      email: customerEmail,
       terrain_id: selectedTerrainId,
       date: selectedDate,
       heure: selectedTime,
       duree: effectiveDuration,
-      statut: "en_attente",
+      statut: "en_attente", // Statut en attente
     });
   };
 
