@@ -178,8 +178,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     try {
       const securityCheck = await checkReservationLimits(
         phone.trim(), 
-        email.trim().toLowerCase(), 
-        true // Mode admin
+        email.trim().toLowerCase()
       );
       
       console.log('📋 Résultat vérification admin:', securityCheck);

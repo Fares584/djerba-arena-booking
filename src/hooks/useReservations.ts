@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
@@ -165,8 +166,7 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
         
         const securityCheck = await checkReservationLimits(
           newReservation.tel, // On passe le téléphone original, la normalisation se fait dans le hook
-          newReservation.email,
-          options?.isAdminCreation || false
+          newReservation.email
         );
 
         console.log('📋 Résultat double vérification:', securityCheck);
