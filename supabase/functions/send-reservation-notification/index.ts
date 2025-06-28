@@ -39,6 +39,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { reservation, terrain }: ReservationNotificationRequest = await req.json();
     
     console.log("📧 Envoi d'email pour la réservation:", reservation.id);
+    console.log("🔑 Clé API Resend configurée:", Deno.env.get("RESEND_API_KEY") ? "✅ Oui" : "❌ Non");
 
     // Format de la date en français
     const dateFormatted = new Date(reservation.date).toLocaleDateString('fr-FR', {
@@ -107,13 +108,13 @@ const handler = async (req: Request): Promise<Response> => {
         </div>
         
         <div style="background-color: #333; color: #999; padding: 20px; text-align: center; font-size: 12px;">
-          <p style="margin: 0;">Email automatique - Centre Sportif</p>
+          <p style="margin: 0;">Email automatique - Planet Sports 25</p>
         </div>
       </div>
     `;
 
     const emailResponse = await resend.emails.send({
-      from: "Centre Sportif <notifications@resend.dev>",
+      from: "Planet Sports 25 <notifications@resend.dev>",
       to: ["planetsports25@gmail.com"],
       subject: `🏟️ Nouvelle réservation - ${terrain.nom} le ${dateFormatted}`,
       html: emailHtml,
