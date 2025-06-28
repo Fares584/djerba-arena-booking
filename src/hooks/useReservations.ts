@@ -147,8 +147,8 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
         console.log('Données de réservation:', newReservation);
         console.log('Mode admin:', options?.isAdminCreation);
         
-        // Vérification des limites de sécurité renforcée
-        console.log('Vérification des limites de sécurité...');
+        // VÉRIFICATION CRITIQUE BLACKLIST - TOUJOURS EFFECTUÉE
+        console.log('🔐 Vérification des limites de sécurité (blacklist prioritaire)...');
         const securityCheck = await checkReservationLimits(
           newReservation.tel,
           newReservation.email,
@@ -158,7 +158,7 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
         console.log('Résultat vérification sécurité:', securityCheck);
 
         if (!securityCheck.canReserve) {
-          console.log('❌ Réservation bloquée:', securityCheck.reason);
+          console.log('❌ Réservation bloquée par sécurité:', securityCheck.reason);
           throw new Error(securityCheck.reason || 'Réservation non autorisée');
         }
 

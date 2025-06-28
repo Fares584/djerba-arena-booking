@@ -155,6 +155,8 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('🔐 ADMIN FORM: Début vérification sécurité');
+    
     // Validation des champs
     const nameError = validateName(name);
     const phoneError = validateTunisianPhone(phone);
@@ -172,18 +174,27 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       return;
     }
 
-    // Vérification de sécurité (sauf si contournement activé)
-    if (!bypassSecurity) {
-      console.log('🔐 ADMIN FORM: Vérification sécurité (blacklist uniquement)');
-      const securityCheck = await checkReservationLimits(phone, email, true);
+    // Vérification de sécurité (blacklist toujours active, limites contournables si admin)
+    console.log('🔐 ADMIN FORM: Vérification sécurité...');
+    console.log('Téléphone:', phone);
+    console.log('Email:', email);
+    console.log('Contournement activé:', bypassSecurity);
+    
+    try {
+      // Si contournement activé, on passe isAdminCreation=true pour contourner les limites mais PAS la blacklist
+      const securityCheck = await checkReservationLimits(phone, email, bypassSecurity);
       
       if (!securityCheck.canReserve) {
-        console.log('❌ ADMIN FORM: Contact bloqué par blacklist:', securityCheck.reason);
+        console.log('❌ ADMIN FORM: Contact bloqué:', securityCheck.reason);
         toast.error(`Contact bloqué: ${securityCheck.reason}`);
         return;
       }
-    } else {
-      console.log('🔧 ADMIN FORM: Contournement de sécurité activé');
+      
+      console.log('✅ ADMIN FORM: Vérification sécurité OK');
+    } catch (error) {
+      console.error('❌ ADMIN FORM: Erreur vérification sécurité:', error);
+      toast.error('Erreur de vérification de sécurité. Veuillez réessayer.');
+      return;
     }
     
     // Format date as ISO string (YYYY-MM-DD)

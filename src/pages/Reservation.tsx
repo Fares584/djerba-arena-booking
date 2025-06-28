@@ -246,9 +246,11 @@ const Reservation = () => {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // --- Modification de handleSubmit avec validation ET vérification sécurité ---
+  // --- CORRECTION CRITIQUE de handleSubmit avec vérification blacklist OBLIGATOIRE ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    console.log('🔐 DÉBUT SOUMISSION FORMULAIRE - Vérification blacklist obligatoire');
 
     // Validation des champs
     const nameError = validateName(customerName);
@@ -281,31 +283,42 @@ const Reservation = () => {
       return;
     }
 
-    // NOUVELLE ÉTAPE: Vérification de sécurité (blacklist + limites)
+    // ÉTAPE CRITIQUE: Vérification de sécurité (blacklist + limites) - OBLIGATOIRE
     console.log('🔐 VÉRIFICATION SÉCURITÉ AVANT RÉSERVATION');
-    const securityCheck = await checkReservationLimits(customerPhone, customerEmail, false);
+    console.log('Téléphone à vérifier:', customerPhone);
+    console.log('Email à vérifier:', customerEmail);
     
-    if (!securityCheck.canReserve) {
-      console.log('❌ BLOQUÉ par sécurité:', securityCheck.reason);
-      toast.error(securityCheck.reason || 'Réservation bloquée par sécurité');
+    try {
+      const securityCheck = await checkReservationLimits(customerPhone, customerEmail, false);
+      
+      console.log('Résultat de la vérification:', securityCheck);
+      
+      if (!securityCheck.canReserve) {
+        console.log('❌ RÉSERVATION BLOQUÉE:', securityCheck.reason);
+        toast.error(securityCheck.reason || 'Réservation bloquée par sécurité');
+        return;
+      }
+
+      console.log('✅ Vérification sécurité OK, création de la réservation');
+
+      const effectiveDuration = parseFloat(getEffectiveDuration());
+
+      // Créer la réservation avec statut "en_attente"
+      createReservation.mutate({
+        nom_client: customerName,
+        tel: customerPhone,
+        email: customerEmail,
+        terrain_id: selectedTerrainId,
+        date: selectedDate,
+        heure: selectedTime,
+        duree: effectiveDuration,
+        statut: "en_attente", // Statut en attente
+      });
+    } catch (error) {
+      console.error('❌ Erreur lors de la vérification de sécurité:', error);
+      toast.error('Erreur de vérification de sécurité. Veuillez réessayer.');
       return;
     }
-
-    console.log('✅ Vérification sécurité OK, création de la réservation');
-
-    const effectiveDuration = parseFloat(getEffectiveDuration());
-
-    // Créer la réservation avec statut "en_attente"
-    createReservation.mutate({
-      nom_client: customerName,
-      tel: customerPhone,
-      email: customerEmail,
-      terrain_id: selectedTerrainId,
-      date: selectedDate,
-      heure: selectedTime,
-      duree: effectiveDuration,
-      statut: "en_attente", // Statut en attente
-    });
   };
 
   // Quand l'utilisateur clique sur "OK", fermer la popup et rediriger vers l'accueil
