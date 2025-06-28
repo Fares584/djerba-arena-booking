@@ -155,7 +155,10 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('🔐 ADMIN FORM: Début vérification sécurité');
+    console.log('🔐 === DÉBUT FORMULAIRE ADMIN ===');
+    console.log('📞 Téléphone admin form:', phone);
+    console.log('📧 Email admin form:', email);
+    console.log('🔓 Contournement blacklist:', bypassSecurity);
     
     // Validation des champs
     const nameError = validateName(name);
@@ -174,46 +177,49 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       return;
     }
 
-    // Vérification de sécurité (blacklist toujours active, limites contournables si admin)
-    console.log('🔐 ADMIN FORM: Vérification sécurité...');
-    console.log('Téléphone:', phone);
-    console.log('Email:', email);
-    console.log('Contournement activé:', bypassSecurity);
+    // ==================== VÉRIFICATION SÉCURITÉ ADMIN ====================
+    console.log('🔐 VÉRIFICATION SÉCURITÉ ADMIN');
     
     try {
-      // Si contournement activé, on passe isAdminCreation=true pour contourner les limites mais PAS la blacklist
-      const securityCheck = await checkReservationLimits(phone, email, bypassSecurity);
+      // Si bypass activé, on contourne SEULEMENT les limites, PAS la blacklist
+      const securityCheck = await checkReservationLimits(
+        phone.trim(), 
+        email.trim().toLowerCase(), 
+        bypassSecurity // Permet de contourner les limites quotidiennes mais PAS la blacklist
+      );
+      
+      console.log('📋 Résultat vérification admin:', securityCheck);
       
       if (!securityCheck.canReserve) {
-        console.log('❌ ADMIN FORM: Contact bloqué:', securityCheck.reason);
-        toast.error(`Contact bloqué: ${securityCheck.reason}`);
+        console.log('❌ ADMIN FORM - Contact bloqué:', securityCheck.reason);
+        toast.error(`Blocage sécurité: ${securityCheck.reason}`);
         return;
       }
       
-      console.log('✅ ADMIN FORM: Vérification sécurité OK');
+      console.log('✅ ADMIN FORM - Vérification sécurité OK');
     } catch (error) {
-      console.error('❌ ADMIN FORM: Erreur vérification sécurité:', error);
+      console.error('❌ ADMIN FORM - Erreur vérification:', error);
       toast.error('Erreur de vérification de sécurité. Veuillez réessayer.');
       return;
     }
     
-    // Format date as ISO string (YYYY-MM-DD)
+    // Création de la réservation
     const formattedDate = format(selectedDate, 'yyyy-MM-dd');
     const effectiveDuration = getEffectiveDuration();
     
     createReservation.mutate({
-      nom_client: name,
-      tel: phone,
-      email: email,
+      nom_client: name.trim(),
+      tel: phone.trim(),
+      email: email.trim().toLowerCase(),
       terrain_id: selectedField,
       date: formattedDate,
       heure: selectedTime,
       duree: parseFloat(effectiveDuration),
-      statut: 'en_attente', // Statut en attente
+      statut: 'en_attente',
       remarque: message || undefined
     }, {
       onSuccess: () => {
-        console.log('✅ ADMIN FORM: Réservation créée avec succès');
+        console.log('✅ ADMIN FORM - Réservation créée avec succès');
         onSuccess();
       }
     });

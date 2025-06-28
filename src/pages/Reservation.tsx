@@ -250,7 +250,9 @@ const Reservation = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log('🔐 DÉBUT SOUMISSION FORMULAIRE - Vérification blacklist obligatoire');
+    console.log('🔐 === DÉBUT SOUMISSION FORMULAIRE PUBLIC ===');
+    console.log('📞 Téléphone soumis:', customerPhone);
+    console.log('📧 Email soumis:', customerEmail);
 
     // Validation des champs
     const nameError = validateName(customerName);
@@ -264,7 +266,7 @@ const Reservation = () => {
       return;
     }
 
-    // Ensure required fields are filled
+    // Validation des champs obligatoires
     if (
       !selectedTerrainId ||
       !selectedDate ||
@@ -277,45 +279,51 @@ const Reservation = () => {
       return;
     }
 
-    // Check slot availability
+    // Vérification disponibilité du créneau
     if (!isTimeSlotAvailable(selectedTime)) {
       toast.error("Ce créneau horaire n'est pas disponible.");
       return;
     }
 
-    // ÉTAPE CRITIQUE: Vérification de sécurité (blacklist + limites) - OBLIGATOIRE
-    console.log('🔐 VÉRIFICATION SÉCURITÉ AVANT RÉSERVATION');
-    console.log('Téléphone à vérifier:', customerPhone);
-    console.log('Email à vérifier:', customerEmail);
+    // ==================== VÉRIFICATION SÉCURITÉ OBLIGATOIRE ====================
+    console.log('🔐 VÉRIFICATION SÉCURITÉ OBLIGATOIRE AVANT RÉSERVATION');
     
     try {
-      const securityCheck = await checkReservationLimits(customerPhone, customerEmail, false);
+      // APPEL OBLIGATOIRE à la vérification de sécurité (blacklist incluse)
+      const securityCheck = await checkReservationLimits(
+        customerPhone.trim(), 
+        customerEmail.trim().toLowerCase(), 
+        false // Mode public, pas admin
+      );
       
-      console.log('Résultat de la vérification:', securityCheck);
+      console.log('📋 Résultat de la vérification de sécurité:', securityCheck);
       
+      // SI BLOQUÉ = ARRÊT IMMÉDIAT
       if (!securityCheck.canReserve) {
-        console.log('❌ RÉSERVATION BLOQUÉE:', securityCheck.reason);
+        console.log('❌ === RÉSERVATION BLOQUÉE PAR SÉCURITÉ ===');
+        console.log('🚫 Raison du blocage:', securityCheck.reason);
         toast.error(securityCheck.reason || 'Réservation bloquée par sécurité');
-        return;
+        return; // ARRÊT TOTAL
       }
 
-      console.log('✅ Vérification sécurité OK, création de la réservation');
+      console.log('✅ Vérification sécurité réussie - Création de la réservation');
 
+      // Création de la réservation SEULEMENT si sécurité OK
       const effectiveDuration = parseFloat(getEffectiveDuration());
 
-      // Créer la réservation avec statut "en_attente"
       createReservation.mutate({
-        nom_client: customerName,
-        tel: customerPhone,
-        email: customerEmail,
+        nom_client: customerName.trim(),
+        tel: customerPhone.trim(),
+        email: customerEmail.trim().toLowerCase(),
         terrain_id: selectedTerrainId,
         date: selectedDate,
         heure: selectedTime,
         duree: effectiveDuration,
-        statut: "en_attente", // Statut en attente
+        statut: "en_attente",
       });
+      
     } catch (error) {
-      console.error('❌ Erreur lors de la vérification de sécurité:', error);
+      console.error('❌ ERREUR lors de la vérification de sécurité:', error);
       toast.error('Erreur de vérification de sécurité. Veuillez réessayer.');
       return;
     }

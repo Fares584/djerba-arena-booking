@@ -143,42 +143,48 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
   return useMutation({
     mutationFn: async (newReservation: Omit<Reservation, 'id' | 'created_at' | 'updated_at'>) => {
       try {
-        console.log('=== DÉBUT CRÉATION RÉSERVATION ===');
-        console.log('Données de réservation:', newReservation);
-        console.log('Mode admin:', options?.isAdminCreation);
+        console.log('🔄 === DÉBUT CRÉATION RÉSERVATION (HOOK) ===');
+        console.log('📝 Données reçues:', {
+          nom_client: newReservation.nom_client,
+          tel: newReservation.tel,
+          email: newReservation.email,
+          terrain_id: newReservation.terrain_id,
+          date: newReservation.date,
+          heure: newReservation.heure,
+          statut: newReservation.statut
+        });
+        console.log('👤 Mode admin:', options?.isAdminCreation);
         
-        // VÉRIFICATION CRITIQUE BLACKLIST - TOUJOURS EFFECTUÉE
-        console.log('🔐 Vérification des limites de sécurité (blacklist prioritaire)...');
+        // ==================== DOUBLE VÉRIFICATION SÉCURITÉ ====================
+        console.log('🔐 DOUBLE VÉRIFICATION SÉCURITÉ (HOOK)');
+        
         const securityCheck = await checkReservationLimits(
           newReservation.tel,
           newReservation.email,
           options?.isAdminCreation || false
         );
 
-        console.log('Résultat vérification sécurité:', securityCheck);
+        console.log('📋 Résultat double vérification:', securityCheck);
 
         if (!securityCheck.canReserve) {
-          console.log('❌ Réservation bloquée par sécurité:', securityCheck.reason);
+          console.log('❌ === DOUBLE VÉRIFICATION ÉCHOUÉE ===');
+          console.log('🚫 Raison:', securityCheck.reason);
           throw new Error(securityCheck.reason || 'Réservation non autorisée');
         }
 
-        console.log('✅ Sécurité validée, création de la réservation...');
+        console.log('✅ Double vérification sécurité réussie');
         
-        // Obtenir le fingerprint de l'appareil pour traçabilité et limitation
+        // Création effective de la réservation
         const deviceFingerprint = getDeviceFingerprint();
         
-        // Créer avec statut "en_attente" et fingerprint de l'appareil
         const reservationData = {
           ...newReservation,
           statut: 'en_attente' as const,
-          ip_address: deviceFingerprint, // Stocke le fingerprint de l'appareil
+          ip_address: deviceFingerprint,
           user_agent: navigator.userAgent.slice(0, 255)
         };
         
-        console.log('Données finales de la réservation:', {
-          ...reservationData,
-          ip_address: `device_${deviceFingerprint.slice(0, 8)}...` // Affichage tronqué pour la console
-        });
+        console.log('💾 Insertion en base de données...');
         
         const { data, error } = await supabase
           .from('reservations')
@@ -190,17 +196,17 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
           .single();
 
         if (error) {
-          console.error("❌ Error creating reservation:", error);
+          console.error("❌ Erreur insertion base de données:", error);
           throw error;
         }
 
         console.log('✅ Réservation créée avec succès:', data);
         
-        // Envoyer la notification email à l'admin
+        // Envoi notification
         if (terrains) {
           const terrain = terrains.find(t => t.id === data.terrain_id);
           if (terrain) {
-            console.log('📧 Envoi de la notification email...');
+            console.log('📧 Envoi notification...');
             sendNotification({
               reservation: {
                 id: data.id,
@@ -218,12 +224,12 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
           }
         }
         
-        console.log('=== FIN CRÉATION RÉSERVATION ===');
+        console.log('🎉 === RÉSERVATION TERMINÉE AVEC SUCCÈS ===');
         toast.success("Réservation créée avec succès !");
 
         return data;
       } catch (error) {
-        console.error("❌ Error in createReservation mutation:", error);
+        console.error("❌ ERREUR GÉNÉRALE dans createReservation:", error);
         throw error;
       }
     },
@@ -235,7 +241,7 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
       queryClient.invalidateQueries({ queryKey: ['reservations-history'] });
     },
     onError: (error) => {
-      console.error("❌ Reservation creation error:", error);
+      console.error("❌ ERREUR FINALE création réservation:", error);
       toast.error(error.message || "Erreur lors de la création de la réservation");
     },
   });
