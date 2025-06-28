@@ -4,6 +4,8 @@ import { Reservation } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useReservationSecurity } from './useReservationSecurity';
 import { useDeviceFingerprint } from './useDeviceFingerprint';
+import { useReservationNotification } from './useReservationNotification';
+import { useTerrains } from './useTerrains';
 
 export function useReservations(filters?: { 
   terrain_id?: number; 
@@ -135,6 +137,8 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
   const queryClient = useQueryClient();
   const { checkReservationLimits } = useReservationSecurity();
   const { getDeviceFingerprint } = useDeviceFingerprint();
+  const { mutate: sendNotification } = useReservationNotification();
+  const { data: terrains } = useTerrains();
 
   return useMutation({
     mutationFn: async (newReservation: Omit<Reservation, 'id' | 'created_at' | 'updated_at'>) => {
@@ -191,6 +195,29 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
         }
 
         console.log('✅ Réservation créée avec succès:', data);
+        
+        // Envoyer la notification email à l'admin
+        if (terrains) {
+          const terrain = terrains.find(t => t.id === data.terrain_id);
+          if (terrain) {
+            console.log('📧 Envoi de la notification email...');
+            sendNotification({
+              reservation: {
+                id: data.id,
+                nom_client: data.nom_client,
+                tel: data.tel,
+                email: data.email,
+                terrain_id: data.terrain_id,
+                date: data.date,
+                heure: data.heure,
+                duree: data.duree,
+                statut: data.statut
+              },
+              terrain
+            });
+          }
+        }
+        
         console.log('=== FIN CRÉATION RÉSERVATION ===');
         toast.success("Réservation créée avec succès !");
 
