@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -246,11 +247,8 @@ const Reservation = () => {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // --- CORRECTION CRITIQUE de handleSubmit avec vérification blacklist OBLIGATOIRE ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    console.log('🔐 Soumission formulaire public - Téléphone:', customerPhone, 'Email:', customerEmail);
 
     // Validation des champs
     const nameError = validateName(customerName);
@@ -283,43 +281,26 @@ const Reservation = () => {
       return;
     }
 
-    // Vérification blacklist
-    try {
-      const securityCheck = await checkReservationLimits(
-        customerPhone.trim(), 
-        customerEmail.trim().toLowerCase(), 
-        false
-      );
-      
-      console.log('📋 Résultat vérification:', securityCheck);
-      
-      if (!securityCheck.canReserve) {
-        console.log('❌ Réservation bloquée:', securityCheck.reason);
-        toast.error(securityCheck.reason || 'Réservation bloquée');
-        return;
-      }
-
-      console.log('✅ Création de la réservation autorisée');
-
-      // Création de la réservation
-      const effectiveDuration = parseFloat(getEffectiveDuration());
-
-      createReservation.mutate({
-        nom_client: customerName.trim(),
-        tel: customerPhone.trim(),
-        email: customerEmail.trim().toLowerCase(),
-        terrain_id: selectedTerrainId,
-        date: selectedDate,
-        heure: selectedTime,
-        duree: effectiveDuration,
-        statut: "en_attente",
-      });
-      
-    } catch (error) {
-      console.error('❌ Erreur vérification sécurité:', error);
-      toast.error('Erreur de vérification de sécurité. Veuillez réessayer.');
+    // Vérification des limites de sécurité (incluant blacklist)
+    const securityCheck = await checkReservationLimits(customerPhone, customerEmail);
+    if (!securityCheck.canReserve) {
+      toast.error(securityCheck.reason || 'Réservation non autorisée');
       return;
     }
+
+    // Création de la réservation
+    const effectiveDuration = parseFloat(getEffectiveDuration());
+
+    createReservation.mutate({
+      nom_client: customerName.trim(),
+      tel: customerPhone.trim(),
+      email: customerEmail.trim().toLowerCase(),
+      terrain_id: selectedTerrainId,
+      date: selectedDate,
+      heure: selectedTime,
+      duree: effectiveDuration,
+      statut: "en_attente",
+    });
   };
 
   // Quand l'utilisateur clique sur "OK", fermer la popup et rediriger vers l'accueil
