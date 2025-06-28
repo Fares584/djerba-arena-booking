@@ -250,9 +250,7 @@ const Reservation = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log('🔐 === DÉBUT SOUMISSION FORMULAIRE PUBLIC ===');
-    console.log('📞 Téléphone soumis:', customerPhone);
-    console.log('📧 Email soumis:', customerEmail);
+    console.log('🔐 Soumission formulaire public - Téléphone:', customerPhone, 'Email:', customerEmail);
 
     // Validation des champs
     const nameError = validateName(customerName);
@@ -285,30 +283,25 @@ const Reservation = () => {
       return;
     }
 
-    // ==================== VÉRIFICATION SÉCURITÉ OBLIGATOIRE ====================
-    console.log('🔐 VÉRIFICATION SÉCURITÉ OBLIGATOIRE AVANT RÉSERVATION');
-    
+    // Vérification blacklist
     try {
-      // APPEL OBLIGATOIRE à la vérification de sécurité (blacklist incluse)
       const securityCheck = await checkReservationLimits(
         customerPhone.trim(), 
         customerEmail.trim().toLowerCase(), 
-        false // Mode public, pas admin
+        false
       );
       
-      console.log('📋 Résultat de la vérification de sécurité:', securityCheck);
+      console.log('📋 Résultat vérification:', securityCheck);
       
-      // SI BLOQUÉ = ARRÊT IMMÉDIAT
       if (!securityCheck.canReserve) {
-        console.log('❌ === RÉSERVATION BLOQUÉE PAR SÉCURITÉ ===');
-        console.log('🚫 Raison du blocage:', securityCheck.reason);
-        toast.error(securityCheck.reason || 'Réservation bloquée par sécurité');
-        return; // ARRÊT TOTAL
+        console.log('❌ Réservation bloquée:', securityCheck.reason);
+        toast.error(securityCheck.reason || 'Réservation bloquée');
+        return;
       }
 
-      console.log('✅ Vérification sécurité réussie - Création de la réservation');
+      console.log('✅ Création de la réservation autorisée');
 
-      // Création de la réservation SEULEMENT si sécurité OK
+      // Création de la réservation
       const effectiveDuration = parseFloat(getEffectiveDuration());
 
       createReservation.mutate({
@@ -323,7 +316,7 @@ const Reservation = () => {
       });
       
     } catch (error) {
-      console.error('❌ ERREUR lors de la vérification de sécurité:', error);
+      console.error('❌ Erreur vérification sécurité:', error);
       toast.error('Erreur de vérification de sécurité. Veuillez réessayer.');
       return;
     }

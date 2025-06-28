@@ -8,11 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Trash2, Plus, Shield, AlertTriangle } from 'lucide-react';
+import { Trash2, Plus, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { normalizeTunisianPhone } from '@/lib/validation';
 
 const BlacklistManager = () => {
   const { blacklist, isLoading, addToBlacklist, removeFromBlacklist } = useBlacklist();
@@ -25,59 +23,31 @@ const BlacklistManager = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEntry.value.trim()) {
-      toast.error('Veuillez saisir une valeur à bloquer');
-      return;
-    }
+    if (!newEntry.value.trim()) return;
 
-    // Nettoyer et normaliser la valeur
-    let cleanValue: string;
-    
-    if (newEntry.type === 'email') {
-      cleanValue = newEntry.value.trim().toLowerCase();
-      // Validation email
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanValue)) {
-        toast.error('L\'adresse email n\'est pas valide');
-        return;
-      }
-    } else {
-      // Pour les téléphones, normaliser vers 8 chiffres
-      cleanValue = normalizeTunisianPhone(newEntry.value);
-      console.log('📞 Téléphone original:', newEntry.value);
-      console.log('📞 Téléphone normalisé pour blacklist:', cleanValue);
-      
-      // Validation téléphone normalisé
-      if (!/^\d{8}$/.test(cleanValue)) {
-        toast.error('Le numéro de téléphone doit être un numéro tunisien valide (8 chiffres)');
-        return;
-      }
-    }
-
-    addToBlacklist.mutate({
-      ...newEntry,
-      value: cleanValue
-    }, {
+    addToBlacklist.mutate(newEntry, {
       onSuccess: () => {
         setNewEntry({ type: 'phone', value: '', reason: '' });
         setIsDialogOpen(false);
-        toast.success(`${newEntry.type === 'phone' ? 'Numéro' : 'Email'} ajouté à la blacklist avec succès`);
       },
     });
   };
 
-  const handleRemove = (id: number, value: string, type: string) => {
-    if (confirm(`Êtes-vous sûr de vouloir débloquer ce ${type === 'phone' ? 'numéro' : 'email'} : ${value} ?`)) {
+  const handleRemove = (id: number, value: string) => {
+    if (confirm(`Êtes-vous sûr de vouloir débloquer : ${value} ?`)) {
       removeFromBlacklist.mutate(id);
     }
   };
 
   if (isLoading) {
-    return <div className="flex items-center justify-center p-8">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sport-green mx-auto mb-2"></div>
-        <p>Chargement de la blacklist...</p>
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sport-green mx-auto mb-2"></div>
+          <p>Chargement...</p>
+        </div>
       </div>
-    </div>;
+    );
   }
 
   return (
@@ -86,10 +56,10 @@ const BlacklistManager = () => {
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Shield className="h-6 w-6" />
-            Gestion de la Blacklist
+            Blacklist
           </h2>
-          <p className="text-gray-600 mt-1">
-            Contacts bloqués : {blacklist?.length || 0} élément(s)
+          <p className="text-gray-600">
+            {blacklist?.length || 0} contact(s) bloqué(s)
           </p>
         </div>
         
@@ -97,16 +67,16 @@ const BlacklistManager = () => {
           <DialogTrigger asChild>
             <Button className="bg-red-600 hover:bg-red-700">
               <Plus className="mr-2 h-4 w-4" />
-              Ajouter à la blacklist
+              Bloquer un contact
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Ajouter un contact à la blacklist</DialogTitle>
+              <DialogTitle>Bloquer un contact</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="type">Type de contact</Label>
+                <Label>Type</Label>
                 <Select
                   value={newEntry.type}
                   onValueChange={(value: 'phone' | 'email') => 
@@ -117,39 +87,34 @@ const BlacklistManager = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="phone">📞 Numéro de téléphone</SelectItem>
-                    <SelectItem value="email">📧 Adresse email</SelectItem>
+                    <SelectItem value="phone">Téléphone</SelectItem>
+                    <SelectItem value="email">Email</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="value">
+                <Label>
                   {newEntry.type === 'phone' ? 'Numéro de téléphone' : 'Adresse email'}
                 </Label>
                 <Input
-                  id="value"
                   value={newEntry.value}
                   onChange={(e) => setNewEntry({ ...newEntry, value: e.target.value })}
-                  placeholder={newEntry.type === 'phone' ? 'Ex: 27339837, +21627339837, ou 21627339837' : 'email@example.com'}
+                  placeholder={
+                    newEntry.type === 'phone' 
+                      ? 'Ex: 27339837 ou +21627339837' 
+                      : 'email@example.com'
+                  }
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  {newEntry.type === 'phone' 
-                    ? 'Accepte tous les formats tunisiens : 8 chiffres, +216xxxxxxxx, ou 216xxxxxxxx'
-                    : 'Saisissez l\'adresse email complète'
-                  }
-                </p>
               </div>
 
               <div>
-                <Label htmlFor="reason">Raison du blocage</Label>
+                <Label>Raison (optionnel)</Label>
                 <Textarea
-                  id="reason"
                   value={newEntry.reason}
                   onChange={(e) => setNewEntry({ ...newEntry, reason: e.target.value })}
-                  placeholder="Expliquez pourquoi ce contact est bloqué..."
-                  className="h-20"
+                  placeholder="Pourquoi bloquer ce contact..."
                 />
               </div>
 
@@ -158,7 +123,7 @@ const BlacklistManager = () => {
                   Annuler
                 </Button>
                 <Button type="submit" disabled={addToBlacklist.isPending} className="bg-red-600 hover:bg-red-700">
-                  {addToBlacklist.isPending ? 'Ajout...' : 'Bloquer ce contact'}
+                  {addToBlacklist.isPending ? 'Ajout...' : 'Bloquer'}
                 </Button>
               </div>
             </form>
@@ -166,46 +131,24 @@ const BlacklistManager = () => {
         </Dialog>
       </div>
 
-      {/* Alerte d'information */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-blue-600 mt-0.5" />
-            <div>
-              <h3 className="font-medium text-blue-900">Comment fonctionne la blacklist ?</h3>
-              <p className="text-sm text-blue-700 mt-1">
-                Les contacts ajoutés à cette liste ne pourront plus effectuer de réservations, 
-                même via l'interface publique. Tous les formats de numéros tunisiens sont automatiquement 
-                normalisés (8 chiffres uniquement) pour une protection maximale.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       <div className="grid gap-4">
         {blacklist && blacklist.length > 0 ? (
           blacklist.map((entry) => (
             <Card key={entry.id} className="border-l-4 border-l-red-500">
               <CardContent className="p-4">
                 <div className="flex justify-between items-start">
-                  <div className="space-y-1 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-semibold">
                         {entry.type === 'phone' ? '📞' : '📧'} {entry.value}
-                        {entry.type === 'phone' && (
-                          <span className="text-xs text-gray-500 ml-2">
-                            (format normalisé : 8 chiffres)
-                          </span>
-                        )}
                       </span>
                       <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
-                        {entry.type === 'phone' ? 'Téléphone' : 'Email'} bloqué
+                        {entry.type === 'phone' ? 'Téléphone' : 'Email'}
                       </span>
                     </div>
                     {entry.reason && (
-                      <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                        <strong>Raison :</strong> {entry.reason}
+                      <p className="text-sm text-gray-600 mb-2">
+                        <strong>Raison:</strong> {entry.reason}
                       </p>
                     )}
                     <p className="text-xs text-gray-400">
@@ -216,9 +159,8 @@ const BlacklistManager = () => {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => handleRemove(entry.id, entry.value, entry.type)}
+                    onClick={() => handleRemove(entry.id, entry.value)}
                     disabled={removeFromBlacklist.isPending}
-                    title="Débloquer ce contact"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -230,20 +172,10 @@ const BlacklistManager = () => {
           <Card>
             <CardContent className="p-8 text-center">
               <Shield className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Aucun contact bloqué
-              </h3>
+              <h3 className="text-lg font-medium mb-2">Aucun contact bloqué</h3>
               <p className="text-gray-500 mb-4">
-                La blacklist est vide. Vous pouvez ajouter des contacts pour les empêcher de faire des réservations.
+                La blacklist est vide.
               </p>
-              <Button 
-                onClick={() => setIsDialogOpen(true)}
-                variant="outline"
-                className="border-red-200 text-red-600 hover:bg-red-50"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Ajouter le premier contact
-              </Button>
             </CardContent>
           </Card>
         )}

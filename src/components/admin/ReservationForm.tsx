@@ -155,10 +155,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('🔐 === DÉBUT FORMULAIRE ADMIN ===');
-    console.log('📞 Téléphone admin form:', phone);
-    console.log('📧 Email admin form:', email);
-    console.log('🔓 Contournement blacklist:', bypassSecurity);
+    console.log('🔐 Formulaire admin - Téléphone:', phone, 'Email:', email);
     
     // Validation des champs
     const nameError = validateName(name);
@@ -177,28 +174,25 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       return;
     }
 
-    // ==================== VÉRIFICATION SÉCURITÉ ADMIN ====================
-    console.log('🔐 VÉRIFICATION SÉCURITÉ ADMIN');
-    
+    // Vérification blacklist (même pour admin)
     try {
-      // Si bypass activé, on contourne SEULEMENT les limites, PAS la blacklist
       const securityCheck = await checkReservationLimits(
         phone.trim(), 
         email.trim().toLowerCase(), 
-        bypassSecurity // Permet de contourner les limites quotidiennes mais PAS la blacklist
+        true // Mode admin
       );
       
       console.log('📋 Résultat vérification admin:', securityCheck);
       
       if (!securityCheck.canReserve) {
-        console.log('❌ ADMIN FORM - Contact bloqué:', securityCheck.reason);
-        toast.error(`Blocage sécurité: ${securityCheck.reason}`);
+        console.log('❌ Contact bloqué:', securityCheck.reason);
+        toast.error(securityCheck.reason);
         return;
       }
       
-      console.log('✅ ADMIN FORM - Vérification sécurité OK');
+      console.log('✅ Création réservation admin autorisée');
     } catch (error) {
-      console.error('❌ ADMIN FORM - Erreur vérification:', error);
+      console.error('❌ Erreur vérification admin:', error);
       toast.error('Erreur de vérification de sécurité. Veuillez réessayer.');
       return;
     }
@@ -219,7 +213,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       remarque: message || undefined
     }, {
       onSuccess: () => {
-        console.log('✅ ADMIN FORM - Réservation créée avec succès');
+        console.log('✅ Réservation admin créée avec succès');
         onSuccess();
       }
     });
