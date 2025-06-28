@@ -37,6 +37,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
+  const [bypassSecurity, setBypassSecurity] = useState(false);
   
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
   const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
@@ -171,7 +172,19 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       return;
     }
 
-    console.log('🔧 ADMIN FORM: Création de réservation admin - pas de vérification sécurité nécessaire');
+    // Vérification de sécurité (sauf si contournement activé)
+    if (!bypassSecurity) {
+      console.log('🔐 ADMIN FORM: Vérification sécurité (blacklist uniquement)');
+      const securityCheck = await checkReservationLimits(phone, email, true);
+      
+      if (!securityCheck.canReserve) {
+        console.log('❌ ADMIN FORM: Contact bloqué par blacklist:', securityCheck.reason);
+        toast.error(`Contact bloqué: ${securityCheck.reason}`);
+        return;
+      }
+    } else {
+      console.log('🔧 ADMIN FORM: Contournement de sécurité activé');
+    }
     
     // Format date as ISO string (YYYY-MM-DD)
     const formattedDate = format(selectedDate, 'yyyy-MM-dd');
@@ -339,6 +352,20 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
               onChange={(e) => setMessage(e.target.value)}
               className="h-16 text-sm"
             />
+          </div>
+          
+          {/* Nouvelle option: Contournement de sécurité */}
+          <div className="flex items-center space-x-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+            <input
+              type="checkbox"
+              id="bypassSecurity"
+              checked={bypassSecurity}
+              onChange={(e) => setBypassSecurity(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <Label htmlFor="bypassSecurity" className="text-sm text-yellow-800">
+              Contourner la blacklist (admin uniquement)
+            </Label>
           </div>
           
           {selectedField && selectedTime && terrains && (

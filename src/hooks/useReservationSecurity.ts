@@ -20,47 +20,43 @@ export function useReservationSecurity() {
       console.log('=== DÉBUT VÉRIFICATION SÉCURITÉ RENFORCÉE ===');
       console.log('Vérification de sécurité pour:', { phone, email, isAdminCreation });
       
-      // Si c'est une création admin, contourner TOUTES les vérifications
-      if (isAdminCreation) {
-        console.log('✅ ADMIN CRÉATION - Toutes les vérifications de sécurité contournées');
-        return { canReserve: true };
-      }
-
-      // Obtenir le fingerprint de l'appareil
-      const deviceFingerprint = getDeviceFingerprint();
-      console.log('Fingerprint de l\'appareil:', deviceFingerprint);
-
-      // 1. Vérifier la blacklist - CORRECTION AVEC REQUÊTES SÉPARÉES
+      // Nettoyer les données d'entrée
+      const cleanPhone = phone.trim();
+      const cleanEmail = email.trim().toLowerCase();
+      
+      // 1. VÉRIFICATION BLACKLIST - TOUJOURS ACTIVE (même pour admin)
       console.log('1. Vérification de la blacklist...');
       
-      // Vérifier le téléphone
+      // Vérifier le téléphone dans la blacklist
       const { data: phoneBlacklist, error: phoneError } = await supabase
         .from('blacklist')
         .select('*')
         .eq('type', 'phone')
-        .eq('value', phone);
+        .eq('value', cleanPhone);
 
       if (phoneError) {
         console.error('Erreur lors de la vérification téléphone blacklist:', phoneError);
+        // En cas d'erreur, on continue mais on log
       } else if (phoneBlacklist && phoneBlacklist.length > 0) {
-        console.log('❌ Téléphone trouvé dans la blacklist:', phoneBlacklist);
+        console.log('❌ Téléphone trouvé dans la blacklist:', phoneBlacklist[0]);
         return {
           canReserve: false,
           reason: 'Ce numéro de téléphone est bloqué. Contactez l\'administration.'
         };
       }
 
-      // Vérifier l'email
+      // Vérifier l'email dans la blacklist
       const { data: emailBlacklist, error: emailError } = await supabase
         .from('blacklist')
         .select('*')
         .eq('type', 'email')
-        .eq('value', email);
+        .eq('value', cleanEmail);
 
       if (emailError) {
         console.error('Erreur lors de la vérification email blacklist:', emailError);
+        // En cas d'erreur, on continue mais on log
       } else if (emailBlacklist && emailBlacklist.length > 0) {
-        console.log('❌ Email trouvé dans la blacklist:', emailBlacklist);
+        console.log('❌ Email trouvé dans la blacklist:', emailBlacklist[0]);
         return {
           canReserve: false,
           reason: 'Cette adresse email est bloquée. Contactez l\'administration.'
@@ -68,6 +64,16 @@ export function useReservationSecurity() {
       }
 
       console.log('✅ Contact non présent dans la blacklist');
+
+      // Si c'est une création admin, contourner le RESTE des vérifications (pas la blacklist)
+      if (isAdminCreation) {
+        console.log('✅ ADMIN CRÉATION - Vérifications de limites contournées (blacklist toujours active)');
+        return { canReserve: true };
+      }
+
+      // Obtenir le fingerprint de l'appareil
+      const deviceFingerprint = getDeviceFingerprint();
+      console.log('Fingerprint de l\'appareil:', deviceFingerprint);
 
       // 2. Vérification des limites par contact (email + téléphone)
       console.log('2. Vérification des limites par contact...');
@@ -78,8 +84,8 @@ export function useReservationSecurity() {
       const { data: contactReservations, error: contactError } = await supabase
         .from('reservations')
         .select('id, created_at, tel, email, nom_client, ip_address')
-        .eq('tel', phone)
-        .eq('email', email)
+        .eq('tel', cleanPhone)
+        .eq('email', cleanEmail)
         .gte('created_at', todayStart)
         .lte('created_at', todayEnd);
 
@@ -93,8 +99,8 @@ export function useReservationSecurity() {
       if (contactReservationsCount >= 2) {
         console.log('❌ BLOQUÉ - Limite quotidienne par contact atteinte:', {
           contactReservationsCount,
-          phone,
-          email: email.slice(0, 5) + '...'
+          phone: cleanPhone,
+          email: cleanEmail.slice(0, 5) + '...'
         });
         
         return {

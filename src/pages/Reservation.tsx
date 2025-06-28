@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -7,6 +6,7 @@ import { useTerrains } from '@/hooks/useTerrains';
 import { useCreateReservation } from '@/hooks/useReservations';
 import { useAvailability } from '@/hooks/useAvailability';
 import { useAppSetting } from '@/hooks/useAppSettings';
+import { useReservationSecurity } from '@/hooks/useReservationSecurity';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -58,6 +58,7 @@ const Reservation = () => {
   // -------- 1. Declare hooks first, so allTerrains exists! -----------
   const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
   const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
+  const { checkReservationLimits } = useReservationSecurity();
   const createReservation = useCreateReservation({
     onSuccess: () => {
       setShowSuccessDialog(true);
@@ -245,7 +246,7 @@ const Reservation = () => {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // --- Modification de handleSubmit avec validation ---
+  // --- Modification de handleSubmit avec validation ET vérification sécurité ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -279,6 +280,18 @@ const Reservation = () => {
       toast.error("Ce créneau horaire n'est pas disponible.");
       return;
     }
+
+    // NOUVELLE ÉTAPE: Vérification de sécurité (blacklist + limites)
+    console.log('🔐 VÉRIFICATION SÉCURITÉ AVANT RÉSERVATION');
+    const securityCheck = await checkReservationLimits(customerPhone, customerEmail, false);
+    
+    if (!securityCheck.canReserve) {
+      console.log('❌ BLOQUÉ par sécurité:', securityCheck.reason);
+      toast.error(securityCheck.reason || 'Réservation bloquée par sécurité');
+      return;
+    }
+
+    console.log('✅ Vérification sécurité OK, création de la réservation');
 
     const effectiveDuration = parseFloat(getEffectiveDuration());
 
