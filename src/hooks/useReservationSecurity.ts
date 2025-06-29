@@ -11,6 +11,27 @@ interface SecurityCheckResult {
 export function useReservationSecurity() {
   const { getDeviceFingerprint } = useDeviceFingerprint();
 
+  // Fonction pour normaliser les numéros de téléphone
+  const normalizePhoneNumber = (phone: string): string => {
+    // Supprimer tous les espaces, tirets, points, parenthèses
+    let cleaned = phone.replace(/[\s\-\.\(\)]/g, '');
+    
+    // Convertir +216 ou 216 en format local (8 chiffres)
+    if (cleaned.startsWith('+216')) {
+      cleaned = cleaned.substring(4);
+    } else if (cleaned.startsWith('216')) {
+      cleaned = cleaned.substring(3);
+    }
+    
+    // S'assurer qu'on a bien 8 chiffres pour la Tunisie
+    if (cleaned.length === 8 && /^\d{8}$/.test(cleaned)) {
+      return cleaned;
+    }
+    
+    // Retourner le numéro original si pas de format reconnu
+    return phone.trim();
+  };
+
   const checkReservationLimits = async (
     phone: string, 
     email: string,
@@ -26,45 +47,80 @@ export function useReservationSecurity() {
         return { canReserve: true };
       }
 
+      // Normaliser les données d'entrée
+      const normalizedPhone = normalizePhoneNumber(phone);
+      const normalizedEmail = email.trim().toLowerCase();
+      
+      console.log('Données normalisées:', {
+        originalPhone: phone,
+        normalizedPhone: normalizedPhone,
+        originalEmail: email,
+        normalizedEmail: normalizedEmail
+      });
+
       // Obtenir le fingerprint de l'appareil
       const deviceFingerprint = getDeviceFingerprint();
       console.log('Fingerprint de l\'appareil:', deviceFingerprint);
 
-      // 1. Vérifier la blacklist - VERSION CORRIGÉE
+      // 1. Vérifier la blacklist - VERSION ULTRA ROBUSTE
       console.log('1. Vérification de la blacklist...');
       
-      // Vérifier le téléphone dans la blacklist
+      // Vérifier le téléphone dans la blacklist avec plusieurs formats
+      console.log('Vérification téléphone blacklist avec:', normalizedPhone);
       const { data: phoneBlacklist, error: phoneError } = await supabase
         .from('blacklist')
         .select('*')
         .eq('type', 'phone')
-        .eq('value', phone);
+        .eq('value', normalizedPhone);
 
       if (phoneError) {
         console.error('Erreur lors de la vérification téléphone blacklist:', phoneError);
-      } else if (phoneBlacklist && phoneBlacklist.length > 0) {
+        // En cas d'erreur de requête, on bloque par sécurité
+        return {
+          canReserve: false,
+          reason: 'Erreur de vérification de sécurité. Veuillez réessayer.'
+        };
+      }
+
+      console.log('Résultat requête téléphone blacklist:', phoneBlacklist);
+
+      if (phoneBlacklist && phoneBlacklist.length > 0) {
         console.log('❌ Téléphone trouvé dans la blacklist:', phoneBlacklist);
         return {
           canReserve: false,
           reason: 'Ce contact est bloqué. Contactez l\'administration.'
         };
+      } else {
+        console.log('✅ Téléphone NON trouvé dans la blacklist');
       }
 
       // Vérifier l'email dans la blacklist
+      console.log('Vérification email blacklist avec:', normalizedEmail);
       const { data: emailBlacklist, error: emailError } = await supabase
         .from('blacklist')
         .select('*')
         .eq('type', 'email')
-        .eq('value', email);
+        .eq('value', normalizedEmail);
 
       if (emailError) {
         console.error('Erreur lors de la vérification email blacklist:', emailError);
-      } else if (emailBlacklist && emailBlacklist.length > 0) {
+        // En cas d'erreur de requête, on bloque par sécurité
+        return {
+          canReserve: false,
+          reason: 'Erreur de vérification de sécurité. Veuillez réessayer.'
+        };
+      }
+
+      console.log('Résultat requête email blacklist:', emailBlacklist);
+
+      if (emailBlacklist && emailBlacklist.length > 0) {
         console.log('❌ Email trouvé dans la blacklist:', emailBlacklist);
         return {
           canReserve: false,
           reason: 'Ce contact est bloqué. Contactez l\'administration.'
         };
+      } else {
+        console.log('✅ Email NON trouvé dans la blacklist');
       }
 
       console.log('✅ Contact non présent dans la blacklist');
