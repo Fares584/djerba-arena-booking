@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 const Hero = () => {
   return (
-    <div className="relative bg-sport-dark text-white overflow-hidden">
+    <div className="relative bg-sport-dark text-white overflow-hidden min-h-screen">
       {/* Background video */}
       <video
           autoPlay
@@ -22,7 +22,7 @@ const Hero = () => {
       <div className="absolute inset-0 bg-black/50 z-0" />
 
       {/* Foreground content */}
-      <div className="container-custom relative z-10 py-16 md:py-24 lg:py-32">
+      <div className="container-custom relative z-10 py-16 md:py-24 lg:py-32 min-h-screen flex items-center">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
             <span className="text-sport-green">Réserve</span> ton match. <span className="text-sport-green">Joue</span>. <span className="text-sport-green">Gagne</span>.
