@@ -53,9 +53,6 @@ const Navbar = () => {
             <Link to="/about" className="text-sport-dark hover:text-sport-green font-medium transition-colors" onClick={handleLinkClick}>
               À Propos
             </Link>
-            <Link to="/login" className="btn-primary" onClick={handleLinkClick}>
-              Admin
-            </Link>
           </div>
         </div>
         
@@ -89,13 +86,6 @@ const Navbar = () => {
               onClick={handleLinkClick}
             >
               À Propos
-            </Link>
-            <Link 
-              to="/login" 
-              className="block btn-primary inline-block"
-              onClick={handleLinkClick}
-            >
-              Admin
             </Link>
           </div>
         )}
