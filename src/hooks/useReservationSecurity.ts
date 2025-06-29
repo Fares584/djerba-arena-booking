@@ -62,30 +62,66 @@ export function useReservationSecurity() {
       const deviceFingerprint = getDeviceFingerprint();
       console.log('Fingerprint de l\'appareil:', deviceFingerprint);
 
-      // 1. Vérifier la blacklist - VERSION ULTRA ROBUSTE
+      // 1. Vérifier la blacklist - VERSION ULTRA ROBUSTE AVEC DEBUG
       console.log('1. Vérification de la blacklist...');
       
-      // Vérifier le téléphone dans la blacklist avec plusieurs formats
+      // NOUVEAU: Récupérer TOUTE la blacklist pour debug
+      console.log('🔍 DEBUG: Récupération de toute la blacklist...');
+      const { data: allBlacklist, error: allBlacklistError } = await supabase
+        .from('blacklist')
+        .select('*');
+      
+      if (allBlacklistError) {
+        console.error('❌ Erreur lors de la récupération de toute la blacklist:', allBlacklistError);
+      } else {
+        console.log('📋 TOUTE LA BLACKLIST:', allBlacklist);
+        console.log('📋 Nombre d\'entrées dans la blacklist:', allBlacklist?.length || 0);
+      }
+      
+      // Vérifier le téléphone dans la blacklist avec PLUSIEURS FORMATS
       console.log('Vérification téléphone blacklist avec:', normalizedPhone);
-      const { data: phoneBlacklist, error: phoneError } = await supabase
+      
+      // Test avec le numéro normalisé
+      const { data: phoneBlacklist1, error: phoneError1 } = await supabase
         .from('blacklist')
         .select('*')
         .eq('type', 'phone')
         .eq('value', normalizedPhone);
 
-      if (phoneError) {
-        console.error('Erreur lors de la vérification téléphone blacklist:', phoneError);
-        // En cas d'erreur de requête, on bloque par sécurité
+      // Test avec le numéro original
+      const { data: phoneBlacklist2, error: phoneError2 } = await supabase
+        .from('blacklist')
+        .select('*')
+        .eq('type', 'phone')
+        .eq('value', phone);
+
+      // Test avec ILIKE pour voir s'il y a des différences de casse ou espaces
+      const { data: phoneBlacklist3, error: phoneError3 } = await supabase
+        .from('blacklist')
+        .select('*')
+        .eq('type', 'phone')
+        .ilike('value', `%${normalizedPhone}%`);
+
+      console.log('📞 Tests téléphone blacklist:');
+      console.log('  - Avec numéro normalisé (' + normalizedPhone + '):', phoneBlacklist1);
+      console.log('  - Avec numéro original (' + phone + '):', phoneBlacklist2);
+      console.log('  - Avec ILIKE pattern (' + normalizedPhone + '):', phoneBlacklist3);
+
+      if (phoneError1 || phoneError2 || phoneError3) {
+        console.error('Erreur lors de la vérification téléphone blacklist:', { phoneError1, phoneError2, phoneError3 });
         return {
           canReserve: false,
           reason: 'Erreur de vérification de sécurité. Veuillez réessayer.'
         };
       }
 
-      console.log('Résultat requête téléphone blacklist:', phoneBlacklist);
+      // Vérifier si le téléphone est bloqué avec n'importe lequel des formats
+      const isPhoneBlocked = (phoneBlacklist1 && phoneBlacklist1.length > 0) || 
+                            (phoneBlacklist2 && phoneBlacklist2.length > 0) || 
+                            (phoneBlacklist3 && phoneBlacklist3.length > 0);
 
-      if (phoneBlacklist && phoneBlacklist.length > 0) {
-        console.log('❌ Téléphone trouvé dans la blacklist:', phoneBlacklist);
+      if (isPhoneBlocked) {
+        console.log('❌ Téléphone trouvé dans la blacklist');
         return {
           canReserve: false,
           reason: 'Ce contact est bloqué. Contactez l\'administration.'
@@ -94,27 +130,50 @@ export function useReservationSecurity() {
         console.log('✅ Téléphone NON trouvé dans la blacklist');
       }
 
-      // Vérifier l'email dans la blacklist
+      // Vérifier l'email dans la blacklist avec PLUSIEURS FORMATS
       console.log('Vérification email blacklist avec:', normalizedEmail);
-      const { data: emailBlacklist, error: emailError } = await supabase
+      
+      // Test avec email normalisé
+      const { data: emailBlacklist1, error: emailError1 } = await supabase
         .from('blacklist')
         .select('*')
         .eq('type', 'email')
         .eq('value', normalizedEmail);
 
-      if (emailError) {
-        console.error('Erreur lors de la vérification email blacklist:', emailError);
-        // En cas d'erreur de requête, on bloque par sécurité
+      // Test avec email original
+      const { data: emailBlacklist2, error: emailError2 } = await supabase
+        .from('blacklist')
+        .select('*')
+        .eq('type', 'email')
+        .eq('value', email);
+
+      // Test avec ILIKE
+      const { data: emailBlacklist3, error: emailError3 } = await supabase
+        .from('blacklist')
+        .select('*')
+        .eq('type', 'email')
+        .ilike('value', `%${normalizedEmail}%`);
+
+      console.log('📧 Tests email blacklist:');
+      console.log('  - Avec email normalisé (' + normalizedEmail + '):', emailBlacklist1);
+      console.log('  - Avec email original (' + email + '):', emailBlacklist2);
+      console.log('  - Avec ILIKE pattern (' + normalizedEmail + '):', emailBlacklist3);
+
+      if (emailError1 || emailError2 || emailError3) {
+        console.error('Erreur lors de la vérification email blacklist:', { emailError1, emailError2, emailError3 });
         return {
           canReserve: false,
           reason: 'Erreur de vérification de sécurité. Veuillez réessayer.'
         };
       }
 
-      console.log('Résultat requête email blacklist:', emailBlacklist);
+      // Vérifier si l'email est bloqué avec n'importe lequel des formats
+      const isEmailBlocked = (emailBlacklist1 && emailBlacklist1.length > 0) || 
+                             (emailBlacklist2 && emailBlacklist2.length > 0) || 
+                             (emailBlacklist3 && emailBlacklist3.length > 0);
 
-      if (emailBlacklist && emailBlacklist.length > 0) {
-        console.log('❌ Email trouvé dans la blacklist:', emailBlacklist);
+      if (isEmailBlocked) {
+        console.log('❌ Email trouvé dans la blacklist');
         return {
           canReserve: false,
           reason: 'Ce contact est bloqué. Contactez l\'administration.'
