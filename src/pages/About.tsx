@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -48,129 +49,228 @@ const About = () => {
       {/* Facilities Section */}
       <section className="section-padding bg-sport-gray">
         <div className="container-custom">
-          <h2 className="text-3xl font-bold mb-10 text-center">Nos Installations</h2>
+          <h2 className="text-3xl font-bold mb-12 text-center">Nos Installations</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-8">
-            {/* Facility 1: Foot */}
-            <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-start">
-              <div className="mb-4 flex items-center">
-                <div className="w-12 h-12 rounded-full bg-sport-green/20 flex items-center justify-center mr-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {/* Facility 1: Terrains de Football */}
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+              <div className="mb-6 flex items-center">
+                <div className="w-16 h-16 rounded-full bg-sport-green/20 flex items-center justify-center mr-6">
                   {/* Football Icon */}
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-sport-green" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="2" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v8m-4-4h8" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-sport-green" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="2" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v8m-4-4h8" /></svg>
                 </div>
-                <h3 className="text-xl font-bold mb-0">Terrains de Football</h3>
+                <h3 className="text-2xl font-bold text-sport-dark">Terrains de Football</h3>
               </div>
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700 mb-6 leading-relaxed">
                 3 terrains de football à 6, 7 et 8 joueurs avec gazon synthétique de haute qualité, éclairage LED pour les matchs nocturnes et vestiaires équipés.
               </p>
-              <ul className="text-gray-700 space-y-1">
-                <li>• Surface synthétique professionnelle</li>
-                <li>• Éclairage LED pour jouer la nuit</li>
-                <li>• Filets et buts de compétition</li>
+              <ul className="text-gray-700 space-y-3">
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Surface synthétique professionnelle
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Éclairage LED pour jouer la nuit
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Filets et buts de compétition
+                </li>
               </ul>
             </div>
-            {/* Facility 2: Tennis */}
-            <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-start">
-              <div className="mb-4 flex items-center">
-                <div className="w-12 h-12 rounded-full bg-sport-green/20 flex items-center justify-center mr-4">
+
+            {/* Facility 2: Courts de Tennis */}
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+              <div className="mb-6 flex items-center">
+                <div className="w-16 h-16 rounded-full bg-sport-green/20 flex items-center justify-center mr-6">
                   {/* Tennis Icon */}
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-sport-green" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="2" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 2C6.5 7.5 6.5 16.5 12 22M12 2c5.5 5.5 5.5 14.5 0 20" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-sport-green" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="2" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 2C6.5 7.5 6.5 16.5 12 22M12 2c5.5 5.5 5.5 14.5 0 20" /></svg>
                 </div>
-                <h3 className="text-xl font-bold mb-0">Courts de Tennis</h3>
+                <h3 className="text-2xl font-bold text-sport-dark">Courts de Tennis</h3>
               </div>
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700 mb-6 leading-relaxed">
                 2 courts de tennis en dur entretenus quotidiennement, avec possibilité de location de matériel et de prendre des cours avec nos entraîneurs certifiés.
               </p>
-              <ul className="text-gray-700 space-y-1">
-                <li>• Surface en dur de qualité</li>
-                <li>• Location de raquettes et balles</li>
-                <li>• Cours disponibles avec nos pros</li>
+              <ul className="text-gray-700 space-y-3">
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Surface en dur de qualité
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Location de raquettes et balles
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Cours disponibles avec nos pros
+                </li>
               </ul>
             </div>
-            {/* Facility 3: Padel */}
-            <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-start">
-              <div className="mb-4 flex items-center">
-                <div className="w-12 h-12 rounded-full bg-sport-green/20 flex items-center justify-center mr-4">
+
+            {/* Facility 3: Courts de Padel */}
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+              <div className="mb-6 flex items-center">
+                <div className="w-16 h-16 rounded-full bg-sport-green/20 flex items-center justify-center mr-6">
                   {/* Padel Icon */}
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-sport-green" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="2" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 9H9m0 0v6" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-sport-green" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="2" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 9H9m0 0v6" /></svg>
                 </div>
-                <h3 className="text-xl font-bold mb-0">Courts de Padel</h3>
+                <h3 className="text-2xl font-bold text-sport-dark">Courts de Padel</h3>
               </div>
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700 mb-6 leading-relaxed">
                 2 courts de padel couverts pour jouer toute l'année, quelles que soient les conditions météorologiques. Matériel disponible à la location.
               </p>
-              <ul className="text-gray-700 space-y-1">
-                <li>• Courts couverts panoramiques</li>
-                <li>• Équipement de qualité professionnelle</li>
-                <li>• Initiation pour débutants disponible</li>
+              <ul className="text-gray-700 space-y-3">
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Courts couverts panoramiques
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Équipement de qualité professionnelle
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Initiation pour débutants disponible
+                </li>
               </ul>
             </div>
+
             {/* Facility 4: Espace Enfant */}
-            <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-start">
-              <div className="mb-4 flex items-center">
-                <div className="w-12 h-12 rounded-full bg-sport-green/20 flex items-center justify-center mr-4 text-sport-green font-bold text-2xl">
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+              <div className="mb-6 flex items-center">
+                <div className="w-16 h-16 rounded-full bg-sport-green/20 flex items-center justify-center mr-6 text-sport-green font-bold text-3xl">
                   👦
                 </div>
-                <h3 className="text-xl font-bold mb-0">Espace Enfant</h3>
+                <h3 className="text-2xl font-bold text-sport-dark">Espace Enfant</h3>
               </div>
-              <p className="text-gray-700 mb-4">
-                Un espace sécurisé et dédié pour permettre aux enfants de s’amuser pendant que les parents profitent de leur activité sportive.
+              <p className="text-gray-700 mb-6 leading-relaxed">
+                Un espace sécurisé et dédié pour permettre aux enfants de s'amuser pendant que les parents profitent de leur activité sportive.
               </p>
-              <ul className="text-gray-700 space-y-1">
-                <li>• Jeux adaptés pour petits</li>
-                <li>• Encadrement disponible</li>
-                <li>• Zone ombragée et sécurisée</li>
+              <ul className="text-gray-700 space-y-3">
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Jeux adaptés pour petits
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Encadrement disponible
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Zone ombragée et sécurisée
+                </li>
               </ul>
             </div>
+
             {/* Facility 5: Buvette */}
-            <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-start">
-              <div className="mb-4 flex items-center">
-                <div className="w-12 h-12 rounded-full bg-sport-green/20 flex items-center justify-center mr-4 text-sport-green font-bold text-2xl">
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+              <div className="mb-6 flex items-center">
+                <div className="w-16 h-16 rounded-full bg-sport-green/20 flex items-center justify-center mr-6 text-sport-green font-bold text-3xl">
                   🥤
                 </div>
-                <h3 className="text-xl font-bold mb-0">Buvette</h3>
+                <h3 className="text-2xl font-bold text-sport-dark">Buvette</h3>
               </div>
-              <p className="text-gray-700 mb-4">
-                Rafraîchissez-vous après l’effort grâce à notre buvette conviviale proposant boissons fraîches et snacks variés.
+              <p className="text-gray-700 mb-6 leading-relaxed">
+                Rafraîchissez-vous après l'effort grâce à notre buvette conviviale proposant boissons fraîches et snacks variés.
               </p>
-              <ul className="text-gray-700 space-y-1">
-                <li>• Boissons fraîches et chaudes</li>
-                <li>• Snacks et encas</li>
-                <li>• Espace détente</li>
+              <ul className="text-gray-700 space-y-3">
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Boissons fraîches et chaudes
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Snacks et encas
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Espace détente
+                </li>
               </ul>
             </div>
+
             {/* Facility 6: Location chaussures */}
-            <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-start">
-              <div className="mb-4 flex items-center">
-                <div className="w-12 h-12 rounded-full bg-sport-green/20 flex items-center justify-center mr-4 text-sport-green font-bold text-2xl">
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+              <div className="mb-6 flex items-center">
+                <div className="w-16 h-16 rounded-full bg-sport-green/20 flex items-center justify-center mr-6 text-sport-green font-bold text-3xl">
                   👟
                 </div>
-                <h3 className="text-xl font-bold mb-0">Location des chaussures de foot</h3>
+                <h3 className="text-2xl font-bold text-sport-dark">Location de chaussures</h3>
               </div>
-              <p className="text-gray-700 mb-4">
-                Vous n’avez pas de chaussures adaptées ? Profitez de notre service de location à petit prix, pour jouer sans souci !
+              <p className="text-gray-700 mb-6 leading-relaxed">
+                Vous n'avez pas de chaussures adaptées ? Profitez de notre service de location à petit prix, pour jouer sans souci !
               </p>
-              <ul className="text-gray-700 space-y-1">
-                <li>• Toutes tailles disponibles</li>
-                <li>• Matériel désinfecté après chaque utilisation</li>
-                <li>• Facilité de location sur place</li>
+              <ul className="text-gray-700 space-y-3">
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Toutes tailles disponibles
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Matériel désinfecté après chaque utilisation
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Facilité de location sur place
+                </li>
               </ul>
             </div>
-            {/* Facility 7: Parking sécurisé */}
-            <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-start">
-              <div className="mb-4 flex items-center">
-                <div className="w-12 h-12 rounded-full bg-sport-green/20 flex items-center justify-center mr-4">
-                  <ParkingMeter className="h-7 w-7 text-sport-green" />
+          </div>
+
+          {/* Additional Services */}
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Parking sécurisé */}
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+              <div className="mb-6 flex items-center">
+                <div className="w-16 h-16 rounded-full bg-sport-green/20 flex items-center justify-center mr-6">
+                  <ParkingMeter className="h-8 w-8 text-sport-green" />
                 </div>
-                <h3 className="text-xl font-bold mb-0">Parking sécurisé</h3>
+                <h3 className="text-2xl font-bold text-sport-dark">Parking sécurisé</h3>
               </div>
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700 mb-6 leading-relaxed">
                 Garez votre véhicule en toute sérénité grâce à notre parking sécurisé, réservé à notre clientèle.
               </p>
-              <ul className="text-gray-700 space-y-1">
-                <li>• Vidéosurveillance et accès contrôlé</li>
-                <li>• Accès facile aux terrains</li>
-                <li>• Parking éclairé la nuit</li>
+              <ul className="text-gray-700 space-y-3">
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Vidéosurveillance et accès contrôlé
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Accès facile aux terrains
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Parking éclairé la nuit
+                </li>
+              </ul>
+            </div>
+
+            {/* Vestiaires */}
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+              <div className="mb-6 flex items-center">
+                <div className="w-16 h-16 rounded-full bg-sport-green/20 flex items-center justify-center mr-6 text-sport-green font-bold text-3xl">
+                  🚿
+                </div>
+                <h3 className="text-2xl font-bold text-sport-dark">Vestiaires équipés</h3>
+              </div>
+              <p className="text-gray-700 mb-6 leading-relaxed">
+                Des vestiaires modernes et propres avec douches pour vous changer et vous rafraîchir avant et après vos matchs.
+              </p>
+              <ul className="text-gray-700 space-y-3">
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Douches avec eau chaude
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Casiers sécurisés
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Nettoyage quotidien
+                </li>
               </ul>
             </div>
           </div>
