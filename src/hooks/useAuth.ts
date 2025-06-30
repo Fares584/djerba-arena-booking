@@ -15,8 +15,18 @@ export function useAuth() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
-        setSession(session);
-        setUser(session?.user ?? null);
+        
+        if (event === 'SIGNED_OUT') {
+          console.log('User signed out, clearing state...');
+          setSession(null);
+          setUser(null);
+          // Nettoyer le localStorage
+          localStorage.clear();
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+        
         setLoading(false);
       }
     );
@@ -84,6 +94,12 @@ export function useAuth() {
       }
       
       console.log('Sign out successful');
+      
+      // Forcer la mise à jour de l'état
+      setSession(null);
+      setUser(null);
+      localStorage.clear();
+      
     } catch (error) {
       console.error('Error signing out:', error);
       throw error;

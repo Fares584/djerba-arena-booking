@@ -1,3 +1,4 @@
+
 import { Outlet } from 'react-router-dom';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { Button } from '@/components/ui/button';
@@ -15,10 +16,32 @@ const AdminLayout = () => {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
-      toast.success('Déconnexion réussie');
-      navigate('/login');
+      console.log('Starting logout process...');
+      
+      // Effectuer la déconnexion
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Logout error:', error);
+        toast.error('Erreur lors de la déconnexion');
+        return;
+      }
+      
+      console.log('Logout successful, redirecting to login...');
+      
+      // Nettoyer le localStorage au cas où
+      localStorage.clear();
+      
+      // Rediriger immédiatement vers la page de login
+      navigate('/login', { replace: true });
+      
+      // Afficher le message de succès après la redirection
+      setTimeout(() => {
+        toast.success('Déconnexion réussie');
+      }, 100);
+      
     } catch (error) {
+      console.error('Logout error:', error);
       toast.error('Erreur lors de la déconnexion');
     }
   };
