@@ -8,13 +8,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import AdminNavigation from '@/components/admin/AdminNavigation';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 const AdminLayout = () => {
-  const { role } = useRequireAuth();
+  useRequireAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { signOut } = useAuth();
-  const { isPlanningViewer } = useUserPermissions();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -44,31 +42,22 @@ const AdminLayout = () => {
     setIsMobileMenuOpen(false);
   };
 
-  const getHeaderTitle = () => {
-    if (isPlanningViewer) {
-      return 'Planning des Terrains';
-    }
-    return 'Administration';
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 w-full max-w-full overflow-x-hidden">
       {/* Header */}
       <header className="bg-white shadow-sm border-b w-full">
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 w-full max-w-full">
           <div className="flex items-center gap-4 min-w-0 flex-1">
-            {!isPlanningViewer && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="lg:hidden flex-shrink-0"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              >
-                {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden flex-shrink-0"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
             <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">
-              {getHeaderTitle()}
+              Administration
             </h1>
           </div>
           <div className="flex justify-end flex-shrink-0">
@@ -87,22 +76,20 @@ const AdminLayout = () => {
       </header>
 
       <div className="flex w-full max-w-full">
-        {/* Sidebar - masquée pour les planning viewers */}
-        {!isPlanningViewer && (
-          <aside className={`
-            ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-            lg:translate-x-0 fixed lg:static top-[73px] left-0 z-50 w-64 bg-white border-r
-            transition-transform duration-200 ease-in-out lg:transition-none
-            flex flex-col h-[calc(100vh-73px)] max-w-full
-          `}>
-            <div className="p-4 sm:p-6 flex-1 overflow-y-auto">
-              <AdminNavigation onMobileMenuClose={closeMobileMenu} />
-            </div>
-          </aside>
-        )}
+        {/* Sidebar */}
+        <aside className={`
+          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0 fixed lg:static top-[73px] left-0 z-50 w-64 bg-white border-r
+          transition-transform duration-200 ease-in-out lg:transition-none
+          flex flex-col h-[calc(100vh-73px)] max-w-full
+        `}>
+          <div className="p-4 sm:p-6 flex-1 overflow-y-auto">
+            <AdminNavigation onMobileMenuClose={closeMobileMenu} />
+          </div>
+        </aside>
 
         {/* Mobile overlay */}
-        {isMobileMenuOpen && !isPlanningViewer && (
+        {isMobileMenuOpen && (
           <div 
             className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden top-[73px]"
             onClick={() => setIsMobileMenuOpen(false)}

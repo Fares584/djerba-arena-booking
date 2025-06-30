@@ -11,7 +11,6 @@ import {
   Home,
   Shield
 } from 'lucide-react';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 interface AdminNavigationProps {
   onMobileMenuClose?: () => void;
@@ -19,7 +18,6 @@ interface AdminNavigationProps {
 
 const AdminNavigation = ({ onMobileMenuClose }: AdminNavigationProps) => {
   const location = useLocation();
-  const { canAccessOtherAdminPages } = useUserPermissions();
 
   const handleLinkClick = () => {
     if (onMobileMenuClose) {
@@ -27,7 +25,7 @@ const AdminNavigation = ({ onMobileMenuClose }: AdminNavigationProps) => {
     }
   };
 
-  const allNavItems = [
+  const navItems = [
     { path: '/admin', label: 'Dashboard', icon: Home, exact: true },
     { path: '/admin/reservations', label: 'Réservations', icon: Calendar },
     { path: '/admin/historique', label: 'Historique', icon: History },
@@ -37,11 +35,6 @@ const AdminNavigation = ({ onMobileMenuClose }: AdminNavigationProps) => {
     { path: '/admin/blacklist', label: 'Blacklist', icon: Shield },
     { path: '/admin/stats', label: 'Statistiques', icon: BarChart3 },
   ];
-
-  // Filtrer les éléments de navigation selon les permissions
-  const navItems = canAccessOtherAdminPages 
-    ? allNavItems 
-    : allNavItems.filter(item => item.path === '/admin/planning');
 
   return (
     <nav className="space-y-1">
