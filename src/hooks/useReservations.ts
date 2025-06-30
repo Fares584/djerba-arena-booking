@@ -196,8 +196,8 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
 
         console.log('✅ Réservation créée avec succès:', data);
         
-        // Envoyer la notification email à l'admin
-        if (terrains) {
+        // Envoyer la notification email à l'admin SEULEMENT si ce n'est PAS une création admin
+        if (!options?.isAdminCreation && terrains) {
           const terrain = terrains.find(t => t.id === data.terrain_id);
           if (terrain) {
             console.log('📧 Envoi de la notification email...');
@@ -216,6 +216,8 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
               terrain
             });
           }
+        } else if (options?.isAdminCreation) {
+          console.log('📧 Pas d\'envoi de notification - Création admin');
         }
         
         console.log('=== FIN CRÉATION RÉSERVATION ===');
