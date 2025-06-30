@@ -24,9 +24,16 @@ const Navbar = () => {
     <nav className="bg-white shadow-sm sticky top-0 z-50">
       <div className="container-custom py-4">
         <div className="flex justify-between items-center">
-          <Link to="/" className="flex items-center" onClick={handleLinkClick}>
-            <span className="text-sport-green font-bold text-2xl">Planet</span>
-            <span className="text-sport-dark font-bold text-2xl">Sports</span>
+          <Link to="/" className="flex items-center gap-3" onClick={handleLinkClick}>
+            <img 
+              src="/lovable-uploads/47436c87-c1d1-49d7-a102-359bca157816.png" 
+              alt="Planet Sports Logo" 
+              className="h-10 w-10"
+            />
+            <div className="flex items-center">
+              <span className="text-sport-green font-bold text-2xl">Planet</span>
+              <span className="text-sport-dark font-bold text-2xl">Sports</span>
+            </div>
           </Link>
           
           {/* Mobile menu button */}
