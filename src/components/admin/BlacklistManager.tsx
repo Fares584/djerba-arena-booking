@@ -34,27 +34,27 @@ const BlacklistManager = () => {
   };
 
   if (isLoading) {
-    return <div>Chargement...</div>;
+    return <div className="flex items-center justify-center p-8">Chargement...</div>;
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Shield className="h-6 w-6" />
-          Gestion de la Blacklist
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+          <Shield className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+          <span className="break-words">Gestion de la Blacklist</span>
         </h2>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-red-600 hover:bg-red-700">
-              <Plus className="mr-2 h-4 w-4" />
-              Ajouter à la blacklist
+            <Button className="bg-red-600 hover:bg-red-700 w-full sm:w-auto">
+              <Plus className="mr-2 h-4 w-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">Ajouter à la blacklist</span>
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="w-[95vw] max-w-md mx-auto">
             <DialogHeader>
-              <DialogTitle>Ajouter un contact à la blacklist</DialogTitle>
+              <DialogTitle className="text-lg">Ajouter un contact à la blacklist</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -65,7 +65,7 @@ const BlacklistManager = () => {
                     setNewEntry({ ...newEntry, type: value })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -85,6 +85,7 @@ const BlacklistManager = () => {
                   onChange={(e) => setNewEntry({ ...newEntry, value: e.target.value })}
                   placeholder={newEntry.type === 'phone' ? '12345678' : 'email@example.com'}
                   required
+                  className="w-full"
                 />
               </div>
 
@@ -95,15 +96,24 @@ const BlacklistManager = () => {
                   value={newEntry.reason}
                   onChange={(e) => setNewEntry({ ...newEntry, reason: e.target.value })}
                   placeholder="Raison du blocage..."
-                  className="h-20"
+                  className="h-20 w-full resize-none"
                 />
               </div>
 
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <div className="flex flex-col-reverse sm:flex-row justify-end space-y-2 space-y-reverse sm:space-y-0 sm:space-x-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsDialogOpen(false)}
+                  className="w-full sm:w-auto"
+                >
                   Annuler
                 </Button>
-                <Button type="submit" disabled={addToBlacklist.isPending}>
+                <Button 
+                  type="submit" 
+                  disabled={addToBlacklist.isPending}
+                  className="w-full sm:w-auto"
+                >
                   {addToBlacklist.isPending ? 'Ajout...' : 'Ajouter'}
                 </Button>
               </div>
@@ -112,23 +122,23 @@ const BlacklistManager = () => {
         </Dialog>
       </div>
 
-      <div className="grid gap-4">
+      <div className="space-y-4">
         {blacklist && blacklist.length > 0 ? (
           blacklist.map((entry) => (
-            <Card key={entry.id}>
+            <Card key={entry.id} className="w-full">
               <CardContent className="p-4">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                  <div className="space-y-2 flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <span className="font-semibold text-sm sm:text-base break-all">
                         {entry.type === 'phone' ? '📞' : '📧'} {entry.value}
                       </span>
-                      <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+                      <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded w-fit">
                         {entry.type === 'phone' ? 'Téléphone' : 'Email'}
                       </span>
                     </div>
                     {entry.reason && (
-                      <p className="text-sm text-gray-600">{entry.reason}</p>
+                      <p className="text-sm text-gray-600 break-words">{entry.reason}</p>
                     )}
                     <p className="text-xs text-gray-400">
                       Ajouté le {format(new Date(entry.created_at), 'PPP à HH:mm', { locale: fr })}
@@ -140,21 +150,23 @@ const BlacklistManager = () => {
                     size="sm"
                     onClick={() => removeFromBlacklist.mutate(entry.id)}
                     disabled={removeFromBlacklist.isPending}
+                    className="w-full sm:w-auto flex-shrink-0"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 mr-2 sm:mr-0" />
+                    <span className="sm:hidden">Supprimer</span>
                   </Button>
                 </div>
               </CardContent>
             </Card>
           ))
         ) : (
-          <Card>
+          <Card className="w-full">
             <CardContent className="p-8 text-center">
               <Shield className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 Aucun contact bloqué
               </h3>
-              <p className="text-gray-500">
+              <p className="text-gray-500 text-sm">
                 La blacklist est vide. Vous pouvez ajouter des contacts pour les bloquer.
               </p>
             </CardContent>

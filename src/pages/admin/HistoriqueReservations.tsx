@@ -48,45 +48,46 @@ const HistoriqueReservations = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <History className="h-8 w-8 text-sport-green" />
-        <h1 className="text-3xl font-bold">Historique des Réservations</h1>
+    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <History className="h-6 w-6 sm:h-8 sm:w-8 text-sport-green flex-shrink-0" />
+        <h1 className="text-2xl sm:text-3xl font-bold break-words">Historique des Réservations</h1>
       </div>
 
       {/* Search Bar */}
-      <div className="relative max-w-md">
+      <div className="relative w-full max-w-md">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
         <Input
           placeholder="Rechercher par nom du client..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
+          className="pl-10 w-full"
         />
       </div>
       
       {filteredReservations.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 w-full">
           {filteredReservations.map((reservation: Reservation) => (
-            <ReservationCard
-              key={reservation.id}
-              reservation={reservation}
-              terrainName={getTerrainName(reservation.terrain_id)}
-              onStatusChange={() => {}} // Pas de changement de statut pour l'historique
-              onEdit={() => {}} // Pas de modification pour l'historique
-              onDelete={(id) => setReservationToDelete(id)} // Permettre la suppression
-              isUpdating={deleteReservation.isPending}
-              isHistoryView={true} // Nouvelle prop pour indiquer que c'est la vue historique
-            />
+            <div key={reservation.id} className="w-full min-w-0">
+              <ReservationCard
+                reservation={reservation}
+                terrainName={getTerrainName(reservation.terrain_id)}
+                onStatusChange={() => {}} // Pas de changement de statut pour l'historique
+                onEdit={() => {}} // Pas de modification pour l'historique
+                onDelete={(id) => setReservationToDelete(id)} // Permettre la suppression
+                isUpdating={deleteReservation.isPending}
+                isHistoryView={true} // Nouvelle prop pour indiquer que c'est la vue historique
+              />
+            </div>
           ))}
         </div>
       ) : (
-        <div className="text-center py-20">
+        <div className="text-center py-12 sm:py-20">
           <Calendar className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-xl font-medium text-gray-900">
+          <h3 className="mt-2 text-lg sm:text-xl font-medium text-gray-900">
             {searchTerm ? 'Aucune réservation trouvée' : 'Aucun historique'}
           </h3>
-          <p className="mt-1 text-gray-500">
+          <p className="mt-1 text-gray-500 text-sm sm:text-base px-4">
             {searchTerm 
               ? `Aucune réservation dans l'historique ne correspond à "${searchTerm}"`
               : "Il n'y a pas encore de réservations dans l'historique."
@@ -97,19 +98,19 @@ const HistoriqueReservations = () => {
 
       {/* Dialog de confirmation de suppression */}
       <AlertDialog open={!!reservationToDelete} onOpenChange={() => setReservationToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[95vw] max-w-md mx-auto">
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-sm">
               Êtes-vous sûr de vouloir supprimer définitivement cette réservation de l'historique ? 
               Cette action est irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">Annuler</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDeleteConfirm}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
               disabled={deleteReservation.isPending}
             >
               {deleteReservation.isPending ? (
