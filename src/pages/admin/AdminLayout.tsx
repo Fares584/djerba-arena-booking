@@ -4,7 +4,7 @@ import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { Button } from '@/components/ui/button';
 import { LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import AdminNavigation from '@/components/admin/AdminNavigation';
@@ -12,37 +12,29 @@ import AdminNavigation from '@/components/admin/AdminNavigation';
 const AdminLayout = () => {
   useRequireAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
       console.log('Starting logout process...');
       
-      // Effectuer la déconnexion
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('Logout error:', error);
-        toast.error('Erreur lors de la déconnexion');
-        return;
-      }
-      
-      console.log('Logout successful, redirecting to login...');
-      
-      // Nettoyer le localStorage au cas où
-      localStorage.clear();
-      
       // Rediriger immédiatement vers la page de login
       navigate('/login', { replace: true });
       
-      // Afficher le message de succès après la redirection
-      setTimeout(() => {
-        toast.success('Déconnexion réussie');
-      }, 100);
+      // Effectuer la déconnexion après la redirection
+      await signOut();
+      
+      // Afficher le message de succès
+      toast.success('Déconnexion réussie');
       
     } catch (error) {
       console.error('Logout error:', error);
-      toast.error('Erreur lors de la déconnexion');
+      // On ne montre l'erreur que s'il y a vraiment un problème
+      // et seulement si on n'a pas encore redirigé
+      if (!window.location.pathname.includes('/login')) {
+        toast.error('Erreur lors de la déconnexion');
+      }
     }
   };
 
