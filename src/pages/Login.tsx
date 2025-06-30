@@ -53,22 +53,22 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-sport-gray py-12">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <div className="text-center mb-8">
+    <div className="min-h-screen flex items-center justify-center bg-sport-gray px-4 py-8 sm:py-12">
+      <div className="bg-white p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-md mx-4">
+        <div className="text-center mb-6 sm:mb-8">
           <Link to="/" className="flex items-center justify-center mb-4">
-            <span className="text-sport-green font-bold text-3xl">Planet</span>
-            <span className="text-sport-dark font-bold text-3xl">Sports</span>
+            <span className="text-sport-green font-bold text-2xl sm:text-3xl">Planet</span>
+            <span className="text-sport-dark font-bold text-2xl sm:text-3xl">Sports</span>
           </Link>
-          <h1 className="text-2xl font-bold mb-2">
+          <h1 className="text-xl sm:text-2xl font-bold mb-2">
             Connexion Administrateur
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 text-sm sm:text-base px-2">
             Accédez au tableau de bord pour gérer les terrains et les réservations.
           </p>
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
               Adresse email
@@ -81,6 +81,7 @@ const Login = () => {
               placeholder="admin@example.com"
               required
               disabled={isLoading}
+              className="w-full"
             />
           </div>
           
@@ -96,13 +97,14 @@ const Login = () => {
               placeholder="••••••••"
               required
               disabled={isLoading}
+              className="w-full"
             />
           </div>
           
-          <div>
+          <div className="pt-2">
             <Button 
               type="submit" 
-              className="btn-primary text-center w-full"
+              className="btn-primary text-center w-full h-12"
               disabled={isLoading}
             >
               {isLoading ? (
