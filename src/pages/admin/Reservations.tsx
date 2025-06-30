@@ -11,6 +11,7 @@ import { Reservation } from '@/lib/supabase';
 import ReservationForm from '@/components/admin/ReservationForm';
 import EditReservationForm from '@/components/admin/EditReservationForm';
 import ReservationCard from '@/components/admin/ReservationCard';
+import PushNotificationSettings from '@/components/admin/PushNotificationSettings';
 
 const Reservations = () => {
   // Afficher toutes les réservations (en_attente, confirmée, etc.) sauf abonnements
@@ -134,6 +135,9 @@ const Reservations = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Paramètres des notifications push */}
+      <PushNotificationSettings />
 
       {/* Search Bar */}
       <div className="relative max-w-md">
