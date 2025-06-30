@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-interface PushSubscription {
+interface PushSubscriptionData {
   endpoint: string;
   expirationTime?: number | null;
   keys: {
@@ -14,7 +14,7 @@ interface PushSubscription {
 
 export const usePushNotifications = () => {
   const [isSupported, setIsSupported] = useState(false);
-  const [subscription, setSubscription] = useState<PushSubscription | null>(null);
+  const [subscription, setSubscription] = useState<PushSubscriptionData | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
@@ -27,10 +27,18 @@ export const usePushNotifications = () => {
   const checkSubscriptionStatus = async () => {
     try {
       const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
+      const pushSubscription = await registration.pushManager.getSubscription();
       
-      if (subscription) {
-        setSubscription(subscription as any);
+      if (pushSubscription) {
+        const subscriptionData: PushSubscriptionData = {
+          endpoint: pushSubscription.endpoint,
+          expirationTime: pushSubscription.expirationTime,
+          keys: {
+            p256dh: arrayBufferToBase64(pushSubscription.getKey('p256dh')!),
+            auth: arrayBufferToBase64(pushSubscription.getKey('auth')!)
+          }
+        };
+        setSubscription(subscriptionData);
         setIsSubscribed(true);
       }
     } catch (error) {
@@ -58,20 +66,29 @@ export const usePushNotifications = () => {
       await navigator.serviceWorker.ready;
 
       // Créer l'abonnement push
-      const subscription = await registration.pushManager.subscribe({
+      const pushSubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(
-          'BEl62iUYgUivxIkv69yViEuiBIa40HI80YkC1srgDmg' // Clé VAPID publique
+          'BEl62iUYgUivxIkv69yViEuiBIa40HI80YkCnN1srgDmg' // Clé VAPID publique
         )
       });
+
+      const subscriptionData: PushSubscriptionData = {
+        endpoint: pushSubscription.endpoint,
+        expirationTime: pushSubscription.expirationTime,
+        keys: {
+          p256dh: arrayBufferToBase64(pushSubscription.getKey('p256dh')!),
+          auth: arrayBufferToBase64(pushSubscription.getKey('auth')!)
+        }
+      };
 
       // Sauvegarder l'abonnement dans Supabase
       const { error } = await supabase
         .from('push_subscriptions')
         .upsert({
-          endpoint: subscription.endpoint,
-          p256dh: (subscription as any).keys.p256dh,
-          auth: (subscription as any).keys.auth,
+          endpoint: subscriptionData.endpoint,
+          p256dh: subscriptionData.keys.p256dh,
+          auth: subscriptionData.keys.auth,
           user_agent: navigator.userAgent,
           created_at: new Date().toISOString()
         });
@@ -82,7 +99,7 @@ export const usePushNotifications = () => {
         return;
       }
 
-      setSubscription(subscription as any);
+      setSubscription(subscriptionData);
       setIsSubscribed(true);
       toast.success('Notifications push activées avec succès !');
 
@@ -96,7 +113,12 @@ export const usePushNotifications = () => {
     if (!subscription) return;
 
     try {
-      await subscription.unsubscribe();
+      const registration = await navigator.serviceWorker.ready;
+      const pushSubscription = await registration.pushManager.getSubscription();
+      
+      if (pushSubscription) {
+        await pushSubscription.unsubscribe();
+      }
       
       // Supprimer l'abonnement de Supabase
       const { error } = await supabase
@@ -125,6 +147,16 @@ export const usePushNotifications = () => {
     unsubscribeFromPushNotifications
   };
 };
+
+// Fonction utilitaire pour convertir ArrayBuffer en Base64
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return window.btoa(binary);
+}
 
 // Fonction utilitaire pour convertir la clé VAPID
 function urlBase64ToUint8Array(base64String: string) {
