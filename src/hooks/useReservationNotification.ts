@@ -50,13 +50,11 @@ export const useReservationNotification = () => {
     },
     onSuccess: (data) => {
       console.log('✅ Hook: Notification envoyée avec succès');
-      if (data?.emailId) {
-        toast.success('📧 Email de notification envoyé !');
-      }
+      // Suppression du toast de succès - l'utilisateur n'a pas besoin de savoir si l'email a été envoyé
     },
     onError: (error) => {
       console.error('❌ Échec de l\'envoi de la notification:', error);
-      toast.error(`❌ Erreur email: ${error.message}`);
+      // Suppression du toast d'erreur aussi - pas nécessaire d'informer l'utilisateur des problèmes d'email
       // On ne fait pas échouer la création de réservation si l'email échoue
     }
   });
