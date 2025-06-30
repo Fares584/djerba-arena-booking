@@ -1,4 +1,3 @@
-
 import { Outlet } from 'react-router-dom';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,7 @@ const AdminLayout = () => {
     try {
       await supabase.auth.signOut();
       toast.success('Déconnexion réussie');
-      navigate('/');
+      navigate('/login');
     } catch (error) {
       toast.error('Erreur lors de la déconnexion');
     }
