@@ -4,13 +4,15 @@ import { useTerrains } from '@/hooks/useTerrains';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
-import { CalendarCheck, Users, ChartBar } from 'lucide-react';
+import { CalendarCheck, Users, ChartBar, ExternalLink } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Reservation } from '@/lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   // Exclure les réservations d'abonnement des statistiques
@@ -28,6 +30,8 @@ const Dashboard = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedReservations, setSelectedReservations] = useState<Reservation[]>([]);
   const [dialogTitle, setDialogTitle] = useState('');
+  
+  const navigate = useNavigate();
   
   useEffect(() => {
     if (reservations) {
@@ -84,6 +88,11 @@ const Dashboard = () => {
     setSelectedReservations(filteredReservations);
     setDialogTitle(title);
     setIsDialogOpen(true);
+  };
+
+  const handleClientClick = (clientName: string) => {
+    // Naviguer vers la page des réservations avec le nom du client comme paramètre de recherche
+    navigate(`/admin/reservations?search=${encodeURIComponent(clientName)}`);
   };
 
   const getTerrainName = (terrainId: number) => {
@@ -276,13 +285,22 @@ const Dashboard = () => {
                       <TableHead>Heure</TableHead>
                       <TableHead>Durée</TableHead>
                       <TableHead>Statut</TableHead>
+                      <TableHead>Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {selectedReservations.map((reservation) => (
                       <TableRow key={reservation.id}>
                         <TableCell className="font-medium">#{reservation.id}</TableCell>
-                        <TableCell>{reservation.nom_client}</TableCell>
+                        <TableCell>
+                          <button
+                            onClick={() => handleClientClick(reservation.nom_client)}
+                            className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-medium text-left"
+                            title={`Voir les réservations de ${reservation.nom_client}`}
+                          >
+                            {reservation.nom_client}
+                          </button>
+                        </TableCell>
                         <TableCell>{reservation.email}</TableCell>
                         <TableCell>{reservation.tel}</TableCell>
                         <TableCell>{getTerrainName(reservation.terrain_id)}</TableCell>
@@ -295,6 +313,17 @@ const Dashboard = () => {
                           <Badge className={getStatusClass(reservation.statut)}>
                             {getStatusLabel(reservation.statut)}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleClientClick(reservation.nom_client)}
+                            className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            Voir
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -309,12 +338,29 @@ const Dashboard = () => {
                     <CardContent className="p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <h3 className="font-semibold text-lg">{reservation.nom_client}</h3>
+                          <button
+                            onClick={() => handleClientClick(reservation.nom_client)}
+                            className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-semibold text-lg text-left"
+                            title={`Voir les réservations de ${reservation.nom_client}`}
+                          >
+                            {reservation.nom_client}
+                          </button>
                           <p className="text-sm text-gray-600">#{reservation.id}</p>
                         </div>
-                        <Badge className={getStatusClass(reservation.statut)}>
-                          {getStatusLabel(reservation.statut)}
-                        </Badge>
+                        <div className="flex flex-col items-end gap-2">
+                          <Badge className={getStatusClass(reservation.statut)}>
+                            {getStatusLabel(reservation.statut)}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleClientClick(reservation.nom_client)}
+                            className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            Voir
+                          </Button>
+                        </div>
                       </div>
                       
                       <div className="space-y-2 text-sm">
