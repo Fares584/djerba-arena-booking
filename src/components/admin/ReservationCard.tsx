@@ -222,10 +222,21 @@ const ReservationCard = ({
           </div>
         )}
 
-        {/* Message pour vue historique */}
+        {/* Actions pour la vue historique - Bouton suppression seulement */}
         {isHistoryView && (
-          <div className="text-center py-4 bg-gray-100 rounded-lg">
-            <span className="text-gray-600 font-medium">Réservation terminée</span>
+          <div className="pt-4 border-t-2 border-gray-100">
+            <div className="flex justify-center">
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-red-600 border-red-600 hover:bg-red-50 font-medium"
+                disabled={isUpdating}
+                onClick={() => onDelete(reservation.id)}
+              >
+                <Trash2 className="h-5 w-5 mr-2" />
+                Supprimer définitivement
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>

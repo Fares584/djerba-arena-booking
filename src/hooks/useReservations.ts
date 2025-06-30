@@ -240,3 +240,40 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
     },
   });
 }
+
+export function useDeleteReservation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (reservationId: number) => {
+      try {
+        console.log('🗑️ Suppression de la réservation:', reservationId);
+        
+        const { error } = await supabase
+          .from('reservations')
+          .delete()
+          .eq('id', reservationId);
+
+        if (error) {
+          console.error("❌ Erreur lors de la suppression:", error);
+          throw error;
+        }
+
+        console.log('✅ Réservation supprimée avec succès');
+        return reservationId;
+      } catch (error) {
+        console.error("❌ Erreur dans la mutation de suppression:", error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reservations'] });
+      queryClient.invalidateQueries({ queryKey: ['reservations-history'] });
+      toast.success("Réservation supprimée avec succès !");
+    },
+    onError: (error) => {
+      console.error("❌ Erreur lors de la suppression:", error);
+      toast.error("Erreur lors de la suppression de la réservation");
+    },
+  });
+}

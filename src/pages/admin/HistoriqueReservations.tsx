@@ -1,11 +1,12 @@
 
 import { useState } from 'react';
-import { useReservationsHistory } from '@/hooks/useReservations';
+import { useReservationsHistory, useDeleteReservation } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
 import { Input } from '@/components/ui/input';
 import { Loader2, Search, History, Calendar } from 'lucide-react';
 import { Reservation } from '@/lib/supabase';
 import ReservationCard from '@/components/admin/ReservationCard';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const HistoriqueReservations = () => {
   // Afficher les réservations passées confirmées ET les réservations annulées
@@ -14,7 +15,9 @@ const HistoriqueReservations = () => {
     excludeSubscriptions: true
   });
   const { data: terrains } = useTerrains();
+  const deleteReservation = useDeleteReservation();
   const [searchTerm, setSearchTerm] = useState('');
+  const [reservationToDelete, setReservationToDelete] = useState<number | null>(null);
   
   const getTerrainName = (terrainId: number) => {
     if (!terrains) return 'Inconnu';
@@ -26,6 +29,13 @@ const HistoriqueReservations = () => {
   const filteredReservations = reservations?.filter(reservation =>
     reservation.nom_client.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
+
+  const handleDeleteConfirm = () => {
+    if (reservationToDelete) {
+      deleteReservation.mutate(reservationToDelete);
+      setReservationToDelete(null);
+    }
+  };
 
   // Reservations are already sorted by date (descending) from the hook
 
@@ -64,8 +74,8 @@ const HistoriqueReservations = () => {
               terrainName={getTerrainName(reservation.terrain_id)}
               onStatusChange={() => {}} // Pas de changement de statut pour l'historique
               onEdit={() => {}} // Pas de modification pour l'historique
-              onDelete={() => {}} // Pas de suppression pour l'historique
-              isUpdating={false}
+              onDelete={(id) => setReservationToDelete(id)} // Permettre la suppression
+              isUpdating={deleteReservation.isPending}
               isHistoryView={true} // Nouvelle prop pour indiquer que c'est la vue historique
             />
           ))}
@@ -84,6 +94,36 @@ const HistoriqueReservations = () => {
           </p>
         </div>
       )}
+
+      {/* Dialog de confirmation de suppression */}
+      <AlertDialog open={!!reservationToDelete} onOpenChange={() => setReservationToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer définitivement cette réservation de l'historique ? 
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteReservation.isPending}
+            >
+              {deleteReservation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                'Supprimer définitivement'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
