@@ -25,7 +25,8 @@ export const useReservationNotification = () => {
       console.log('📧 Envoi de notification email pour réservation:', reservation.id);
       console.log('📧 Données à envoyer:', { reservation, terrain });
       
-      const { data, error } = await supabase.functions.invoke('send-reservation-notification', {
+      // Envoyer l'email de notification
+      const { data: emailData, error: emailError } = await supabase.functions.invoke('send-reservation-notification', {
         body: {
           reservation,
           terrain: {
@@ -35,27 +36,45 @@ export const useReservationNotification = () => {
         }
       });
 
-      if (error) {
-        console.error('❌ Erreur lors de l\'envoi de la notification:', error);
-        throw new Error(`Erreur notification: ${error.message}`);
+      if (emailError) {
+        console.error('❌ Erreur lors de l\'envoi de la notification email:', emailError);
+      } else {
+        console.log('✅ Email de notification envoyé avec succès:', emailData);
       }
 
-      if (data?.error) {
-        console.error('❌ Erreur dans la réponse:', data.error);
-        throw new Error(`Erreur serveur: ${data.error}`);
+      // Envoyer la notification push
+      const dateFormatted = new Date(reservation.date).toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push-notification', {
+        body: {
+          title: '🏟️ Nouvelle Réservation',
+          body: `${reservation.nom_client} - ${terrain.nom} le ${dateFormatted} à ${reservation.heure}`,
+          url: '/admin/reservations'
+        }
+      });
+
+      if (pushError) {
+        console.error('❌ Erreur lors de l\'envoi de la notification push:', pushError);
+      } else {
+        console.log('✅ Notification push envoyée avec succès:', pushData);
       }
 
-      console.log('✅ Notification envoyée avec succès:', data);
-      return data;
+      // On retourne le succès même si une des notifications échoue
+      return { emailData, pushData };
     },
     onSuccess: (data) => {
-      console.log('✅ Hook: Notification envoyée avec succès');
-      // Suppression du toast de succès - l'utilisateur n'a pas besoin de savoir si l'email a été envoyé
+      console.log('✅ Hook: Notifications envoyées avec succès');
+      // Suppression du toast de succès - l'utilisateur n'a pas besoin de savoir si l'email/push a été envoyé
     },
     onError: (error) => {
-      console.error('❌ Échec de l\'envoi de la notification:', error);
-      // Suppression du toast d'erreur aussi - pas nécessaire d'informer l'utilisateur des problèmes d'email
-      // On ne fait pas échouer la création de réservation si l'email échoue
+      console.error('❌ Échec de l\'envoi des notifications:', error);
+      // Suppression du toast d'erreur aussi - pas nécessaire d'informer l'utilisateur des problèmes de notification
+      // On ne fait pas échouer la création de réservation si les notifications échouent
     }
   });
 };
