@@ -26,14 +26,10 @@ const Navbar = () => {
         <div className="flex justify-between items-center">
           <Link to="/" className="flex items-center gap-3" onClick={handleLinkClick}>
             <img 
-              src="/lovable-uploads/47436c87-c1d1-49d7-a102-359bca157816.png" 
+              src="/lovable-uploads/326cd0aa-e64c-4789-8b9b-0b5679c1c2fd.png" 
               alt="Planet Sports Logo" 
-              className="h-10 w-10"
+              className="h-12 w-auto"
             />
-            <div className="flex items-center">
-              <span className="text-sport-green font-bold text-2xl">Planet</span>
-              <span className="text-sport-dark font-bold text-2xl">Sports</span>
-            </div>
           </Link>
           
           {/* Mobile menu button */}
