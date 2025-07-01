@@ -35,6 +35,20 @@ const ReservationSuccessDialog: React.FC<ReservationSuccessDialogProps> = ({
           ✅ Votre réservation a été confirmée avec succès !
         </p>
         
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start space-x-2">
+            <Phone className="text-blue-600 w-5 h-5 mt-0.5 flex-shrink-0" />
+            <div className="text-left">
+              <p className="font-semibold text-blue-800 mb-2">
+                📞 Confirmation par téléphone :
+              </p>
+              <p className="text-sm text-blue-700">
+                Veuillez garder votre téléphone à côté de vous pour recevoir l'appel de confirmation de votre réservation.
+              </p>
+            </div>
+          </div>
+        </div>
+        
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
           <div className="flex items-start space-x-2">
             <Phone className="text-orange-600 w-5 h-5 mt-0.5 flex-shrink-0" />
