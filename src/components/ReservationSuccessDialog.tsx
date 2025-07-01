@@ -32,7 +32,7 @@ const ReservationSuccessDialog: React.FC<ReservationSuccessDialogProps> = ({
       </DialogHeader>
       <div className="text-center space-y-4 text-gray-800">
         <p className="text-lg font-semibold text-sport-green">
-          ✅ Votre réservation a été confirmée avec succès !
+          ✅ Votre réservation a été envoyée avec succès !
         </p>
         
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -53,10 +53,6 @@ const ReservationSuccessDialog: React.FC<ReservationSuccessDialogProps> = ({
             </div>
           </div>
         </div>
-        
-        <p className="text-sm text-gray-600">
-          Merci de votre confiance ! Nous vous attendons pour votre séance.
-        </p>
       </div>
       <DialogFooter>
         <Button 
