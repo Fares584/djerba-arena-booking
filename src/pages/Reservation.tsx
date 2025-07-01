@@ -12,7 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Calendar, Clock, User, Phone, Mail, MapPin } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Calendar, Clock, User, Phone, Mail, MapPin, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import TerrainSelector from '@/components/TerrainSelector';
 import { calculatePrice, isNightTime } from '@/lib/supabase';
@@ -316,6 +317,15 @@ const Reservation = () => {
 
       <section className="section-padding bg-sport-gray">
         <div className="container-custom max-w-4xl">
+          {/* Alert Message */}
+          <Alert className="mb-8 border-orange-200 bg-orange-50">
+            <AlertTriangle className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              <strong>Important :</strong> Veuillez vérifier attentivement votre nom et votre numéro de téléphone avant d'envoyer le formulaire. 
+              En cas de numéro incorrect ou manquant, nous ne pourrons pas vous contacter pour la confirmation et votre réservation sera automatiquement annulée.
+            </AlertDescription>
+          </Alert>
+
           <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8">
             
             {/* Type Selection */}
