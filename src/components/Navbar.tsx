@@ -28,7 +28,7 @@ const Navbar = () => {
             <img 
               src="/lovable-uploads/47436c87-c1d1-49d7-a102-359bca157816.png" 
               alt="Planet Sports Logo" 
-              className="h-10 w-10"
+              className="h-14 w-14"
             />
             <div className="flex items-center">
               <span className="text-sport-green font-bold text-2xl">Planet</span>
