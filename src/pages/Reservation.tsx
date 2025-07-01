@@ -320,9 +320,15 @@ const Reservation = () => {
           {/* Alert Message */}
           <Alert className="mb-8 border-orange-200 bg-orange-50">
             <AlertTriangle className="h-4 w-4 text-orange-600" />
-            <AlertDescription className="text-orange-800">
-              <strong>Important :</strong> Veuillez vérifier attentivement votre nom et votre numéro de téléphone avant d'envoyer le formulaire. 
-              En cas de numéro incorrect ou manquant, nous ne pourrons pas vous contacter pour la confirmation et votre réservation sera automatiquement annulée.
+            <AlertDescription className="text-orange-800 space-y-3">
+              <div>
+                <strong>Important :</strong> Veuillez vérifier attentivement votre nom et votre numéro de téléphone avant d'envoyer le formulaire. 
+                En cas de numéro incorrect ou manquant, nous ne pourrons pas vous contacter pour la confirmation et votre réservation sera automatiquement annulée.
+              </div>
+              <div className="border-t border-orange-300 pt-3">
+                <strong>Annulation :</strong> En cas d'annulation, veuillez nous contacter <strong>au moins 48h à l'avance</strong> au : 
+                <span className="font-bold ml-1">📞 29 612 809</span>
+              </div>
             </AlertDescription>
           </Alert>
 
