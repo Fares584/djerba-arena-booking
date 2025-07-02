@@ -26,7 +26,7 @@ const Navbar = () => {
         <div className="flex justify-between items-center">
           <Link to="/" className="flex items-center gap-3" onClick={handleLinkClick}>
             <img 
-              src="/lovable-uploads/ca0c6556-daff-439e-90aa-bee2cce8f3ce.png" 
+              src="/lovable-uploads/c1c59295-ca54-4ba0-9b1f-4070b818f7b6.png" 
               alt="Planet Sports Logo" 
               className="h-10 w-10"
             />
