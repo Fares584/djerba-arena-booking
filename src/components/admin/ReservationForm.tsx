@@ -16,13 +16,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { isNightTime, calculatePrice } from '@/lib/supabase';
 import { validateName, validateTunisianPhone } from '@/lib/validation';
 import { toast } from 'sonner';
+import ReservationTypeSelector from '@/components/reservation/ReservationTypeSelector';
+import TerrainSelector from '@/components/TerrainSelector';
 import TimeSlotSelector from '@/components/TimeSlotSelector';
 
 interface ReservationFormProps {
   onSuccess: () => void;
 }
 
-// Fonction pour générer les créneaux horaires pour le football (identique à EditReservationForm)
+// Fonction pour générer les créneaux horaires pour le football
 const generateTimeSlotsForFoot = (startHour: number, startMinute: number, endHour: number, endMinute: number) => {
   const slots: string[] = [];
   let dt = new Date(2000, 0, 1, startHour, startMinute);
@@ -39,6 +41,8 @@ const generateTimeSlotsForFoot = (startHour: number, startMinute: number, endHou
 };
 
 const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
+  // Ajout du state pour le type de sport
+  const [selectedType, setSelectedType] = useState<string>('');
   const [formData, setFormData] = useState({
     nom_client: '',
     tel: '',
@@ -49,21 +53,31 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     remarque: ''
   });
 
-  const { data: terrains } = useTerrains();
+  const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
   const { data: reservations = [] } = useReservations();
   const { data: abonnements = [] } = useAbonnements();
   const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
   const createReservation = useCreateReservation({ isAdminCreation: true });
   const { checkReservationLimits } = useReservationSecurity();
 
-  // Trouver le terrain sélectionné
-  const selectedTerrain = terrains?.find(t => t.id === formData.terrain_id);
+  // Filtrage des terrains selon le type sélectionné
+  const filteredTerrains = selectedType 
+    ? allTerrains.filter(t => t.type === selectedType)
+    : [];
 
-  // Déterminer le type de terrain (identique à EditReservationForm)
+  // Réinitialiser le terrain sélectionné quand le type change
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, terrain_id: null, heure: '' }));
+  }, [selectedType]);
+
+  // Trouver le terrain sélectionné
+  const selectedTerrain = allTerrains.find(t => t.id === formData.terrain_id);
+
+  // Déterminer le type de terrain
   const isFoot6 = !!(selectedTerrain && selectedTerrain.type === 'foot' && selectedTerrain.nom.includes('6'));
   const isFoot7or8 = !!(selectedTerrain && selectedTerrain.type === 'foot' && (selectedTerrain.nom.includes('7') || selectedTerrain.nom.includes('8')));
 
-  // Générer les créneaux horaires selon le type de terrain (identique à EditReservationForm)
+  // Générer les créneaux horaires selon le type de terrain
   const timeSlotsForSelectedTerrain = useMemo(() => {
     if (isFoot6) {
       // Vérifier si c'est un samedi (jour 6 de la semaine)
@@ -130,9 +144,9 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
 
   // Calculer le prix total
   const calculateTotalPrice = (): number => {
-    if (!formData.terrain_id || !formData.heure || !terrains) return 0;
+    if (!formData.terrain_id || !formData.heure || !allTerrains) return 0;
     
-    const terrain = terrains.find(t => t.id === formData.terrain_id);
+    const terrain = allTerrains.find(t => t.id === formData.terrain_id);
     if (!terrain) return 0;
     
     const effectiveDuration = getEffectiveDuration();
@@ -219,118 +233,126 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Informations client */}
-        <div>
-          <Label htmlFor="nom_client">Nom du client</Label>
-          <Input
-            id="nom_client"
-            value={formData.nom_client}
-            onChange={(e) => handleChange('nom_client', e.target.value)}
-            maxLength={40}
-            placeholder="Nom et prénom (lettres uniquement)"
-            required
-          />
-          <p className="text-gray-500 text-xs mt-1">
-            {formData.nom_client.length}/40 caractères (lettres uniquement)
-          </p>
-        </div>
+    <form onSubmit={handleSubmit} className="space-y-6 p-4">
+      {/* Choix du type de sport */}
+      <ReservationTypeSelector selectedType={selectedType} setSelectedType={setSelectedType} />
 
+      {/* Choix du terrain - affiché après sélection du type */}
+      {selectedType && (
         <div>
-          <Label htmlFor="tel">Téléphone</Label>
-          <Input
-            id="tel"
-            value={formData.tel}
-            onChange={(e) => handleChange('tel', e.target.value)}
-            placeholder="Ex: 12345678 ou +21612345678"
-            required
-          />
-          <p className="text-gray-500 text-xs mt-1">
-            Numéro tunisien (8 chiffres)
-          </p>
-        </div>
-
-        <div>
-          <Label htmlFor="terrain_id">Terrain</Label>
-          <Select 
-            value={formData.terrain_id?.toString() || ""} 
-            onValueChange={(value) => handleChange('terrain_id', parseInt(value))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionnez un terrain" />
-            </SelectTrigger>
-            <SelectContent>
-              {terrains?.map((terrain) => (
-                <SelectItem key={terrain.id} value={terrain.id.toString()}>
-                  {terrain.nom} - {terrain.type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Date et heure */}
-        <div>
-          <Label htmlFor="date">Date</Label>
-          <Input
-            id="date"
-            type="date"
-            value={formData.date}
-            onChange={(e) => handleChange('date', e.target.value)}
-            required
+          <Label>Choisissez le terrain</Label>
+          <TerrainSelector
+            terrains={filteredTerrains}
+            selectedTerrainId={formData.terrain_id}
+            onTerrainSelect={(terrainId) => handleChange('terrain_id', terrainId)}
           />
         </div>
+      )}
 
+      {/* Informations client - affiché après sélection du terrain */}
+      {formData.terrain_id && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="nom_client">Nom du client</Label>
+            <Input
+              id="nom_client"
+              value={formData.nom_client}
+              onChange={(e) => handleChange('nom_client', e.target.value)}
+              maxLength={40}
+              placeholder="Nom et prénom (lettres uniquement)"
+              required
+            />
+            <p className="text-gray-500 text-xs mt-1">
+              {formData.nom_client.length}/40 caractères (lettres uniquement)
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="tel">Téléphone</Label>
+            <Input
+              id="tel"
+              value={formData.tel}
+              onChange={(e) => handleChange('tel', e.target.value)}
+              placeholder="Ex: 12345678 ou +21612345678"
+              required
+            />
+            <p className="text-gray-500 text-xs mt-1">
+              Numéro tunisien (8 chiffres)
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Date et heure - affiché après informations client */}
+      {formData.nom_client && formData.tel && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="date">Date</Label>
+            <Input
+              id="date"
+              type="date"
+              value={formData.date}
+              onChange={(e) => handleChange('date', e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="heure">Heure</Label>
+            <TimeSlotSelector
+              timeSlots={timeSlotsForSelectedTerrain}
+              selectedTime={formData.heure}
+              isTimeSlotAvailable={isTimeSlotAvailable}
+              onTimeSelect={(time) => handleChange('heure', time)}
+              loading={false}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Durée - affiché après sélection de l'heure */}
+      {formData.heure && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="duree">Durée</Label>
+            {selectedTerrain?.type === 'foot' ? (
+              <div className="w-full border rounded-md p-2 bg-gray-100 text-gray-700 text-sm flex items-center h-9">
+                1h30 (fixe pour football)
+              </div>
+            ) : (
+              <Select 
+                value={formData.duree} 
+                onValueChange={(value) => handleChange('duree', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Durée" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 heure</SelectItem>
+                  <SelectItem value="2">2 heures</SelectItem>
+                  <SelectItem value="3">3 heures</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          {/* Espace vide pour équilibrer la grille */}
+          <div></div>
+        </div>
+      )}
+
+      {/* Remarques - affiché après durée */}
+      {formData.heure && (
         <div>
-          <Label htmlFor="heure">Heure</Label>
-          <TimeSlotSelector
-            timeSlots={timeSlotsForSelectedTerrain}
-            selectedTime={formData.heure}
-            isTimeSlotAvailable={isTimeSlotAvailable}
-            onTimeSelect={(time) => handleChange('heure', time)}
-            loading={false}
+          <Label htmlFor="remarque">Remarques</Label>
+          <Textarea
+            id="remarque"
+            value={formData.remarque}
+            onChange={(e) => handleChange('remarque', e.target.value)}
+            className="h-20"
           />
         </div>
-
-        {/* Durée */}
-        <div>
-          <Label htmlFor="duree">Durée</Label>
-          {selectedTerrain?.type === 'foot' ? (
-            <div className="w-full border rounded-md p-2 bg-gray-100 text-gray-700 text-sm flex items-center h-9">
-              1h30 (fixe pour football)
-            </div>
-          ) : (
-            <Select 
-              value={formData.duree} 
-              onValueChange={(value) => handleChange('duree', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Durée" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">1 heure</SelectItem>
-                <SelectItem value="2">2 heures</SelectItem>
-                <SelectItem value="3">3 heures</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-        </div>
-
-        {/* Espace vide pour équilibrer la grille */}
-        <div></div>
-      </div>
-
-      {/* Remarques */}
-      <div>
-        <Label htmlFor="remarque">Remarques</Label>
-        <Textarea
-          id="remarque"
-          value={formData.remarque}
-          onChange={(e) => handleChange('remarque', e.target.value)}
-          className="h-20"
-        />
-      </div>
+      )}
 
       {/* Affichage des informations de créneau et prix */}
       {formData.heure && selectedTerrain && (
@@ -367,7 +389,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
         </Button>
         <Button 
           type="submit" 
-          disabled={createReservation.isPending}
+          disabled={createReservation.isPending || !formData.heure}
           className="bg-sport-green hover:bg-sport-dark"
         >
           {createReservation.isPending ? (
