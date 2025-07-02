@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Check, X, Edit, Trash2, Clock, MapPin, User, Phone, Mail, Calendar } from 'lucide-react';
+import { Check, X, Edit, Trash2, Clock, MapPin, User, Phone, Mail, Calendar, Shield, Globe } from 'lucide-react';
 import { Reservation } from '@/lib/supabase';
 
 interface ReservationCardProps {
@@ -70,6 +70,9 @@ const ReservationCard = ({
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  // Déterminer si la réservation vient de l'admin ou du site web
+  const isAdminReservation = reservation.email?.includes('admin.reservation.') || false;
+
   return (
     <Card className={`hover:shadow-xl transition-all duration-300 ${statusConfig.bgLight} ${statusConfig.borderColor} border-2 ${isHistoryView ? 'opacity-80' : ''} w-full max-w-full`}>
       {/* Header avec statut et numéro */}
@@ -81,11 +84,25 @@ const ReservationCard = ({
             </div>
             <span className="text-base sm:text-lg font-bold text-gray-700">#{reservation.id}</span>
           </div>
-          {isHistoryView && (
-            <Badge variant="outline" className="text-gray-500 border-gray-300 w-fit">
-              Passée
-            </Badge>
-          )}
+          <div className="flex flex-col gap-2">
+            {isHistoryView && (
+              <Badge variant="outline" className="text-gray-500 border-gray-300 w-fit">
+                Passée
+              </Badge>
+            )}
+            {/* Badge pour indiquer l'origine de la réservation */}
+            {isAdminReservation ? (
+              <Badge className="bg-blue-600 hover:bg-blue-700 text-white w-fit">
+                <Shield className="h-3 w-3 mr-1" />
+                Admin
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-green-600 border-green-600 w-fit">
+                <Globe className="h-3 w-3 mr-1" />
+                Site Web
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
       
@@ -111,10 +128,12 @@ const ReservationCard = ({
                     {reservation.tel}
                   </a>
                 </div>
-                <div className="flex items-center gap-2 text-gray-600 min-w-0">
-                  <Mail className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm break-all min-w-0" title={reservation.email}>{reservation.email}</span>
-                </div>
+                {!isAdminReservation && (
+                  <div className="flex items-center gap-2 text-gray-600 min-w-0">
+                    <Mail className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm break-all min-w-0" title={reservation.email}>{reservation.email}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -159,9 +178,11 @@ const ReservationCard = ({
           </div>
         </div>
 
-        {/* Date de création */}
+        {/* Date de création avec indication de l'origine */}
         <div className="bg-gray-50 rounded-lg p-3 text-center">
-          <span className="text-xs sm:text-sm text-gray-500">Réservé le </span>
+          <span className="text-xs sm:text-sm text-gray-500">
+            {isAdminReservation ? 'Créée par admin le ' : 'Réservée sur le site le '}
+          </span>
           <span className="font-medium text-gray-700 text-xs sm:text-sm">
             {reservation.created_at 
               ? format(new Date(reservation.created_at), 'dd/MM/yyyy à HH:mm', { locale: fr })
