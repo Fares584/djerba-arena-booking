@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useReservations } from '@/hooks/useReservations';
@@ -41,6 +42,7 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
   const [formData, setFormData] = useState({
     nom_client: reservation.nom_client || '',
     tel: reservation.tel || '',
+    email: reservation.email || '',
     terrain_id: reservation.terrain_id,
     date: reservation.date || '',
     heure: reservation.heure || '',
@@ -145,7 +147,7 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
         .update({
           nom_client: formData.nom_client,
           tel: formData.tel,
-          // Garder l'email existant sans permettre sa modification
+          email: formData.email,
           terrain_id: formData.terrain_id,
           date: formData.date,
           heure: formData.heure,
@@ -176,7 +178,7 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Informations client */}
         <div>
-          <Label htmlFor="nom_client">Nom complet du client</Label>
+          <Label htmlFor="nom_client">Nom du client</Label>
           <Input
             id="nom_client"
             value={formData.nom_client}
@@ -191,6 +193,17 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
             id="tel"
             value={formData.tel}
             onChange={(e) => handleChange('tel', e.target.value)}
+            required
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleChange('email', e.target.value)}
             required
           />
         </div>

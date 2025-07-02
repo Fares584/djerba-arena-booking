@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -13,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { isNightTime, calculatePrice } from '@/lib/supabase';
-import { validateName, validateTunisianPhone } from '@/lib/validation';
+import { validateName, validateTunisianPhone, validateEmail } from '@/lib/validation';
 import { toast } from 'sonner';
 import TimeSlotSelector from '@/components/TimeSlotSelector';
 
@@ -41,6 +42,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   const [formData, setFormData] = useState({
     nom_client: '',
     tel: '',
+    email: '',
     terrain_id: null as number | null,
     date: '',
     heure: '',
@@ -176,14 +178,16 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     // Validation des champs
     const nameError = validateName(formData.nom_client);
     const phoneError = validateTunisianPhone(formData.tel);
+    const emailError = validateEmail(formData.email);
 
-    if (nameError || phoneError) {
+    if (nameError || phoneError || emailError) {
       if (nameError) toast.error(`Nom: ${nameError}`);
       if (phoneError) toast.error(`Téléphone: ${phoneError}`);
+      if (emailError) toast.error(`Email: ${emailError}`);
       return;
     }
     
-    if (!formData.terrain_id || !formData.date || !formData.heure || !formData.nom_client || !formData.tel) {
+    if (!formData.terrain_id || !formData.date || !formData.heure || !formData.nom_client || !formData.email || !formData.tel) {
       toast.error("Veuillez remplir tous les champs obligatoires.");
       return;
     }
@@ -195,7 +199,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     createReservation.mutate({
       nom_client: formData.nom_client,
       tel: formData.tel,
-      email: `admin-${Date.now()}@planetsports.local`, // Email généré automatiquement
+      email: formData.email,
       terrain_id: formData.terrain_id,
       date: formData.date,
       heure: formData.heure,
@@ -219,7 +223,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Informations client */}
         <div>
-          <Label htmlFor="nom_client">Nom complet du client</Label>
+          <Label htmlFor="nom_client">Nom du client</Label>
           <Input
             id="nom_client"
             value={formData.nom_client}
@@ -245,6 +249,18 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
           <p className="text-gray-500 text-xs mt-1">
             Numéro tunisien (8 chiffres)
           </p>
+        </div>
+
+        <div>
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleChange('email', e.target.value)}
+            placeholder="votre@email.com"
+            required
+          />
         </div>
 
         <div>
