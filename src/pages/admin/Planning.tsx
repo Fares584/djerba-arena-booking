@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useReservations } from '@/hooks/useReservations';
 import { useTerrains } from '@/hooks/useTerrains';
@@ -672,14 +671,14 @@ const Planning = () => {
 
       {/* Dialog pour afficher les détails de la réservation */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <User className="h-6 w-6" />
               Détails de la réservation
               {selectedReservation?.abonnement_id && (
                 <Badge className="bg-purple-500 text-white flex items-center gap-1">
-                  <Crown className="h-3 w-3" />
+                  <Crown className="h-4 w-4" />
                   Abonnement
                 </Badge>
               )}
@@ -687,73 +686,84 @@ const Planning = () => {
           </DialogHeader>
           
           {selectedReservation && (
-            <div className="space-y-4">
+            <div className="space-y-6 p-2">
               {/* Statut */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <span className="text-sm font-medium text-gray-600">Statut:</span>
-                <Badge variant={getStatusBadgeVariant(selectedReservation.statut)}>
+                <Badge variant={getStatusBadgeVariant(selectedReservation.statut)} className="text-sm">
                   {getStatusLabel(selectedReservation.statut)}
                 </Badge>
               </div>
 
               {/* Informations client */}
-              <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900">Informations client</h4>
+              <div className="space-y-4 bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-lg border-l-4 border-blue-500">
+                <h4 className="font-semibold text-lg text-blue-900 flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Informations client
+                </h4>
                 
-                <div className="flex items-center gap-3">
-                  <User className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <div className="font-medium">{selectedReservation.nom_client}</div>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                    <User className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm text-gray-600">Nom complet</div>
+                      <div className="font-semibold text-lg">{selectedReservation.nom_client}</div>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <div className="text-sm text-gray-600">Téléphone</div>
-                    <div className="font-medium">{selectedReservation.tel}</div>
+                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                    <Phone className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm text-gray-600">Téléphone</div>
+                      <div className="font-semibold text-lg">{selectedReservation.tel}</div>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <div className="text-sm text-gray-600">Email</div>
-                    <div className="font-medium">{selectedReservation.email}</div>
+                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                    <Mail className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm text-gray-600">Email</div>
+                      <div className="font-semibold break-all">{selectedReservation.email}</div>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Informations réservation */}
-              <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900">Détails de la réservation</h4>
+              <div className="space-y-4 bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg border-l-4 border-green-500">
+                <h4 className="font-semibold text-lg text-green-900 flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Détails de la réservation
+                </h4>
                 
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <div className="text-sm text-gray-600">Terrain</div>
-                    <div className="font-medium">
-                      {terrains?.find(t => t.id === selectedReservation.terrain_id)?.nom || 'Terrain inconnu'}
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                    <MapPin className="h-5 w-5 text-green-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm text-gray-600">Terrain</div>
+                      <div className="font-semibold text-lg">
+                        {terrains?.find(t => t.id === selectedReservation.terrain_id)?.nom || 'Terrain inconnu'}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <div className="text-sm text-gray-600">Date</div>
-                    <div className="font-medium">
-                      {format(new Date(selectedReservation.date), 'EEEE dd MMMM yyyy', { locale: fr })}
+                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                    <Calendar className="h-5 w-5 text-green-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm text-gray-600">Date</div>
+                      <div className="font-semibold text-lg">
+                        {format(new Date(selectedReservation.date), 'EEEE dd MMMM yyyy', { locale: fr })}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-3">
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <div className="text-sm text-gray-600">Heure et durée</div>
-                    <div className="font-medium">
-                      {selectedReservation.heure} - {selectedReservation.duree}h
+                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                    <Clock className="h-5 w-5 text-green-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm text-gray-600">Heure et durée</div>
+                      <div className="font-semibold text-lg">
+                        {selectedReservation.heure} - {selectedReservation.duree}h
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -761,25 +771,27 @@ const Planning = () => {
 
               {/* Remarque si présente */}
               {selectedReservation.remarque && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Remarque</h4>
-                  <p className="text-sm text-gray-700">{selectedReservation.remarque}</p>
+                <div className="bg-yellow-50 p-6 rounded-lg border-l-4 border-yellow-500">
+                  <h4 className="font-semibold text-lg text-yellow-900 mb-3">Remarque</h4>
+                  <p className="text-yellow-800 bg-white p-3 rounded-lg">{selectedReservation.remarque}</p>
                 </div>
               )}
 
               {/* Informations d'abonnement si présente */}
               {selectedReservation.abonnement_id && (
-                <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg border-l-4 border-purple-500">
-                  <h4 className="font-medium text-purple-900 mb-2 flex items-center gap-2">
-                    <Crown className="h-4 w-4" />
+                <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg border-l-4 border-purple-500">
+                  <h4 className="font-semibold text-lg text-purple-900 mb-3 flex items-center gap-2">
+                    <Crown className="h-5 w-5" />
                     Abonnement Premium
                   </h4>
-                  <p className="text-sm text-purple-700">
-                    Cette réservation fait partie de l'abonnement #{selectedReservation.abonnement_id}
-                  </p>
-                  <p className="text-xs text-purple-600 mt-1">
-                    Réservation automatique générée par le système d'abonnement
-                  </p>
+                  <div className="bg-white p-4 rounded-lg space-y-2">
+                    <p className="text-purple-700 font-medium">
+                      Cette réservation fait partie de l'abonnement #{selectedReservation.abonnement_id}
+                    </p>
+                    <p className="text-sm text-purple-600">
+                      Réservation automatique générée par le système d'abonnement
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
