@@ -58,10 +58,10 @@ function App() {
             <Route path="/fields" element={<Fields />} />
             <Route path="/reservation" element={<Reservation />} />
             <Route path="/about" element={<About />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/secure-access-portal-2k24-auth-gateway-xyz789" element={<Login />} />
             
             {/* Admin routes */}
-            <Route path="/admin" element={<AdminLayout />}>
+            <Route path="/admin-control-panel-secure-dashboard-2k24-mgmt-xyz789" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="reservations" element={<Reservations />} />
               <Route path="historique" element={<HistoriqueReservations />} />

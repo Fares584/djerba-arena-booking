@@ -26,14 +26,14 @@ const AdminNavigation = ({ onMobileMenuClose }: AdminNavigationProps) => {
   };
 
   const navItems = [
-    { path: '/admin', label: 'Dashboard', icon: Home, exact: true },
-    { path: '/admin/reservations', label: 'Réservations', icon: Calendar },
-    { path: '/admin/historique', label: 'Historique', icon: History },
-    { path: '/admin/terrains', label: 'Terrains', icon: MapPin },
-    { path: '/admin/planning', label: 'Planning', icon: Calendar },
-    { path: '/admin/abonnements', label: 'Abonnements', icon: Users },
-    { path: '/admin/blacklist', label: 'Blacklist', icon: Shield },
-    { path: '/admin/stats', label: 'Statistiques', icon: BarChart3 },
+    { path: '/admin-control-panel-secure-dashboard-2k24-mgmt-xyz789', label: 'Dashboard', icon: Home, exact: true },
+    { path: '/admin-control-panel-secure-dashboard-2k24-mgmt-xyz789/reservations', label: 'Réservations', icon: Calendar },
+    { path: '/admin-control-panel-secure-dashboard-2k24-mgmt-xyz789/historique', label: 'Historique', icon: History },
+    { path: '/admin-control-panel-secure-dashboard-2k24-mgmt-xyz789/terrains', label: 'Terrains', icon: MapPin },
+    { path: '/admin-control-panel-secure-dashboard-2k24-mgmt-xyz789/planning', label: 'Planning', icon: Calendar },
+    { path: '/admin-control-panel-secure-dashboard-2k24-mgmt-xyz789/abonnements', label: 'Abonnements', icon: Users },
+    { path: '/admin-control-panel-secure-dashboard-2k24-mgmt-xyz789/blacklist', label: 'Blacklist', icon: Shield },
+    { path: '/admin-control-panel-secure-dashboard-2k24-mgmt-xyz789/stats', label: 'Statistiques', icon: BarChart3 },
   ];
 
   return (

@@ -20,7 +20,7 @@ const AdminLayout = () => {
       console.log('Starting logout process...');
       
       // Rediriger immédiatement vers la page de login
-      navigate('/login', { replace: true });
+      navigate('/secure-access-portal-2k24-auth-gateway-xyz789', { replace: true });
       
       // Effectuer la déconnexion après la redirection
       await signOut();
@@ -32,7 +32,7 @@ const AdminLayout = () => {
       console.error('Logout error:', error);
       // On ne montre l'erreur que s'il y a vraiment un problème
       // et seulement si on n'a pas encore redirigé
-      if (!window.location.pathname.includes('/login')) {
+      if (!window.location.pathname.includes('/secure-access-portal-2k24-auth-gateway-xyz789')) {
         toast.error('Erreur lors de la déconnexion');
       }
     }

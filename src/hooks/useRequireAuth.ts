@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './useAuth';
 
-export function useRequireAuth(redirectTo = '/login') {
+export function useRequireAuth(redirectTo = '/secure-access-portal-2k24-auth-gateway-xyz789') {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 

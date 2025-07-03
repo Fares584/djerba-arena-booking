@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
@@ -21,7 +20,7 @@ const Login = () => {
   useEffect(() => {
     if (user) {
       console.log('User already logged in, redirecting to admin');
-      navigate('/admin');
+      navigate('/admin-control-panel-secure-dashboard-2k24-mgmt-xyz789');
     }
   }, [user, navigate]);
   
@@ -38,7 +37,7 @@ const Login = () => {
     try {
       await signIn(adminEmail, password);
       toast.success('Connexion réussie');
-      navigate('/admin');
+      navigate('/admin-control-panel-secure-dashboard-2k24-mgmt-xyz789');
     } catch (error: any) {
       console.error('Auth error:', error);
       
