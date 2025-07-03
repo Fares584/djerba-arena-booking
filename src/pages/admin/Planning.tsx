@@ -5,7 +5,7 @@ import { useTerrains } from '@/hooks/useTerrains';
 import { format, addDays, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight, Loader2, Calendar, User, Phone, Mail, MapPin, Clock, Info } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Calendar, User, Phone, Mail, MapPin, Clock, Info, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -180,10 +180,9 @@ const Planning = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
-  // Correction ici : Récupérer toutes les réservations (ne PAS exclure les réservations d'abonnement)
+  // Récupérer toutes les réservations (y compris les abonnements)
   const { data: reservations, isLoading: reservationsLoading } = useReservations({
     terrain_id: selectedTerrain || undefined
-    // On ne met PAS excludeSubscriptions:true !
   });
 
   // Generate array of dates for the week (today + 7 days)
@@ -239,15 +238,31 @@ const Planning = () => {
   const getCellClassName = (reservation?: Reservation) => {
     if (!reservation) return 'bg-white hover:bg-gray-50 border border-gray-200';
     
-    switch (reservation.statut) {
-      case 'confirmee':
-        return 'bg-green-100 text-green-800 border border-green-300 hover:bg-green-200';
-      case 'en_attente':
-        return 'bg-yellow-100 text-yellow-800 border border-yellow-300 hover:bg-yellow-200';
-      case 'annulee':
-        return 'bg-red-100 text-red-800 border border-red-300 hover:bg-red-200';
-      default:
-        return 'bg-white hover:bg-gray-50 border border-gray-200';
+    // Différents styles pour les abonnements vs réservations normales
+    const isSubscription = !!reservation.abonnement_id;
+    
+    if (isSubscription) {
+      switch (reservation.statut) {
+        case 'confirmee':
+          return 'bg-gradient-to-br from-purple-100 to-purple-200 text-purple-900 border-2 border-purple-300 hover:from-purple-200 hover:to-purple-300 shadow-sm';
+        case 'en_attente':
+          return 'bg-gradient-to-br from-purple-50 to-yellow-100 text-purple-800 border-2 border-purple-200 hover:from-purple-100 hover:to-yellow-200';
+        case 'annulee':
+          return 'bg-gradient-to-br from-red-100 to-purple-100 text-red-800 border-2 border-red-300 hover:from-red-200 hover:to-purple-200';
+        default:
+          return 'bg-gradient-to-br from-purple-50 to-white text-purple-800 border-2 border-purple-200';
+      }
+    } else {
+      switch (reservation.statut) {
+        case 'confirmee':
+          return 'bg-green-100 text-green-800 border border-green-300 hover:bg-green-200';
+        case 'en_attente':
+          return 'bg-yellow-100 text-yellow-800 border border-yellow-300 hover:bg-yellow-200';
+        case 'annulee':
+          return 'bg-red-100 text-red-800 border border-red-300 hover:bg-red-200';
+        default:
+          return 'bg-white hover:bg-gray-50 border border-gray-200';
+      }
     }
   };
 
@@ -308,6 +323,35 @@ const Planning = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl md:text-3xl font-bold">Planning des Terrains</h1>
+        
+        {/* Légende pour différencier les types de réservations */}
+        <div className="hidden md:flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
+            <span>Réservation normale</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-gradient-to-br from-purple-100 to-purple-200 border-2 border-purple-300 rounded"></div>
+            <Crown className="h-3 w-3 text-purple-600" />
+            <span>Abonnement</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Légende mobile */}
+      <div className="md:hidden mb-4 p-3 bg-gray-50 rounded-lg">
+        <div className="text-sm font-medium mb-2">Légende :</div>
+        <div className="flex flex-wrap gap-3 text-xs">
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
+            <span>Normal</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-gradient-to-br from-purple-100 to-purple-200 border-2 border-purple-300 rounded"></div>
+            <Crown className="h-3 w-3 text-purple-600" />
+            <span>Abonnement</span>
+          </div>
+        </div>
       </div>
       
       <div className="bg-white p-4 md:p-6 rounded-lg shadow mb-8">
@@ -445,7 +489,6 @@ const Planning = () => {
                       {/* Créer une structure de table avec gestion des rowspan */}
                       <table className="w-full border-collapse">
                         <tbody>
-                          {/* Générer tous les créneaux possibles pour ce terrain */}
                           {(() => {
                             // Créer un set de tous les créneaux uniques pour ce terrain en fonction des jours
                             const allTimeSlots = new Set<string>();
@@ -505,7 +548,13 @@ const Planning = () => {
                                       onClick={() => occupation.reservation && handleReservationClick(occupation.reservation)}
                                     >
                                       {occupation.reservation ? (
-                                        <div className="text-xs">
+                                        <div className="text-xs relative">
+                                          {/* Badge abonnement pour desktop */}
+                                          {occupation.reservation.abonnement_id && (
+                                            <div className="absolute -top-1 -right-1">
+                                              <Crown className="h-3 w-3 text-purple-600" />
+                                            </div>
+                                          )}
                                           <div className="font-medium truncate" title={occupation.reservation.nom_client}>
                                             {occupation.reservation.nom_client}
                                           </div>
@@ -553,8 +602,18 @@ const Planning = () => {
                               } ${isSpecialSaturdaySlot ? 'ring-2 ring-orange-300 bg-gradient-to-r from-orange-50 to-white' : ''}`}
                               onClick={() => occupation.reservation && handleReservationClick(occupation.reservation)}
                             >
+                              {/* Badge abonnement pour mobile */}
+                              {occupation.reservation?.abonnement_id && (
+                                <div className="absolute -top-2 -right-2 flex items-center">
+                                  <Badge className="bg-purple-500 text-white text-xs px-2 py-1 rounded-full shadow-lg flex items-center gap-1">
+                                    <Crown className="h-3 w-3" />
+                                    Abonnement
+                                  </Badge>
+                                </div>
+                              )}
+                              
                               {/* Indicateur spécial pour le premier créneau du samedi */}
-                              {isSpecialSaturdaySlot && (
+                              {isSpecialSaturdaySlot && !occupation.reservation?.abonnement_id && (
                                 <div className="absolute -top-2 -right-2 flex items-center">
                                   <Badge className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full shadow-lg">
                                     🌅 Ouverture
@@ -573,7 +632,12 @@ const Planning = () => {
                                 </div>
                                 {occupation.reservation ? (
                                   <div className="text-right">
-                                    <div className="font-medium text-sm">{occupation.reservation.nom_client}</div>
+                                    <div className="font-medium text-sm flex items-center gap-1">
+                                      {occupation.reservation.nom_client}
+                                      {occupation.reservation.abonnement_id && (
+                                        <Crown className="h-3 w-3 text-purple-600" />
+                                      )}
+                                    </div>
                                     <div className="text-xs text-gray-600">{occupation.reservation.tel}</div>
                                     <div className="text-xs opacity-75">{occupation.reservation.duree}h</div>
                                   </div>
@@ -613,6 +677,12 @@ const Planning = () => {
             <DialogTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
               Détails de la réservation
+              {selectedReservation?.abonnement_id && (
+                <Badge className="bg-purple-500 text-white flex items-center gap-1">
+                  <Crown className="h-3 w-3" />
+                  Abonnement
+                </Badge>
+              )}
             </DialogTitle>
           </DialogHeader>
           
@@ -699,10 +769,16 @@ const Planning = () => {
 
               {/* Informations d'abonnement si présente */}
               {selectedReservation.abonnement_id && (
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-2">Abonnement</h4>
-                  <p className="text-sm text-blue-700">
+                <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg border-l-4 border-purple-500">
+                  <h4 className="font-medium text-purple-900 mb-2 flex items-center gap-2">
+                    <Crown className="h-4 w-4" />
+                    Abonnement Premium
+                  </h4>
+                  <p className="text-sm text-purple-700">
                     Cette réservation fait partie de l'abonnement #{selectedReservation.abonnement_id}
+                  </p>
+                  <p className="text-xs text-purple-600 mt-1">
+                    Réservation automatique générée par le système d'abonnement
                   </p>
                 </div>
               )}
