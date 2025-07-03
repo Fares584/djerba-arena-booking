@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 
 const Login = () => {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, user } = useAuth();
@@ -25,28 +26,26 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!password) {
-      toast.error('Veuillez saisir le mot de passe.');
+    if (!email || !password) {
+      toast.error('Veuillez remplir tous les champs.');
       return;
     }
     
     setIsLoading(true);
     
     try {
-      // Utiliser un email fixe pour l'administrateur
-      const adminEmail = 'admin@planetsports.com';
-      await signIn(adminEmail, password);
+      await signIn(email, password);
       toast.success('Connexion réussie');
       navigate('/admin');
     } catch (error: any) {
       console.error('Auth error:', error);
       
       if (error.message?.includes('Invalid login credentials')) {
-        toast.error('Mot de passe incorrect.');
+        toast.error('Email ou mot de passe incorrect.');
       } else if (error.message?.includes('Email not confirmed')) {
         toast.error('Veuillez confirmer votre email avant de vous connecter.');
       } else {
-        toast.error(error.message || 'Échec de la connexion. Vérifiez votre mot de passe.');
+        toast.error(error.message || 'Échec de la connexion. Vérifiez vos identifiants.');
       }
     } finally {
       setIsLoading(false);
@@ -65,14 +64,30 @@ const Login = () => {
             Connexion Administrateur
           </h1>
           <p className="text-gray-600 text-sm sm:text-base px-2">
-            Saisissez le mot de passe pour accéder au tableau de bord.
+            Accédez au tableau de bord pour gérer les terrains et les réservations.
           </p>
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Adresse email
+            </label>
+            <Input 
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@example.com"
+              required
+              disabled={isLoading}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Mot de passe administrateur
+              Mot de passe
             </label>
             <Input 
               id="password"
