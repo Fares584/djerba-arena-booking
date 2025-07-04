@@ -68,7 +68,7 @@ export default {
 				"sport-dark": "#333333",
 				"sport-light": "#FFFFFF",
 				"sport-gray": "#F5F5F5",
-				"sport-accent": "#FF6B35"
+				"sport-accent": "#ed8b17"
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
