@@ -73,6 +73,14 @@ const ReservationCard = ({
   // Déterminer si la réservation vient de l'admin ou du site web
   const isAdminReservation = reservation.email?.includes('admin.reservation.') || false;
 
+  // Fonction pour gérer l'appel téléphonique
+  const handlePhoneCall = (phoneNumber: string) => {
+    const telUrl = `tel:${phoneNumber}`;
+    // Utiliser window.open pour forcer l'ouverture externe
+    window.open(telUrl, '_blank');
+    return false;
+  };
+
   return (
     <Card className={`hover:shadow-xl transition-all duration-300 ${statusConfig.bgLight} ${statusConfig.borderColor} border-2 ${isHistoryView ? 'opacity-80' : ''} w-full max-w-full`}>
       {/* Header avec statut et numéro */}
@@ -122,6 +130,11 @@ const ReservationCard = ({
                   <Phone className="h-4 w-4 text-blue-500 flex-shrink-0" />
                   <a 
                     href={`tel:${reservation.tel}`}
+                    target="_blank"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handlePhoneCall(reservation.tel);
+                    }}
                     className="font-medium text-sm sm:text-lg text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer break-all"
                     title={`Appeler ${reservation.tel}`}
                   >
