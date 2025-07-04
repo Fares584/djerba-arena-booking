@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -30,7 +31,7 @@ const Navbar = () => {
               className="h-10 w-auto object-contain"
             />
             <div className="flex items-center">
-              <span className="text-sport-green font-bold text-2xl">Planet</span>
+              <span className="font-bold text-2xl" style={{ color: '#1b6a3f' }}>Planet</span>
               <span className="text-sport-accent font-bold text-2xl">Sports</span>
             </div>
           </Link>
