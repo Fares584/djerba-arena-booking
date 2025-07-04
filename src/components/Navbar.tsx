@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -32,7 +31,7 @@ const Navbar = () => {
             />
             <div className="flex items-center">
               <span className="text-sport-green font-bold text-2xl">Planet</span>
-              <span className="text-sport-dark font-bold text-2xl">Sports</span>
+              <span className="text-sport-accent font-bold text-2xl">Sports</span>
             </div>
           </Link>
           
