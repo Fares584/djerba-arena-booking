@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useUpdateAbonnement, useAbonnements } from '@/hooks/useAbonnements';
-import { useReservations } from '@/hooks/useReservations';
+import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,7 +38,6 @@ interface EditAbonnementFormProps {
 }
 
 const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementFormProps) => {
-  // Ajout state choix type
   const [selectedType, setSelectedType] = useState<string>('');
   const [selectedTerrainId, setSelectedTerrainId] = useState<number | null>(abonnement.terrain_id || null);
   const [dateDebut, setDateDebut] = useState(abonnement.date_debut);
@@ -51,10 +50,8 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
 
   const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
   const updateAbonnement = useUpdateAbonnement();
-  const { data: reservations = [] } = useReservations();
   const { data: abonnements = [] } = useAbonnements();
 
-  // Sélection automatique du type à partir du terrain_id au montage
   useEffect(() => {
     if (abonnement.terrain_id) {
       const foundTerrain = allTerrains.find(t => t.id === abonnement.terrain_id);
@@ -62,7 +59,6 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
     }
   }, [abonnement.terrain_id, allTerrains]);
 
-  // Filtrage terrains selon type
   const filteredTerrains = selectedType
     ? allTerrains.filter(t => t.type === selectedType)
     : [];
@@ -72,14 +68,11 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
     setHeure('');
   }, [selectedType]);
 
-  // Trouver le terrain sélectionné
   const selectedTerrain = allTerrains.find(t => t.id === selectedTerrainId);
 
-  // Déterminer s'il s'agit de foot à 6, 7 ou 8
   const isFoot6 = selectedTerrain?.type === 'foot' && selectedTerrain.nom.includes('6');
   const isFoot7or8 = selectedTerrain?.type === 'foot' && (selectedTerrain.nom.includes('7') || selectedTerrain.nom.includes('8'));
 
-  // Générer les créneaux horaires
   const timeSlotsForSelectedTerrain = useMemo(() => {
     if (!selectedTerrain) return [];
     if (isFoot6) {
@@ -91,34 +84,22 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
     return defaultTimeSlots;
   }, [selectedTerrain, isFoot6, isFoot7or8]);
 
-  // Vérifie si un créneau horaire est dispo ou non
+  const { isAvailable: isTimeSlotAvailableForDate, blockingReason } = useTimeSlotAvailability({
+    terrainId: selectedTerrainId,
+    date: dateDebut,
+    timeSlot: heure,
+    duration: 1.5,
+    enabled: !!(selectedTerrainId && dateDebut && heure)
+  });
+
   const isTimeSlotAvailable = (time: string) => {
-    if (!selectedTerrainId || !time) return false;
-
-    const reservationConflict = reservations.some(
-      (res) =>
-        res.terrain_id === selectedTerrainId &&
-        res.heure === time &&
-        (
-          (!dateDebut || res.date >= dateDebut) &&
-          (!dateFin || res.date <= dateFin)
-        ) &&
-        res.statut !== 'annulee'
-    );
-
-    const dayInWeek = dateDebut ? new Date(dateDebut).getDay() : undefined;
-    const abonnementConflict = abonnements.some(
-      (abo) =>
-        abo.id !== abonnement.id && // ne pas se bloquer soi-même
-        abo.terrain_id === selectedTerrainId &&
-        abo.heure_fixe === time &&
-        abo.statut === 'actif' &&
-        (
-          (!dateDebut || !abo.date_fin || abo.date_fin >= dateDebut) &&
-          (!dateFin || !abo.date_debut || abo.date_debut <= dateFin)
-        )
-    );
-    return !reservationConflict && !abonnementConflict;
+    if (!selectedTerrainId || !time || !dateDebut) return false;
+    
+    if (time === heure) {
+      return isTimeSlotAvailableForDate;
+    }
+    
+    return true;
   };
 
   const isValid =
@@ -138,6 +119,14 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
       setFormError('Merci de remplir correctement tous les champs obligatoires.');
       import('sonner').then(({ toast }) => {
         toast.error('Merci de remplir correctement tous les champs obligatoires.');
+      });
+      return;
+    }
+
+    if (!isTimeSlotAvailableForDate && blockingReason && !blockingReason.includes('abonnement')) {
+      setFormError(blockingReason);
+      import('sonner').then(({ toast }) => {
+        toast.error(blockingReason);
       });
       return;
     }
@@ -169,10 +158,14 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
       <h2 className="text-xl font-semibold mb-4">Modifier l'Abonnement</h2>
       {formError && <div className="bg-red-100 text-red-700 rounded p-2 text-sm">{formError}</div>}
 
-      {/* Choix du type */}
+      {heure && !isTimeSlotAvailableForDate && blockingReason && (
+        <div className="bg-yellow-100 text-yellow-800 rounded p-2 text-sm">
+          ⚠️ {blockingReason}
+        </div>
+      )}
+
       <ReservationTypeSelector selectedType={selectedType} setSelectedType={setSelectedType} />
 
-      {/* Choix du terrain */}
       {selectedType && (
         <div>
           <Label>Choisissez le terrain</Label>
@@ -184,7 +177,6 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
         </div>
       )}
 
-      {/* Dates */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <Label htmlFor="dateDebut">Date de début *</Label>
@@ -208,7 +200,6 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
         </div>
       </div>
 
-      {/* Heure */}
       {selectedTerrainId && (
         <div>
           <Label htmlFor="heure">Heure de la séance *</Label>
@@ -219,10 +210,14 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
             onTimeSelect={setHeure}
             loading={false}
           />
+          {heure && !isTimeSlotAvailableForDate && blockingReason && (
+            <p className="text-sm text-red-600 mt-1">
+              {blockingReason}
+            </p>
+          )}
         </div>
       )}
 
-      {/* Infos client */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
         <div>
           <Label htmlFor="clientNom">Nom du client *</Label>
@@ -246,7 +241,6 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
         </div>
       </div>
 
-      {/* Statut */}
       <div>
         <Label htmlFor="statut" className="text-sm">Statut</Label>
         <select
