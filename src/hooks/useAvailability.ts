@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
@@ -26,8 +27,6 @@ export function useReservations(filters?: {
           query = query.eq('statut', filters.statut);
         }
         
-        // SUPPRIMÉ: Plus de filtrage automatique des statuts
-        
         const { data, error } = await query.order('date', { ascending: true }).order('heure', { ascending: true });
         
         if (error) {
@@ -44,7 +43,7 @@ export function useReservations(filters?: {
   });
 }
 
-// New hook for availability checking - this is what Reservation.tsx is trying to import
+// Hook pour vérifier la disponibilité - CORRIGÉ pour tenir compte du jour de l'abonnement
 export function useAvailability({ 
   terrainId, 
   date, 
@@ -60,19 +59,87 @@ export function useAvailability({
       if (!terrainId || !date) return [];
       
       try {
-        const { data, error } = await supabase
+        console.log('🔍 Vérification disponibilité pour:', { terrainId, date });
+        
+        // Récupérer toutes les réservations actives pour ce terrain et cette date
+        const { data: reservations, error: reservationsError } = await supabase
           .from('reservations')
           .select('*')
           .eq('terrain_id', terrainId)
           .eq('date', date)
           .in('statut', ['en_attente', 'confirmee']);
         
-        if (error) {
-          console.error("Error fetching availability:", error);
-          throw error;
+        if (reservationsError) {
+          console.error("Error fetching reservations:", reservationsError);
+          throw reservationsError;
         }
         
-        return data as Reservation[];
+        console.log('📅 Réservations pour cette date:', reservations);
+
+        // Récupérer les abonnements actifs pour ce terrain qui correspondent à ce jour de la semaine
+        const targetDate = new Date(date + 'T00:00:00');
+        const dayOfWeek = targetDate.getDay(); // 0=Dimanche, 1=Lundi, etc.
+        
+        console.log('📅 Jour de la semaine recherché:', dayOfWeek);
+        
+        const { data: abonnements, error: abonnementsError } = await supabase
+          .from('abonnements')
+          .select('*')
+          .eq('terrain_id', terrainId)
+          .eq('jour_semaine', dayOfWeek) // IMPORTANT: Filtrer par jour de la semaine
+          .eq('statut', 'actif')
+          .lte('date_debut', date)
+          .gte('date_fin', date);
+        
+        if (abonnementsError) {
+          console.error("Error fetching abonnements:", abonnementsError);
+          throw abonnementsError;
+        }
+
+        console.log('🔄 Abonnements actifs pour ce jour:', abonnements);
+
+        // Créer des réservations virtuelles pour les abonnements uniquement pour ce jour spécifique
+        const virtualReservations: Reservation[] = [];
+        
+        if (abonnements) {
+          abonnements.forEach(abonnement => {
+            if (abonnement.heure_fixe && abonnement.duree_seance) {
+              console.log('➕ Ajout réservation virtuelle abonnement:', {
+                jour: dayOfWeek,
+                heure: abonnement.heure_fixe,
+                duree: abonnement.duree_seance,
+                client: abonnement.client_nom
+              });
+              
+              virtualReservations.push({
+                id: -abonnement.id, // ID négatif pour distinguer des vraies réservations
+                nom_client: abonnement.client_nom,
+                tel: abonnement.client_tel,
+                email: abonnement.client_email,
+                terrain_id: terrainId,
+                date: date,
+                heure: abonnement.heure_fixe,
+                duree: abonnement.duree_seance,
+                statut: 'confirmee',
+                abonnement_id: abonnement.id
+              } as Reservation);
+            }
+          });
+        }
+
+        // Combiner les réservations réelles et virtuelles
+        const allReservations = [...(reservations || []), ...virtualReservations];
+        
+        console.log('📋 Total réservations (réelles + virtuelles):', allReservations.length);
+        console.log('📋 Détail des réservations:', allReservations.map(r => ({
+          id: r.id,
+          client: r.nom_client,
+          heure: r.heure,
+          duree: r.duree,
+          type: r.abonnement_id ? 'abonnement' : 'normale'
+        })));
+        
+        return allReservations;
       } catch (error) {
         console.error("Error in useAvailability hook:", error);
         throw error;
