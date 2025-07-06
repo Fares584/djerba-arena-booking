@@ -1,4 +1,5 @@
 
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
@@ -80,52 +81,73 @@ export function useAvailability({
         const targetDate = new Date(date + 'T00:00:00');
         const dayOfWeek = targetDate.getDay(); // 0=Dimanche, 1=Lundi, etc.
         
-        console.log('📅 Jour de la semaine recherché:', dayOfWeek);
+        console.log('📅 Jour de la semaine recherché:', dayOfWeek, '(0=Dimanche, 1=Lundi, etc.)');
+        console.log('📅 Date ciblée:', date);
         
-        const { data: abonnements, error: abonnementsError } = await supabase
+        // CORRECTION: Récupérer TOUS les abonnements actifs pour ce terrain d'abord
+        const { data: allAbonnements, error: abonnementsError } = await supabase
           .from('abonnements')
           .select('*')
           .eq('terrain_id', terrainId)
-          .eq('jour_semaine', dayOfWeek) // IMPORTANT: Filtrer par jour de la semaine
-          .eq('statut', 'actif')
-          .lte('date_debut', date)
-          .gte('date_fin', date);
+          .eq('statut', 'actif');
         
         if (abonnementsError) {
           console.error("Error fetching abonnements:", abonnementsError);
           throw abonnementsError;
         }
 
-        console.log('🔄 Abonnements actifs pour ce jour:', abonnements);
+        console.log('🔄 Tous les abonnements actifs pour ce terrain:', allAbonnements);
 
-        // Créer des réservations virtuelles pour les abonnements uniquement pour ce jour spécifique
+        // Filtrer les abonnements par jour de semaine ET par période de validité
+        const validAbonnements = allAbonnements?.filter(abonnement => {
+          const matchesDay = abonnement.jour_semaine === dayOfWeek;
+          const isInDateRange = date >= abonnement.date_debut && date <= abonnement.date_fin;
+          
+          console.log(`📊 Abonnement ${abonnement.id} (${abonnement.client_nom}):`, {
+            jour_semaine: abonnement.jour_semaine,
+            dayOfWeek,
+            matchesDay,
+            date_debut: abonnement.date_debut,
+            date_fin: abonnement.date_fin,
+            date,
+            isInDateRange,
+            isValid: matchesDay && isInDateRange
+          });
+          
+          return matchesDay && isInDateRange;
+        }) || [];
+
+        console.log('✅ Abonnements valides pour ce jour et cette période:', validAbonnements);
+
+        // Créer des réservations virtuelles pour les abonnements valides uniquement
         const virtualReservations: Reservation[] = [];
         
-        if (abonnements) {
-          abonnements.forEach(abonnement => {
-            if (abonnement.heure_fixe && abonnement.duree_seance) {
-              console.log('➕ Ajout réservation virtuelle abonnement:', {
-                jour: dayOfWeek,
-                heure: abonnement.heure_fixe,
-                duree: abonnement.duree_seance,
-                client: abonnement.client_nom
-              });
-              
-              virtualReservations.push({
-                id: -abonnement.id, // ID négatif pour distinguer des vraies réservations
-                nom_client: abonnement.client_nom,
-                tel: abonnement.client_tel,
-                email: abonnement.client_email,
-                terrain_id: terrainId,
-                date: date,
-                heure: abonnement.heure_fixe,
-                duree: abonnement.duree_seance,
-                statut: 'confirmee',
-                abonnement_id: abonnement.id
-              } as Reservation);
-            }
-          });
-        }
+        validAbonnements.forEach(abonnement => {
+          if (abonnement.heure_fixe && abonnement.duree_seance) {
+            console.log('➕ Ajout réservation virtuelle abonnement:', {
+              id: abonnement.id,
+              client: abonnement.client_nom,
+              jour: dayOfWeek,
+              heure: abonnement.heure_fixe,
+              duree: abonnement.duree_seance,
+              date_debut: abonnement.date_debut,
+              date_fin: abonnement.date_fin
+            });
+            
+            virtualReservations.push({
+              id: -abonnement.id, // ID négatif pour distinguer des vraies réservations
+              nom_client: abonnement.client_nom,
+              tel: abonnement.client_tel,
+              email: abonnement.client_email,
+              terrain_id: terrainId,
+              date: date,
+              heure: abonnement.heure_fixe,
+              duree: abonnement.duree_seance,
+              statut: 'confirmee',
+              abonnement_id: abonnement.id
+            } as Reservation);
+          }
+        });
 
         // Combiner les réservations réelles et virtuelles
         const allReservations = [...(reservations || []), ...virtualReservations];
