@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useCreateReservation } from '@/hooks/useReservations';
-import { useAvailability } from '@/hooks/useAvailability';
+import { useRealReservations } from '@/hooks/useAvailability';
+import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
 import { useAppSetting } from '@/hooks/useAppSettings';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -112,31 +112,28 @@ const Reservation = () => {
     }
   }, [selectedType]);
 
-  // Hooks
-  const { data: availability, isLoading: availabilityLoading } = useAvailability({
+  // Hooks pour les réservations réelles
+  const { data: realReservations, isLoading: availabilityLoading } = useRealReservations({
     terrainId: selectedTerrainId,
     date: selectedDate,
     enabled: !!(selectedTerrainId && selectedDate)
   });
 
-  // Check if selected time slot is available
+  // Check if selected time slot is available using the new hook
   const isTimeSlotAvailable = (time: string): boolean => {
-    if (!availability || !selectedTerrainId) return true;
+    if (!selectedTerrainId || !selectedDate) return true;
     
     const effectiveDuration = parseFloat(getEffectiveDuration());
-    const timeHour = parseInt(time.split(':')[0]);
-    const timeMinutes = parseInt(time.split(':')[1]);
-    const startTime = timeHour + timeMinutes / 60;
-    const endTime = startTime + effectiveDuration;
     
-    return !availability.some(reservation => {
-      const resHour = parseInt(reservation.heure.split(':')[0]);
-      const resMinutes = parseInt(reservation.heure.split(':')[1]);
-      const resStart = resHour + resMinutes / 60;
-      const resEnd = resStart + reservation.duree;
-      
-      return !(endTime <= resStart || startTime >= resEnd);
+    const { isAvailable } = useTimeSlotAvailability({
+      terrainId: selectedTerrainId,
+      date: selectedDate,
+      timeSlot: time,
+      duration: effectiveDuration,
+      enabled: true
     });
+    
+    return isAvailable;
   };
 
   // Calcul du prix total avec gestion correcte pour les terrains de foot
