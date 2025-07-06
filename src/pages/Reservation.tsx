@@ -5,7 +5,7 @@ import Footer from '@/components/Footer';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useCreateReservation } from '@/hooks/useReservations';
 import { useRealReservations } from '@/hooks/useAvailability';
-import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
+import { useSubscriptionAvailability } from '@/hooks/useSubscriptionAvailability';
 import { useAppSetting } from '@/hooks/useAppSettings';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -119,21 +119,50 @@ const Reservation = () => {
     enabled: !!(selectedTerrainId && selectedDate)
   });
 
-  // Check if selected time slot is available using the new hook
+  // Hook pour les abonnements
+  const { data: relevantSubscriptions } = useSubscriptionAvailability({
+    terrainId: selectedTerrainId,
+    targetDate: selectedDate,
+    enabled: !!(selectedTerrainId && selectedDate)
+  });
+
+  // Check if selected time slot is available - maintenant une fonction normale
   const isTimeSlotAvailable = (time: string): boolean => {
     if (!selectedTerrainId || !selectedDate) return true;
     
     const effectiveDuration = parseFloat(getEffectiveDuration());
+    const startHour = parseInt(time.split(':')[0]);
+    const endHour = startHour + effectiveDuration;
     
-    const { isAvailable } = useTimeSlotAvailability({
-      terrainId: selectedTerrainId,
-      date: selectedDate,
-      timeSlot: time,
-      duration: effectiveDuration,
-      enabled: true
+    // Vérifier les abonnements
+    const isBlockedBySubscription = relevantSubscriptions?.some(
+      abonnement => abonnement.heure_fixe === time
+    ) || false;
+    
+    if (isBlockedBySubscription) {
+      console.log('❌ Créneau bloqué par abonnement:', time);
+      return false;
+    }
+    
+    // Vérifier les réservations réelles
+    const conflictingReservation = realReservations?.find(reservation => {
+      const reservationStartHour = parseInt(reservation.heure.split(':')[0]);
+      const reservationEndHour = reservationStartHour + reservation.duree;
+      
+      return (
+        (startHour >= reservationStartHour && startHour < reservationEndHour) ||
+        (endHour > reservationStartHour && endHour <= reservationEndHour) ||
+        (startHour <= reservationStartHour && endHour >= reservationEndHour)
+      );
     });
     
-    return isAvailable;
+    if (conflictingReservation) {
+      console.log('❌ Créneau bloqué par réservation:', conflictingReservation);
+      return false;
+    }
+    
+    console.log('✅ Créneau disponible:', time);
+    return true;
   };
 
   // Calcul du prix total avec gestion correcte pour les terrains de foot
