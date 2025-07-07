@@ -1,3 +1,5 @@
+// ✅ Fichier complet : AbonnementForm.tsx (corrigé avec détection automatique du jour de semaine)
+
 import { useState, useMemo, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useCreateAbonnement } from '@/hooks/useAbonnements';
@@ -31,17 +33,6 @@ const generateTimeSlotsForFoot = (startHour: number, startMinute: number, endHou
   return slots;
 };
 
-const weekDays = [
-  { value: 0, label: 'Dimanche' },
-  { value: 1, label: 'Lundi' },
-  { value: 2, label: 'Mardi' },
-  { value: 3, label: 'Mercredi' },
-  { value: 4, label: 'Jeudi' },
-  { value: 5, label: 'Vendredi' },
-  { value: 6, label: 'Samedi' },
-];
-
-// DUREES DISPONIBLES pour les séances d'abonnement (en heures)
 const footDuration = 1.5;
 const otherSportDurations = [
   { value: 1, label: '1 heure' },
@@ -62,18 +53,13 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const [clientNom, setClientNom] = useState('');
   const [clientTel, setClientTel] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
-  const [selectedJourSemaine, setSelectedJourSemaine] = useState<number | null>(null);
   const [dureeSeance, setDureeSeance] = useState<number>(1);
 
-  // Récupération des terrains actifs
-  const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
+  const { data: allTerrains = [] } = useTerrains({ actif: true });
   const createAbonnement = useCreateAbonnement();
-
-  // Récupération des réservations et abonnements existants pour disponibilité
   const { data: reservations = [] } = useReservations();
   const { data: abonnements = [] } = useAbonnements();
 
-  // Filtrage des terrains selon le type choisi
   const filteredTerrains = selectedType
     ? allTerrains.filter(t => t.type === selectedType)
     : [];
@@ -83,14 +69,10 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     setHeure('');
   }, [selectedType]);
 
-  // Trouver le terrain sélectionné
   const selectedTerrain = allTerrains.find(t => t.id === selectedTerrainId);
-
-  // Déterminer s'il s'agit de foot à 6, 7 ou 8
   const isFoot6 = selectedTerrain?.type === 'foot' && selectedTerrain.nom.includes('6');
   const isFoot7or8 = selectedTerrain?.type === 'foot' && (selectedTerrain.nom.includes('7') || selectedTerrain.nom.includes('8'));
 
-  // Générer les créneaux horaires selon le terrain
   const timeSlotsForSelectedTerrain = useMemo(() => {
     if (!selectedTerrain) return [];
     if (isFoot6) {
@@ -102,48 +84,39 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     return defaultTimeSlots;
   }, [selectedTerrain, isFoot6, isFoot7or8]);
 
-  // CORRECTION: Utiliser selectedJourSemaine au lieu de calculer depuis dateDebut
   const isTimeSlotAvailable = (time: string) => {
-    if (!selectedTerrainId || !time || selectedJourSemaine === null) return false;
-    
-    console.log('Vérification disponibilité:', {
-      time,
-      terrainId: selectedTerrainId,
-      selectedJourSemaine,
-      dateDebut
+    if (!selectedTerrainId || !time || !dateDebut) return false;
+
+    const [hour, minute] = time.split(':').map(Number);
+    const startTime = hour + minute / 60;
+    const endTime = startTime + dureeSeance;
+    const dayOfWeek = new Date(dateDebut + 'T00:00:00').getDay();
+
+    const reservationConflict = reservations.some((res) => {
+      if (res.terrain_id !== selectedTerrainId) return false;
+      if (res.date !== dateDebut) return false;
+      if (res.statut === 'annulee') return false;
+
+      const [resHour, resMin] = res.heure.split(':').map(Number);
+      const resStart = resHour + resMin / 60;
+      const resEnd = resStart + res.duree;
+
+      return !(endTime <= resStart || startTime >= resEnd);
     });
 
-    // Cherche conflits avec réservations
-    const reservationConflict = reservations.some(
-      (res) =>
-        res.terrain_id === selectedTerrainId &&
-        res.heure === time &&
-        (
-          (!dateDebut || res.date >= dateDebut) &&
-          (!dateFin || res.date <= dateFin)
-        ) &&
-        res.statut !== 'annulee'
-    );
+    const abonnementConflict = abonnements.some((abo) => {
+      if (abo.terrain_id !== selectedTerrainId) return false;
+      if (abo.statut !== 'actif') return false;
+      if (Number(abo.jour_semaine) !== dayOfWeek) return false;
+      if (abo.date_debut && dateDebut < abo.date_debut) return false;
+      if (abo.date_fin && dateDebut > abo.date_fin) return false;
 
-    // CORRECTION: Utiliser selectedJourSemaine directement
-    const abonnementConflict = abonnements.some(
-      (abo) => {
-        const conflict = abo.terrain_id === selectedTerrainId &&
-          abo.heure_fixe === time &&
-          abo.statut === 'actif' &&
-          abo.jour_semaine === selectedJourSemaine && // CORRECTION: utiliser selectedJourSemaine directement
-          (
-            (!dateDebut || !abo.date_fin || abo.date_fin >= dateDebut) &&
-            (!dateFin || !abo.date_debut || abo.date_debut <= dateFin)
-          );
-        
-        if (conflict) {
-          console.log('Conflit détecté avec abonnement:', abo);
-        }
-        
-        return conflict;
-      }
-    );
+      const [aboHour, aboMin] = abo.heure_fixe.split(':').map(Number);
+      const aboStart = aboHour + aboMin / 60;
+      const aboEnd = aboStart + abo.duree_seance;
+
+      return !(endTime <= aboStart || startTime >= aboEnd);
+    });
 
     return !reservationConflict && !abonnementConflict;
   };
@@ -152,18 +125,16 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     if (selectedType === 'foot') {
       setDureeSeance(footDuration);
     } else if (selectedType) {
-      setDureeSeance(1); // valeur par défaut pour autres types
+      setDureeSeance(1);
     }
   }, [selectedType]);
 
-  // Retirer toute logique liée au montant/validation montant
   const isValid =
     selectedType &&
     selectedTerrainId &&
     !!dateDebut &&
     !!dateFin &&
     !!heure &&
-    selectedJourSemaine !== null &&
     !!clientNom.trim() &&
     !!clientTel.trim() &&
     dureeSeance > 0;
@@ -172,7 +143,9 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     e.preventDefault();
     setFormError(null);
 
-    if (!isValid || selectedJourSemaine === null) {
+    const dayOfWeek = new Date(dateDebut + 'T00:00:00').getDay();
+
+    if (!isValid) {
       setFormError('Merci de remplir correctement tous les champs obligatoires.');
       import('sonner').then(({ toast }) => {
         toast.error('Merci de remplir correctement tous les champs obligatoires.');
@@ -185,11 +158,11 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         terrain_id: selectedTerrainId!,
         date_debut: dateDebut,
         date_fin: dateFin,
-        jour_semaine: selectedJourSemaine,
+        jour_semaine: dayOfWeek,
         heure_fixe: heure,
-        duree_seance: dureeSeance, // Correction ICI !
+        duree_seance: dureeSeance,
         client_nom: clientNom.trim(),
-        client_email: '', // Toujours obligatoire dans le modèle, mais laissé vide
+        client_email: '',
         client_tel: clientTel.trim(),
         statut: 'actif'
       },
@@ -207,10 +180,8 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       <h2 className="text-xl font-semibold mb-4">Créer un Abonnement</h2>
       {formError && <div className="bg-red-100 text-red-700 rounded p-2 text-sm">{formError}</div>}
 
-      {/* Choix du type */}
       <ReservationTypeSelector selectedType={selectedType} setSelectedType={setSelectedType} />
 
-      {/* Choix du terrain */}
       {selectedType && (
         <div>
           <Label>Choisissez le terrain</Label>
@@ -222,7 +193,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         </div>
       )}
 
-      {/* Dates */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <Label htmlFor="dateDebut">Date de début *</Label>
@@ -246,27 +216,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         </div>
       </div>
 
-      {/* Jour de la semaine - MANUEL uniquement */}
-      <div>
-        <Label htmlFor="jourSemaine">Jour de la semaine *</Label>
-        <select
-          id="jourSemaine"
-          className="w-full border rounded-md p-2 h-9 mt-1"
-          value={selectedJourSemaine !== null ? selectedJourSemaine : ""}
-          onChange={e => {
-            const newVal = e.target.value === "" ? null : Number(e.target.value);
-            setSelectedJourSemaine(newVal);
-          }}
-          required
-        >
-          <option value="" disabled>Sélectionnez un jour</option>
-          {weekDays.map(day => (
-            <option key={day.value} value={day.value}>{day.label}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Durée de la séance */}
       <div>
         <Label htmlFor="dureeSeance">Durée de la séance *</Label>
         {selectedType === 'foot' ? (
@@ -292,7 +241,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         )}
       </div>
 
-      {/* Heure */}
       {selectedTerrainId && (
         <div>
           <Label htmlFor="heure">Heure de la séance *</Label>
@@ -306,7 +254,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         </div>
       )}
 
-      {/* Infos client */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
         <div>
           <Label htmlFor="clientNom">Nom du client *</Label>
