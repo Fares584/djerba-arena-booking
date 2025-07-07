@@ -63,15 +63,6 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
     }
   }, [abonnement.terrain_id, allTerrains]);
 
-  // CORRECTION: Synchroniser selectedJourSemaine avec dateDebut
-  useEffect(() => {
-    if (dateDebut) {
-      const jour = new Date(dateDebut).getDay();
-      setSelectedJourSemaine(jour);
-      console.log('Date début changée (edit):', dateDebut, 'Jour de la semaine:', jour);
-    }
-  }, [dateDebut]);
-
   // Filtrage terrains selon type
   const filteredTerrains = selectedType
     ? allTerrains.filter(t => t.type === selectedType)
@@ -101,17 +92,13 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
     return defaultTimeSlots;
   }, [selectedTerrain, isFoot6, isFoot7or8]);
 
-  // CORRECTION: Améliorer la fonction isTimeSlotAvailable
+  // CORRECTION: Utiliser selectedJourSemaine au lieu de calculer depuis dateDebut
   const isTimeSlotAvailable = (time: string) => {
-    if (!selectedTerrainId || !time || !dateDebut) return false;
-
-    // Calculer le jour de la semaine à partir de la date début
-    const jourSemaine = new Date(dateDebut).getDay();
+    if (!selectedTerrainId || !time || selectedJourSemaine === null) return false;
     
     console.log('Vérification disponibilité (edit):', {
       time,
       terrainId: selectedTerrainId,
-      jourSemaine,
       selectedJourSemaine,
       dateDebut,
       abonnementId: abonnement.id
@@ -128,14 +115,14 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
         res.statut !== 'annulee'
     );
 
-    // CORRECTION: utiliser le jour calculé et exclure l'abonnement en cours de modification
+    // CORRECTION: utiliser selectedJourSemaine directement et exclure l'abonnement en cours de modification
     const abonnementConflict = abonnements.some(
       (abo) => {
         const conflict = abo.id !== abonnement.id && // ne pas se bloquer soi-même
           abo.terrain_id === selectedTerrainId &&
           abo.heure_fixe === time &&
           abo.statut === 'actif' &&
-          abo.jour_semaine === jourSemaine && // CORRECTION: utiliser le jour calculé
+          abo.jour_semaine === selectedJourSemaine && // CORRECTION: utiliser selectedJourSemaine directement
           (
             (!dateDebut || !abo.date_fin || abo.date_fin >= dateDebut) &&
             (!dateFin || !abo.date_debut || abo.date_debut <= dateFin)
@@ -241,7 +228,7 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
         </div>
       </div>
 
-      {/* Jour de la semaine */}
+      {/* Jour de la semaine - MANUEL uniquement */}
       <div>
         <Label htmlFor="jourSemaine">Jour de la semaine *</Label>
         <select
@@ -263,12 +250,6 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
           <option value={5}>Vendredi</option>
           <option value={6}>Samedi</option>
         </select>
-        {/* Affichage du jour calculé pour debug */}
-        {dateDebut && (
-          <p className="text-xs text-gray-500 mt-1">
-            Jour calculé automatiquement: {['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'][new Date(dateDebut).getDay()]}
-          </p>
-        )}
       </div>
 
       {/* Heure */}

@@ -41,7 +41,7 @@ const weekDays = [
   { value: 6, label: 'Samedi' },
 ];
 
-// DUREES DISPONIBLES pour les séances d’abonnement (en heures)
+// DUREES DISPONIBLES pour les séances d'abonnement (en heures)
 const footDuration = 1.5;
 const otherSportDurations = [
   { value: 1, label: '1 heure' },
@@ -78,15 +78,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     ? allTerrains.filter(t => t.type === selectedType)
     : [];
 
-  // CORRECTION: Synchroniser selectedJourSemaine avec dateDebut
-  useEffect(() => {
-    if (dateDebut) {
-      const jour = new Date(dateDebut).getDay();
-      setSelectedJourSemaine(jour);
-      console.log('Date début changée:', dateDebut, 'Jour de la semaine:', jour);
-    }
-  }, [dateDebut]);
-
   useEffect(() => {
     setSelectedTerrainId(null);
     setHeure('');
@@ -111,17 +102,13 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     return defaultTimeSlots;
   }, [selectedTerrain, isFoot6, isFoot7or8]);
 
-  // CORRECTION: Améliorer la fonction isTimeSlotAvailable
+  // CORRECTION: Utiliser selectedJourSemaine au lieu de calculer depuis dateDebut
   const isTimeSlotAvailable = (time: string) => {
-    if (!selectedTerrainId || !time || !dateDebut) return false;
-
-    // Calculer le jour de la semaine à partir de la date début
-    const jourSemaine = new Date(dateDebut).getDay();
+    if (!selectedTerrainId || !time || selectedJourSemaine === null) return false;
     
     console.log('Vérification disponibilité:', {
       time,
       terrainId: selectedTerrainId,
-      jourSemaine,
       selectedJourSemaine,
       dateDebut
     });
@@ -138,13 +125,13 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         res.statut !== 'annulee'
     );
 
-    // Cherche conflits avec abonnements existants - UTILISER jourSemaine calculé
+    // CORRECTION: Utiliser selectedJourSemaine directement
     const abonnementConflict = abonnements.some(
       (abo) => {
         const conflict = abo.terrain_id === selectedTerrainId &&
           abo.heure_fixe === time &&
           abo.statut === 'actif' &&
-          abo.jour_semaine === jourSemaine && // CORRECTION: utiliser le jour calculé
+          abo.jour_semaine === selectedJourSemaine && // CORRECTION: utiliser selectedJourSemaine directement
           (
             (!dateDebut || !abo.date_fin || abo.date_fin >= dateDebut) &&
             (!dateFin || !abo.date_debut || abo.date_debut <= dateFin)
@@ -259,7 +246,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         </div>
       </div>
 
-      {/* Jour de la semaine - AFFICHER la valeur synchronisée */}
+      {/* Jour de la semaine - MANUEL uniquement */}
       <div>
         <Label htmlFor="jourSemaine">Jour de la semaine *</Label>
         <select
@@ -277,12 +264,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
             <option key={day.value} value={day.value}>{day.label}</option>
           ))}
         </select>
-        {/* Affichage du jour calculé pour debug */}
-        {dateDebut && (
-          <p className="text-xs text-gray-500 mt-1">
-            Jour calculé automatiquement: {weekDays[new Date(dateDebut).getDay()]?.label}
-          </p>
-        )}
       </div>
 
       {/* Durée de la séance */}
