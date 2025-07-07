@@ -120,12 +120,12 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     );
 
     // Cherche conflits avec abonnements existants sur le même jour/heure
-    const dayInWeek = dateDebut ? new Date(dateDebut).getDay() : undefined;
     const abonnementConflict = abonnements.some(
       (abo) =>
         abo.terrain_id === selectedTerrainId &&
         abo.heure_fixe === time &&
         abo.statut === 'actif' &&
+        abo.jour_semaine === selectedJourSemaine && // IMPORTANT: vérifier le même jour de la semaine
         // Pour la sécurité, recoupe la période
         (
           (!dateDebut || !abo.date_fin || abo.date_fin >= dateDebut) &&

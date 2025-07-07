@@ -47,6 +47,7 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
   const [clientNom, setClientNom] = useState(abonnement.client_nom);
   const [clientTel, setClientTel] = useState(abonnement.client_tel);
   const [statut, setStatut] = useState<Abonnement['statut']>(abonnement.statut);
+  const [selectedJourSemaine, setSelectedJourSemaine] = useState<number | null>(abonnement.jour_semaine || null);
   const [formError, setFormError] = useState<string | null>(null);
 
   const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
@@ -106,13 +107,17 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
         res.statut !== 'annulee'
     );
 
-    const dayInWeek = dateDebut ? new Date(dateDebut).getDay() : undefined;
+    // Calculer le jour de la semaine sélectionné pour la comparaison
+    const selectedDayOfWeek = selectedJourSemaine !== null ? selectedJourSemaine : 
+      (dateDebut ? new Date(dateDebut).getDay() : undefined);
+    
     const abonnementConflict = abonnements.some(
       (abo) =>
         abo.id !== abonnement.id && // ne pas se bloquer soi-même
         abo.terrain_id === selectedTerrainId &&
         abo.heure_fixe === time &&
         abo.statut === 'actif' &&
+        abo.jour_semaine === selectedDayOfWeek && // IMPORTANT: vérifier le même jour de la semaine
         (
           (!dateDebut || !abo.date_fin || abo.date_fin >= dateDebut) &&
           (!dateFin || !abo.date_debut || abo.date_debut <= dateFin)
@@ -127,6 +132,7 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
     !!dateDebut &&
     !!dateFin &&
     !!heure &&
+    selectedJourSemaine !== null &&
     !!clientNom.trim() &&
     !!clientTel.trim();
 
@@ -149,6 +155,7 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
           terrain_id: selectedTerrainId!,
           date_debut: dateDebut,
           date_fin: dateFin,
+          jour_semaine: selectedJourSemaine!,
           heure_fixe: heure,
           client_nom: clientNom.trim(),
           client_tel: clientTel.trim(),
@@ -206,6 +213,30 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
             required
           />
         </div>
+      </div>
+
+      {/* Jour de la semaine */}
+      <div>
+        <Label htmlFor="jourSemaine">Jour de la semaine *</Label>
+        <select
+          id="jourSemaine"
+          className="w-full border rounded-md p-2 h-9 mt-1"
+          value={selectedJourSemaine !== null ? selectedJourSemaine : ""}
+          onChange={e => {
+            const newVal = e.target.value === "" ? null : Number(e.target.value);
+            setSelectedJourSemaine(newVal);
+          }}
+          required
+        >
+          <option value="" disabled>Sélectionnez un jour</option>
+          <option value={0}>Dimanche</option>
+          <option value={1}>Lundi</option>
+          <option value={2}>Mardi</option>
+          <option value={3}>Mercredi</option>
+          <option value={4}>Jeudi</option>
+          <option value={5}>Vendredi</option>
+          <option value={6}>Samedi</option>
+        </select>
       </div>
 
       {/* Heure */}
