@@ -95,8 +95,41 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     return defaultTimeSlots;
   }, [selectedTerrain, isFoot6, isFoot7or8]);
 
-  const isTimeSlotAvailable = (time: string) => {
-    if (!selectedTerrainId || !time || selectedJourSemaine === null) return false;
+const isTimeSlotAvailable = (time: string) => {
+  if (!selectedTerrainId || !time || selectedJourSemaine === null) return false;
+
+  const [hour, minute] = time.split(':').map(Number);
+  const startTime = hour + minute / 60;
+  const endTime = startTime + dureeSeance;
+
+  const reservationConflict = reservations.some((res) => {
+    if (res.terrain_id !== selectedTerrainId) return false;
+    if (res.statut === 'annulee') return false;
+    if (res.date < dateDebut || res.date > dateFin) return false;
+
+    const [resHour, resMin] = res.heure.split(':').map(Number);
+    const resStart = resHour + resMin / 60;
+    const resEnd = resStart + res.duree;
+
+    return !(endTime <= resStart || startTime >= resEnd);
+  });
+
+  const abonnementConflict = abonnements.some((abo) => {
+    if (abo.terrain_id !== selectedTerrainId) return false;
+    if (abo.statut !== 'actif') return false;
+    if (Number(abo.jour_semaine) !== Number(selectedJourSemaine)) return false;
+    if (abo.date_fin && abo.date_fin < dateDebut) return false;
+    if (abo.date_debut && abo.date_debut > dateFin) return false;
+
+    const [aboHour, aboMin] = abo.heure_fixe.split(':').map(Number);
+    const aboStart = aboHour + aboMin / 60;
+    const aboEnd = aboStart + abo.duree_seance;
+
+    return !(endTime <= aboStart || startTime >= aboEnd);
+  });
+
+  return !reservationConflict && !abonnementConflict;
+};
 
     const reservationConflict = reservations.some(
       (res) =>
