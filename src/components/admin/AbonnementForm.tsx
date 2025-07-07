@@ -78,6 +78,15 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     ? allTerrains.filter(t => t.type === selectedType)
     : [];
 
+  // CORRECTION: Synchroniser selectedJourSemaine avec dateDebut
+  useEffect(() => {
+    if (dateDebut) {
+      const jour = new Date(dateDebut).getDay();
+      setSelectedJourSemaine(jour);
+      console.log('Date début changée:', dateDebut, 'Jour de la semaine:', jour);
+    }
+  }, [dateDebut]);
+
   useEffect(() => {
     setSelectedTerrainId(null);
     setHeure('');
@@ -102,16 +111,26 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     return defaultTimeSlots;
   }, [selectedTerrain, isFoot6, isFoot7or8]);
 
-  // Vérifie si un créneau horaire est dispo ou non (utilise réservations & abonnements existants sur ce terrain)
+  // CORRECTION: Améliorer la fonction isTimeSlotAvailable
   const isTimeSlotAvailable = (time: string) => {
-    if (!selectedTerrainId || !time) return false;
+    if (!selectedTerrainId || !time || !dateDebut) return false;
+
+    // Calculer le jour de la semaine à partir de la date début
+    const jourSemaine = new Date(dateDebut).getDay();
+    
+    console.log('Vérification disponibilité:', {
+      time,
+      terrainId: selectedTerrainId,
+      jourSemaine,
+      selectedJourSemaine,
+      dateDebut
+    });
 
     // Cherche conflits avec réservations
     const reservationConflict = reservations.some(
       (res) =>
         res.terrain_id === selectedTerrainId &&
         res.heure === time &&
-        // On vérifie les dates du range abonnement, si la réservation recoupe
         (
           (!dateDebut || res.date >= dateDebut) &&
           (!dateFin || res.date <= dateFin)
@@ -119,19 +138,26 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         res.statut !== 'annulee'
     );
 
-    // Cherche conflits avec abonnements existants sur le même jour/heure
+    // Cherche conflits avec abonnements existants - UTILISER jourSemaine calculé
     const abonnementConflict = abonnements.some(
-      (abo) =>
-        abo.terrain_id === selectedTerrainId &&
-        abo.heure_fixe === time &&
-        abo.statut === 'actif' &&
-        abo.jour_semaine === selectedJourSemaine && // IMPORTANT: vérifier le même jour de la semaine
-        // Pour la sécurité, recoupe la période
-        (
-          (!dateDebut || !abo.date_fin || abo.date_fin >= dateDebut) &&
-          (!dateFin || !abo.date_debut || abo.date_debut <= dateFin)
-        )
+      (abo) => {
+        const conflict = abo.terrain_id === selectedTerrainId &&
+          abo.heure_fixe === time &&
+          abo.statut === 'actif' &&
+          abo.jour_semaine === jourSemaine && // CORRECTION: utiliser le jour calculé
+          (
+            (!dateDebut || !abo.date_fin || abo.date_fin >= dateDebut) &&
+            (!dateFin || !abo.date_debut || abo.date_debut <= dateFin)
+          );
+        
+        if (conflict) {
+          console.log('Conflit détecté avec abonnement:', abo);
+        }
+        
+        return conflict;
+      }
     );
+
     return !reservationConflict && !abonnementConflict;
   };
 
@@ -209,23 +235,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         </div>
       )}
 
-      {/* CHAMP montant SUPPRIMÉ */}
-      {/* 
-      <div>
-        <Label htmlFor="montant">Montant (DT) *</Label>
-        <Input
-          id="montant"
-          type="number"
-          min="0"
-          step="0.1"
-          value={montant}
-          onChange={e => setMontant(e.target.value)}
-          required
-          placeholder="Montant en dinars"
-        />
-      </div>
-      */}
-
       {/* Dates */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
@@ -250,7 +259,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         </div>
       </div>
 
-      {/* Jour de la semaine */}
+      {/* Jour de la semaine - AFFICHER la valeur synchronisée */}
       <div>
         <Label htmlFor="jourSemaine">Jour de la semaine *</Label>
         <select
@@ -268,6 +277,12 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
             <option key={day.value} value={day.value}>{day.label}</option>
           ))}
         </select>
+        {/* Affichage du jour calculé pour debug */}
+        {dateDebut && (
+          <p className="text-xs text-gray-500 mt-1">
+            Jour calculé automatiquement: {weekDays[new Date(dateDebut).getDay()]?.label}
+          </p>
+        )}
       </div>
 
       {/* Durée de la séance */}
