@@ -1,7 +1,7 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
+import { format, addDays } from 'date-fns';
 
 export function useReservations(filters?: { 
   terrain_id?: number; 
@@ -26,6 +26,8 @@ export function useReservations(filters?: {
           query = query.eq('statut', filters.statut);
         }
         
+        // SUPPRIMÉ: Plus de filtrage automatique des statuts
+        
         const { data, error } = await query.order('date', { ascending: true }).order('heure', { ascending: true });
         
         if (error) {
@@ -42,8 +44,8 @@ export function useReservations(filters?: {
   });
 }
 
-// Hook simplifié pour récupérer SEULEMENT les vraies réservations
-export function useRealReservations({ 
+// New hook for availability checking - this is what Reservation.tsx is trying to import
+export function useAvailability({ 
   terrainId, 
   date, 
   enabled = true 
@@ -53,74 +55,71 @@ export function useRealReservations({
   enabled?: boolean;
 }) {
   return useQuery({
-    queryKey: ['real-reservations', terrainId, date],
+    queryKey: ['availability', terrainId, date],
     queryFn: async () => {
       if (!terrainId || !date) return [];
       
-      console.log('🔍 Récupération réservations réelles pour:', { terrainId, date });
-      
-      const { data: reservations, error } = await supabase
-        .from('reservations')
-        .select('*')
-        .eq('terrain_id', terrainId)
-        .eq('date', date)
-        .in('statut', ['en_attente', 'confirmee']);
-      
-      if (error) {
-        console.error("Erreur récupération réservations:", error);
+      try {
+        const { data, error } = await supabase
+          .from('reservations')
+          .select('*')
+          .eq('terrain_id', terrainId)
+          .eq('date', date)
+          .in('statut', ['en_attente', 'confirmee']);
+        
+        if (error) {
+          console.error("Error fetching availability:", error);
+          throw error;
+        }
+        
+        return data as Reservation[];
+      } catch (error) {
+        console.error("Error in useAvailability hook:", error);
         throw error;
       }
-      
-      console.log('📅 Réservations réelles trouvées:', reservations);
-      return reservations || [];
     },
     enabled: enabled && !!terrainId && !!date,
   });
 }
 
-// Fonction pour vérifier si un créneau est disponible (logique séparée et claire)
+// Check if a specific time slot is available - garde la logique existante pour la disponibilité
 export function isTimeSlotAvailable(
-  realReservations: Reservation[] | undefined,
+  reservations: Reservation[] | undefined,
   terrainId: number,
   date: string,
   startTime: string,
   duration: number
 ): boolean {
-  if (!realReservations) return true;
+  if (!reservations) return true;
   
-  console.log('🕒 Vérification disponibilité créneau:', {
-    terrainId,
-    date,
-    startTime,
-    duration,
-    reservationsCount: realReservations.length
-  });
+  // Seules les réservations confirmées et en attente bloquent la disponibilité
+  const activeReservations = reservations.filter(
+    r => r.terrain_id === terrainId && 
+         r.date === date && 
+         (r.statut === 'en_attente' || r.statut === 'confirmee')
+  );
   
   const startHour = parseInt(startTime.split(':')[0]);
   const endHour = startHour + duration;
   
-  for (const reservation of realReservations) {
+  for (const reservation of activeReservations) {
     const reservationStartHour = parseInt(reservation.heure.split(':')[0]);
     const reservationEndHour = reservationStartHour + reservation.duree;
     
-    // Vérifier chevauchement
-    const hasOverlap = (
+    // Check for overlap
+    if (
       (startHour >= reservationStartHour && startHour < reservationEndHour) ||
       (endHour > reservationStartHour && endHour <= reservationEndHour) ||
       (startHour <= reservationStartHour && endHour >= reservationEndHour)
-    );
-    
-    if (hasOverlap) {
-      console.log('❌ Créneau occupé par réservation:', reservation);
-      return false;
+    ) {
+      return false; // Time slot is occupied
     }
   }
   
-  console.log('✅ Créneau disponible');
-  return true;
+  return true; // Time slot is available
 }
 
-// Fonction pour obtenir les dates complètement indisponibles
+// Get dates that are completely unavailable for a specific terrain
 export function getUnavailableDates(
   reservations: Reservation[] | undefined,
   terrainId: number
@@ -130,7 +129,7 @@ export function getUnavailableDates(
   const unavailableDates: string[] = [];
   const dateReservations: { [key: string]: Reservation[] } = {};
   
-  // Grouper les réservations actives par date
+  // Group active reservations by date (only 'en_attente' and 'confirmee')
   reservations
     .filter(r => r.terrain_id === terrainId && (r.statut === 'en_attente' || r.statut === 'confirmee'))
     .forEach(reservation => {
@@ -140,16 +139,16 @@ export function getUnavailableDates(
       dateReservations[reservation.date].push(reservation);
     });
   
-  // Vérifier chaque date pour voir si tous les créneaux sont occupés
+  // Check each date to see if all time slots are occupied
   Object.keys(dateReservations).forEach(date => {
     const dayReservations = dateReservations[date];
     
-    // Trier les réservations par heure de début
+    // Sort reservations by start time
     dayReservations.sort((a, b) => a.heure.localeCompare(b.heure));
     
-    // Vérifier si toute la journée (09:00-22:00) est couverte
-    let currentHour = 9;
-    const endHour = 22;
+    // Check if the entire day (09:00-22:00) is covered by reservations
+    let currentHour = 9; // Start at 9 AM
+    const endHour = 22; // End at 10 PM
     
     for (const reservation of dayReservations) {
       const reservationStartHour = parseInt(reservation.heure.split(':')[0]);
@@ -158,10 +157,12 @@ export function getUnavailableDates(
       if (reservationStartHour <= currentHour && reservationEndHour > currentHour) {
         currentHour = Math.max(currentHour, reservationEndHour);
       } else if (reservationStartHour > currentHour) {
+        // There's a gap, so the day is not fully booked
         break;
       }
     }
     
+    // If we've covered the entire day
     if (currentHour >= endHour) {
       unavailableDates.push(date);
     }

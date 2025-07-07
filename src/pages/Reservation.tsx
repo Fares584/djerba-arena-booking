@@ -1,11 +1,11 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useCreateReservation } from '@/hooks/useReservations';
-import { useRealReservations } from '@/hooks/useAvailability';
-import { useSubscriptionAvailability } from '@/hooks/useSubscriptionAvailability';
+import { useAvailability } from '@/hooks/useAvailability';
 import { useAppSetting } from '@/hooks/useAppSettings';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -112,57 +112,31 @@ const Reservation = () => {
     }
   }, [selectedType]);
 
-  // Hooks pour les réservations réelles
-  const { data: realReservations, isLoading: availabilityLoading } = useRealReservations({
+  // Hooks
+  const { data: availability, isLoading: availabilityLoading } = useAvailability({
     terrainId: selectedTerrainId,
     date: selectedDate,
     enabled: !!(selectedTerrainId && selectedDate)
   });
 
-  // Hook pour les abonnements
-  const { data: relevantSubscriptions } = useSubscriptionAvailability({
-    terrainId: selectedTerrainId,
-    targetDate: selectedDate,
-    enabled: !!(selectedTerrainId && selectedDate)
-  });
-
-  // Check if selected time slot is available - maintenant une fonction normale
+  // Check if selected time slot is available
   const isTimeSlotAvailable = (time: string): boolean => {
-    if (!selectedTerrainId || !selectedDate) return true;
+    if (!availability || !selectedTerrainId) return true;
     
     const effectiveDuration = parseFloat(getEffectiveDuration());
-    const startHour = parseInt(time.split(':')[0]);
-    const endHour = startHour + effectiveDuration;
+    const timeHour = parseInt(time.split(':')[0]);
+    const timeMinutes = parseInt(time.split(':')[1]);
+    const startTime = timeHour + timeMinutes / 60;
+    const endTime = startTime + effectiveDuration;
     
-    // Vérifier les abonnements
-    const isBlockedBySubscription = relevantSubscriptions?.some(
-      abonnement => abonnement.heure_fixe === time
-    ) || false;
-    
-    if (isBlockedBySubscription) {
-      console.log('❌ Créneau bloqué par abonnement:', time);
-      return false;
-    }
-    
-    // Vérifier les réservations réelles
-    const conflictingReservation = realReservations?.find(reservation => {
-      const reservationStartHour = parseInt(reservation.heure.split(':')[0]);
-      const reservationEndHour = reservationStartHour + reservation.duree;
+    return !availability.some(reservation => {
+      const resHour = parseInt(reservation.heure.split(':')[0]);
+      const resMinutes = parseInt(reservation.heure.split(':')[1]);
+      const resStart = resHour + resMinutes / 60;
+      const resEnd = resStart + reservation.duree;
       
-      return (
-        (startHour >= reservationStartHour && startHour < reservationEndHour) ||
-        (endHour > reservationStartHour && endHour <= reservationEndHour) ||
-        (startHour <= reservationStartHour && endHour >= reservationEndHour)
-      );
+      return !(endTime <= resStart || startTime >= resEnd);
     });
-    
-    if (conflictingReservation) {
-      console.log('❌ Créneau bloqué par réservation:', conflictingReservation);
-      return false;
-    }
-    
-    console.log('✅ Créneau disponible:', time);
-    return true;
   };
 
   // Calcul du prix total avec gestion correcte pour les terrains de foot

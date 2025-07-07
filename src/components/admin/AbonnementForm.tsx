@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useCreateAbonnement } from '@/hooks/useAbonnements';
-import { useTimeSlotAvailability } from '@/hooks/useTimeSlotAvailability';
+import { useReservations } from '@/hooks/useReservations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react';
 import ReservationTypeSelector from '@/components/reservation/ReservationTypeSelector';
 import TerrainSelector from '@/components/TerrainSelector';
 import TimeSlotSelector from '@/components/TimeSlotSelector';
+import { useAbonnements } from '@/hooks/useAbonnements';
 
 const defaultTimeSlots = [
   '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
@@ -64,9 +65,15 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const [selectedJourSemaine, setSelectedJourSemaine] = useState<number | null>(null);
   const [dureeSeance, setDureeSeance] = useState<number>(1);
 
+  // Récupération des terrains actifs
   const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
   const createAbonnement = useCreateAbonnement();
 
+  // Récupération des réservations et abonnements existants pour disponibilité
+  const { data: reservations = [] } = useReservations();
+  const { data: abonnements = [] } = useAbonnements();
+
+  // Filtrage des terrains selon le type choisi
   const filteredTerrains = selectedType
     ? allTerrains.filter(t => t.type === selectedType)
     : [];
@@ -76,11 +83,14 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     setHeure('');
   }, [selectedType]);
 
+  // Trouver le terrain sélectionné
   const selectedTerrain = allTerrains.find(t => t.id === selectedTerrainId);
 
+  // Déterminer s'il s'agit de foot à 6, 7 ou 8
   const isFoot6 = selectedTerrain?.type === 'foot' && selectedTerrain.nom.includes('6');
   const isFoot7or8 = selectedTerrain?.type === 'foot' && (selectedTerrain.nom.includes('7') || selectedTerrain.nom.includes('8'));
 
+  // Générer les créneaux horaires selon le terrain
   const timeSlotsForSelectedTerrain = useMemo(() => {
     if (!selectedTerrain) return [];
     if (isFoot6) {
@@ -92,27 +102,37 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     return defaultTimeSlots;
   }, [selectedTerrain, isFoot6, isFoot7or8]);
 
-  // Utiliser la nouvelle logique de vérification de disponibilité
-  const { isAvailable: isTimeSlotAvailableForDate, blockingReason } = useTimeSlotAvailability({
-    terrainId: selectedTerrainId,
-    date: dateDebut, // Utiliser la date de début comme référence
-    timeSlot: heure,
-    duration: dureeSeance,
-    enabled: !!(selectedTerrainId && dateDebut && heure)
-  });
-
-  // Fonction simplifiée pour vérifier la disponibilité d'un créneau
+  // Vérifie si un créneau horaire est dispo ou non (utilise réservations & abonnements existants sur ce terrain)
   const isTimeSlotAvailable = (time: string) => {
-    if (!selectedTerrainId || !time || !dateDebut) return false;
-    
-    // Pour l'abonnement, on vérifie juste avec la date de début
-    // La logique complète est gérée par useTimeSlotAvailability
-    if (time === heure) {
-      return isTimeSlotAvailableForDate;
-    }
-    
-    // Pour les autres créneaux, on fait une vérification basique
-    return true; // Temporairement, on laisse les autres créneaux disponibles pour la sélection
+    if (!selectedTerrainId || !time) return false;
+
+    // Cherche conflits avec réservations
+    const reservationConflict = reservations.some(
+      (res) =>
+        res.terrain_id === selectedTerrainId &&
+        res.heure === time &&
+        // On vérifie les dates du range abonnement, si la réservation recoupe
+        (
+          (!dateDebut || res.date >= dateDebut) &&
+          (!dateFin || res.date <= dateFin)
+        ) &&
+        res.statut !== 'annulee'
+    );
+
+    // Cherche conflits avec abonnements existants sur le même jour/heure
+    const dayInWeek = dateDebut ? new Date(dateDebut).getDay() : undefined;
+    const abonnementConflict = abonnements.some(
+      (abo) =>
+        abo.terrain_id === selectedTerrainId &&
+        abo.heure_fixe === time &&
+        abo.statut === 'actif' &&
+        // Pour la sécurité, recoupe la période
+        (
+          (!dateDebut || !abo.date_fin || abo.date_fin >= dateDebut) &&
+          (!dateFin || !abo.date_debut || abo.date_debut <= dateFin)
+        )
+    );
+    return !reservationConflict && !abonnementConflict;
   };
 
   useEffect(() => {
@@ -123,6 +143,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     }
   }, [selectedType]);
 
+  // Retirer toute logique liée au montant/validation montant
   const isValid =
     selectedType &&
     selectedTerrainId &&
@@ -146,15 +167,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       return;
     }
 
-    // Vérification finale de disponibilité
-    if (!isTimeSlotAvailableForDate) {
-      setFormError(blockingReason || 'Ce créneau n\'est pas disponible.');
-      import('sonner').then(({ toast }) => {
-        toast.error(blockingReason || 'Ce créneau n\'est pas disponible.');
-      });
-      return;
-    }
-
     createAbonnement.mutate(
       {
         terrain_id: selectedTerrainId!,
@@ -162,9 +174,9 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         date_fin: dateFin,
         jour_semaine: selectedJourSemaine,
         heure_fixe: heure,
-        duree_seance: dureeSeance,
+        duree_seance: dureeSeance, // Correction ICI !
         client_nom: clientNom.trim(),
-        client_email: '',
+        client_email: '', // Toujours obligatoire dans le modèle, mais laissé vide
         client_tel: clientTel.trim(),
         statut: 'actif'
       },
@@ -182,13 +194,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       <h2 className="text-xl font-semibold mb-4">Créer un Abonnement</h2>
       {formError && <div className="bg-red-100 text-red-700 rounded p-2 text-sm">{formError}</div>}
 
-      {/* Afficher l'information de blocage si nécessaire */}
-      {heure && !isTimeSlotAvailableForDate && blockingReason && (
-        <div className="bg-yellow-100 text-yellow-800 rounded p-2 text-sm">
-          ⚠️ {blockingReason}
-        </div>
-      )}
-
       {/* Choix du type */}
       <ReservationTypeSelector selectedType={selectedType} setSelectedType={setSelectedType} />
 
@@ -203,6 +208,23 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
           />
         </div>
       )}
+
+      {/* CHAMP montant SUPPRIMÉ */}
+      {/* 
+      <div>
+        <Label htmlFor="montant">Montant (DT) *</Label>
+        <Input
+          id="montant"
+          type="number"
+          min="0"
+          step="0.1"
+          value={montant}
+          onChange={e => setMontant(e.target.value)}
+          required
+          placeholder="Montant en dinars"
+        />
+      </div>
+      */}
 
       {/* Dates */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -274,7 +296,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         )}
       </div>
 
-      {/* Heure avec nouvelle logique */}
+      {/* Heure */}
       {selectedTerrainId && (
         <div>
           <Label htmlFor="heure">Heure de la séance *</Label>
@@ -285,11 +307,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
             onTimeSelect={setHeure}
             loading={false}
           />
-          {heure && !isTimeSlotAvailableForDate && (
-            <p className="text-sm text-red-600 mt-1">
-              Ce créneau n'est pas disponible: {blockingReason}
-            </p>
-          )}
         </div>
       )}
 
