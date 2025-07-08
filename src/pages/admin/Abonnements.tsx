@@ -1,11 +1,11 @@
+
 import { useState, useMemo } from 'react';
 import { useAbonnements, useDeleteAbonnement, useUpdateAbonnement } from '@/hooks/useAbonnements';
 import { useAbonnementExpiration } from '@/hooks/useAbonnementExpiration';
-// import { useAbonnementTypes } from '@/hooks/useAbonnementTypes';
 import { useTerrains } from '@/hooks/useTerrains';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Plus, Calendar, CreditCard, Users } from 'lucide-react';
+import { Loader2, Plus, Users } from 'lucide-react';
 import { Abonnement } from '@/lib/supabase';
 import AbonnementForm from '@/components/admin/AbonnementForm';
 import EditAbonnementForm from '@/components/admin/EditAbonnementForm';
@@ -76,16 +76,6 @@ const Abonnements = () => {
     return terrain?.type ? terrain.type : '';
   };
 
-  // Calcul du chiffre d'affaires à partir des abonnements "actifs" (somme des montants renseignés)
-  const chiffreAffaires = useMemo(() => {
-    if (!abonnements) return 0;
-    return abonnements
-      .filter(a => a.statut === 'actif' && a.montant !== undefined && a.montant !== null && !isNaN(Number(a.montant)))
-      .reduce((total, abn) => {
-        return total + Number(abn.montant);
-      }, 0);
-  }, [abonnements]);
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -116,13 +106,25 @@ const Abonnements = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-center">
             <Users className="h-8 w-8 text-sport-green mr-3" />
             <div>
               <p className="text-sm font-medium text-gray-600">Total Abonnements</p>
               <p className="text-2xl font-bold">{abonnements?.length || 0}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="flex items-center">
+            <Users className="h-8 w-8 text-green-600 mr-3" />
+            <div>
+              <p className="text-sm font-medium text-gray-600">Abonnements Actifs</p>
+              <p className="text-2xl font-bold">
+                {abonnements?.filter(a => a.statut === 'actif').length || 0}
+              </p>
             </div>
           </div>
         </div>

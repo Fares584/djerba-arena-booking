@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 
 export function useAbonnements(filters?: { 
   statut?: string;
-  client_email?: string;
+  mois_abonnement?: number;
+  annee_abonnement?: number;
 }) {
   return useQuery({
     queryKey: ['abonnements', filters],
@@ -18,8 +19,12 @@ export function useAbonnements(filters?: {
           query = query.eq('statut', filters.statut);
         }
         
-        if (filters?.client_email) {
-          query = query.eq('client_email', filters.client_email);
+        if (filters?.mois_abonnement) {
+          query = query.eq('mois_abonnement', filters.mois_abonnement);
+        }
+        
+        if (filters?.annee_abonnement) {
+          query = query.eq('annee_abonnement', filters.annee_abonnement);
         }
         
         const { data, error } = await query
@@ -64,29 +69,27 @@ export function useCreateAbonnement() {
           throw new Error("No abonnement returned from insert");
         }
 
-        // Si l'abonnement inclut terrain_id, jour_semaine et heure_fixe, générer les réservations automatiques
-        if (abonnement.terrain_id && abonnement.jour_semaine !== null && abonnement.heure_fixe && abonnement.duree_seance) {
-          console.log("Generating recurring reservations for abonnement:", abonnement.id);
+        // Générer les réservations automatiques pour le mois
+        if (abonnement.terrain_id && abonnement.jour_semaine !== null && abonnement.heure_fixe) {
+          console.log("Generating monthly reservations for abonnement:", abonnement.id);
           
-          const { error: functionError } = await supabase.rpc('generer_reservations_abonnement', {
+          const { error: functionError } = await supabase.rpc('generer_reservations_mensuelles', {
             p_abonnement_id: abonnement.id,
             p_terrain_id: abonnement.terrain_id,
-            p_date_debut: abonnement.date_debut,
-            p_date_fin: abonnement.date_fin,
+            p_mois: abonnement.mois_abonnement,
+            p_annee: abonnement.annee_abonnement,
             p_jour_semaine: abonnement.jour_semaine,
             p_heure: abonnement.heure_fixe,
-            p_duree: abonnement.duree_seance,
             p_client_nom: abonnement.client_nom,
-            p_client_tel: abonnement.client_tel,
-            p_client_email: abonnement.client_email
+            p_client_tel: abonnement.client_tel || ''
           });
 
           if (functionError) {
-            console.error("Error generating recurring reservations:", functionError);
+            console.error("Error generating monthly reservations:", functionError);
             throw functionError;
           }
 
-          console.log("Recurring reservations generated successfully");
+          console.log("Monthly reservations generated successfully");
         }
         
         return abonnement;

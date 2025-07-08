@@ -16,52 +16,40 @@ export type Database = {
     Tables: {
       abonnements: {
         Row: {
-          client_email: string
+          annee_abonnement: number
           client_nom: string
-          client_tel: string
+          client_tel: string | null
           created_at: string | null
-          date_debut: string
-          date_fin: string
-          duree_seance: number | null
           heure_fixe: string | null
           id: number
           jour_semaine: number | null
-          montant: number | null
-          reservations_utilisees: number | null
+          mois_abonnement: number
           statut: string
           terrain_id: number | null
           updated_at: string | null
         }
         Insert: {
-          client_email: string
+          annee_abonnement?: number
           client_nom: string
-          client_tel: string
+          client_tel?: string | null
           created_at?: string | null
-          date_debut: string
-          date_fin: string
-          duree_seance?: number | null
           heure_fixe?: string | null
           id?: number
           jour_semaine?: number | null
-          montant?: number | null
-          reservations_utilisees?: number | null
+          mois_abonnement?: number
           statut: string
           terrain_id?: number | null
           updated_at?: string | null
         }
         Update: {
-          client_email?: string
+          annee_abonnement?: number
           client_nom?: string
-          client_tel?: string
+          client_tel?: string | null
           created_at?: string | null
-          date_debut?: string
-          date_fin?: string
-          duree_seance?: number | null
           heure_fixe?: string | null
           id?: number
           jour_semaine?: number | null
-          montant?: number | null
-          reservations_utilisees?: number | null
+          mois_abonnement?: number
           statut?: string
           terrain_id?: number | null
           updated_at?: string | null
@@ -327,6 +315,19 @@ export type Database = {
           p_client_nom: string
           p_client_tel: string
           p_client_email: string
+        }
+        Returns: undefined
+      }
+      generer_reservations_mensuelles: {
+        Args: {
+          p_abonnement_id: number
+          p_terrain_id: number
+          p_mois: number
+          p_annee: number
+          p_jour_semaine: number
+          p_heure: string
+          p_client_nom: string
+          p_client_tel: string
         }
         Returns: undefined
       }

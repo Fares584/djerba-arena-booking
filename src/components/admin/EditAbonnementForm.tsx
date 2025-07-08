@@ -1,8 +1,7 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
-import { useUpdateAbonnement, useAbonnements } from '@/hooks/useAbonnements';
-import { useReservations } from '@/hooks/useReservations';
+import { useUpdateAbonnement } from '@/hooks/useAbonnements';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,6 +31,31 @@ const generateTimeSlotsForFoot = (startHour: number, startMinute: number, endHou
   return slots;
 };
 
+const weekDays = [
+  { value: 0, label: 'Dimanche' },
+  { value: 1, label: 'Lundi' },
+  { value: 2, label: 'Mardi' },
+  { value: 3, label: 'Mercredi' },
+  { value: 4, label: 'Jeudi' },
+  { value: 5, label: 'Vendredi' },
+  { value: 6, label: 'Samedi' },
+];
+
+const months = [
+  { value: 1, label: 'Janvier' },
+  { value: 2, label: 'Février' },
+  { value: 3, label: 'Mars' },
+  { value: 4, label: 'Avril' },
+  { value: 5, label: 'Mai' },
+  { value: 6, label: 'Juin' },
+  { value: 7, label: 'Juillet' },
+  { value: 8, label: 'Août' },
+  { value: 9, label: 'Septembre' },
+  { value: 10, label: 'Octobre' },
+  { value: 11, label: 'Novembre' },
+  { value: 12, label: 'Décembre' },
+];
+
 interface EditAbonnementFormProps {
   abonnement: Abonnement;
   onSuccess: () => void;
@@ -39,40 +63,32 @@ interface EditAbonnementFormProps {
 }
 
 const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementFormProps) => {
-  // Ajout state choix type
   const [selectedType, setSelectedType] = useState<string>('');
   const [selectedTerrainId, setSelectedTerrainId] = useState<number | null>(abonnement.terrain_id || null);
-  const [dateDebut, setDateDebut] = useState(abonnement.date_debut);
-  const [dateFin, setDateFin] = useState(abonnement.date_fin);
+  const [selectedMonth, setSelectedMonth] = useState<number>(abonnement.mois_abonnement);
+  const [selectedYear] = useState<number>(abonnement.annee_abonnement);
+  const [selectedJourSemaine, setSelectedJourSemaine] = useState<number | null>(abonnement.jour_semaine || null);
   const [heure, setHeure] = useState(abonnement.heure_fixe || '');
   const [clientNom, setClientNom] = useState(abonnement.client_nom);
-  const [clientTel, setClientTel] = useState(abonnement.client_tel);
+  const [clientTel, setClientTel] = useState(abonnement.client_tel || '');
   const [statut, setStatut] = useState<Abonnement['statut']>(abonnement.statut);
-  const [selectedJourSemaine, setSelectedJourSemaine] = useState<number | null>(abonnement.jour_semaine || null);
   const [formError, setFormError] = useState<string | null>(null);
 
   const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
   const updateAbonnement = useUpdateAbonnement();
-  const { data: reservations = [] } = useReservations();
-  const { data: abonnements = [] } = useAbonnements();
 
   // Sélection automatique du type à partir du terrain_id au montage
-  useEffect(() => {
+  useState(() => {
     if (abonnement.terrain_id) {
       const foundTerrain = allTerrains.find(t => t.id === abonnement.terrain_id);
       if (foundTerrain) setSelectedType(foundTerrain.type);
     }
-  }, [abonnement.terrain_id, allTerrains]);
+  });
 
   // Filtrage terrains selon type
   const filteredTerrains = selectedType
     ? allTerrains.filter(t => t.type === selectedType)
     : [];
-
-  useEffect(() => {
-    setSelectedTerrainId(null);
-    setHeure('');
-  }, [selectedType]);
 
   // Trouver le terrain sélectionné
   const selectedTerrain = allTerrains.find(t => t.id === selectedTerrainId);
@@ -93,76 +109,24 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
     return defaultTimeSlots;
   }, [selectedTerrain, isFoot6, isFoot7or8]);
 
-  // CORRECTION: Vérifier la disponibilité uniquement pour le jour sélectionné
+  // Pour l'édition, on permet tous les créneaux
   const isTimeSlotAvailable = (time: string) => {
-    if (!selectedTerrainId || !time || selectedJourSemaine === null) return false;
-    
-    console.log('Vérification disponibilité (edit):', {
-      time,
-      terrainId: selectedTerrainId,
-      selectedJourSemaine,
-      dateDebut,
-      abonnementId: abonnement.id
-    });
-
-    const reservationConflict = reservations.some(
-      (res) =>
-        res.terrain_id === selectedTerrainId &&
-        res.heure === time &&
-        (
-          (!dateDebut || res.date >= dateDebut) &&
-          (!dateFin || res.date <= dateFin)
-        ) &&
-        res.statut !== 'annulee'
-    );
-
-    // CORRECTION PRINCIPALE: Vérifier les abonnements uniquement pour le même jour de la semaine
-    const abonnementConflict = abonnements.some(
-      (abo) => {
-        const conflict = abo.id !== abonnement.id && // ne pas se bloquer soi-même
-          abo.terrain_id === selectedTerrainId &&
-          abo.heure_fixe === time &&
-          abo.statut === 'actif' &&
-          abo.jour_semaine === selectedJourSemaine && // Ne bloquer que si c'est le même jour de la semaine
-          (
-            (!dateDebut || !abo.date_fin || abo.date_fin >= dateDebut) &&
-            (!dateFin || !abo.date_debut || abo.date_debut <= dateFin)
-          );
-        
-        if (conflict) {
-          console.log('Conflit détecté avec abonnement (edit):', {
-            aboId: abo.id,
-            aboJourSemaine: abo.jour_semaine,
-            selectedJourSemaine,
-            aboHeure: abo.heure_fixe,
-            selectedHeure: time
-          });
-        }
-        
-        return conflict;
-      }
-    );
-    
-    const available = !reservationConflict && !abonnementConflict;
-    console.log('Créneau disponible (edit):', available, 'pour', time, 'le jour', selectedJourSemaine);
-    return available;
+    return true; // En édition, on permet de changer l'heure
   };
 
   const isValid =
     selectedType &&
     selectedTerrainId &&
-    !!dateDebut &&
-    !!dateFin &&
-    !!heure &&
+    selectedMonth &&
     selectedJourSemaine !== null &&
-    !!clientNom.trim() &&
-    !!clientTel.trim();
+    !!heure &&
+    !!clientNom.trim();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
-    if (!isValid) {
+    if (!isValid || selectedJourSemaine === null) {
       setFormError('Merci de remplir correctement tous les champs obligatoires.');
       import('sonner').then(({ toast }) => {
         toast.error('Merci de remplir correctement tous les champs obligatoires.');
@@ -175,12 +139,12 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
         id: abonnement.id,
         updates: {
           terrain_id: selectedTerrainId!,
-          date_debut: dateDebut,
-          date_fin: dateFin,
-          jour_semaine: selectedJourSemaine!,
+          mois_abonnement: selectedMonth,
+          annee_abonnement: selectedYear,
+          jour_semaine: selectedJourSemaine,
           heure_fixe: heure,
           client_nom: clientNom.trim(),
-          client_tel: clientTel.trim(),
+          client_tel: clientTel.trim() || null,
           statut: statut
         }
       },
@@ -213,31 +177,25 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
         </div>
       )}
 
-      {/* Dates */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <Label htmlFor="dateDebut">Date de début *</Label>
-          <Input
-            id="dateDebut"
-            type="date"
-            value={dateDebut}
-            onChange={e => setDateDebut(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="dateFin">Date de fin *</Label>
-          <Input
-            id="dateFin"
-            type="date"
-            value={dateFin}
-            onChange={e => setDateFin(e.target.value)}
-            required
-          />
-        </div>
+      {/* Sélection du mois d'abonnement */}
+      <div>
+        <Label htmlFor="moisAbonnement">Mois d'abonnement *</Label>
+        <select
+          id="moisAbonnement"
+          className="w-full border rounded-md p-2 h-9 mt-1"
+          value={selectedMonth}
+          onChange={e => setSelectedMonth(Number(e.target.value))}
+          required
+        >
+          {months.map(month => (
+            <option key={month.value} value={month.value}>
+              {month.label} {selectedYear}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* Jour de la semaine - MANUEL uniquement */}
+      {/* Jour de la semaine */}
       <div>
         <Label htmlFor="jourSemaine">Jour de la semaine *</Label>
         <select
@@ -246,25 +204,15 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
           value={selectedJourSemaine !== null ? selectedJourSemaine : ""}
           onChange={e => {
             const newVal = e.target.value === "" ? null : Number(e.target.value);
-            console.log('Jour sélectionné (edit):', newVal);
             setSelectedJourSemaine(newVal);
           }}
           required
         >
           <option value="" disabled>Sélectionnez un jour</option>
-          <option value={0}>Dimanche</option>
-          <option value={1}>Lundi</option>
-          <option value={2}>Mardi</option>
-          <option value={3}>Mercredi</option>
-          <option value={4}>Jeudi</option>
-          <option value={5}>Vendredi</option>
-          <option value={6}>Samedi</option>
+          {weekDays.map(day => (
+            <option key={day.value} value={day.value}>{day.label}</option>
+          ))}
         </select>
-        {selectedJourSemaine !== null && (
-          <p className="text-sm text-gray-600 mt-1">
-            Jour sélectionné: {['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'][selectedJourSemaine]}
-          </p>
-        )}
       </div>
 
       {/* Heure */}
@@ -294,13 +242,12 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
           />
         </div>
         <div>
-          <Label htmlFor="clientTel">Téléphone du client *</Label>
+          <Label htmlFor="clientTel">Téléphone du client</Label>
           <Input
             id="clientTel"
             type="tel"
             value={clientTel}
             onChange={e => setClientTel(e.target.value)}
-            required
           />
         </div>
       </div>

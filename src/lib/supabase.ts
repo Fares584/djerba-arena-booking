@@ -44,21 +44,16 @@ export type AbonnementType = {
 
 export type Abonnement = {
   id: number;
-  // abonnement_type_id: number; // supprimé !
   client_nom: string;
-  client_email: string;
-  client_tel: string;
-  date_debut: string;
-  date_fin: string;
+  client_tel?: string | null;
+  mois_abonnement: number;
+  annee_abonnement: number;
   statut: 'actif' | 'expire' | 'annule';
-  reservations_utilisees?: number | null;
   created_at?: string;
   updated_at?: string;
   terrain_id?: number | null;
   jour_semaine?: number | null; // 0=Dimanche, 1=Lundi, etc.
   heure_fixe?: string | null; // Format HH:MM
-  duree_seance?: number | null; // Durée en heures
-  montant?: number | null; // Ajouté pour stocker le montant renseigné lors de la création
 };
 
 export type AdminUser = {
@@ -132,6 +127,15 @@ export const calculatePrice = (terrain: Terrain, time: string, globalNightStartT
 export const getDayName = (dayNumber: number): string => {
   const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
   return days[dayNumber] || '';
+};
+
+// Helper function to get month name in French
+export const getMonthName = (monthNumber: number): string => {
+  const months = [
+    'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+  ];
+  return months[monthNumber - 1] || '';
 };
 
 // Re-export the supabase client for backward compatibility

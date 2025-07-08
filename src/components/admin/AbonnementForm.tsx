@@ -1,5 +1,5 @@
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useCreateAbonnement } from '@/hooks/useAbonnements';
 import { useReservations } from '@/hooks/useReservations';
@@ -42,12 +42,19 @@ const weekDays = [
   { value: 6, label: 'Samedi' },
 ];
 
-// DUREES DISPONIBLES pour les séances d'abonnement (en heures)
-const footDuration = 1.5;
-const otherSportDurations = [
-  { value: 1, label: '1 heure' },
-  { value: 2, label: '2 heures' },
-  { value: 3, label: '3 heures' },
+const months = [
+  { value: 1, label: 'Janvier' },
+  { value: 2, label: 'Février' },
+  { value: 3, label: 'Mars' },
+  { value: 4, label: 'Avril' },
+  { value: 5, label: 'Mai' },
+  { value: 6, label: 'Juin' },
+  { value: 7, label: 'Juillet' },
+  { value: 8, label: 'Août' },
+  { value: 9, label: 'Septembre' },
+  { value: 10, label: 'Octobre' },
+  { value: 11, label: 'Novembre' },
+  { value: 12, label: 'Décembre' },
 ];
 
 interface AbonnementFormProps {
@@ -55,22 +62,21 @@ interface AbonnementFormProps {
 }
 
 const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+
   const [selectedType, setSelectedType] = useState<string>('');
   const [selectedTerrainId, setSelectedTerrainId] = useState<number | null>(null);
-  const [dateDebut, setDateDebut] = useState('');
-  const [dateFin, setDateFin] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth);
+  const [selectedYear] = useState<number>(currentYear);
+  const [selectedJourSemaine, setSelectedJourSemaine] = useState<number | null>(null);
   const [heure, setHeure] = useState('');
   const [clientNom, setClientNom] = useState('');
   const [clientTel, setClientTel] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
-  const [selectedJourSemaine, setSelectedJourSemaine] = useState<number | null>(null);
-  const [dureeSeance, setDureeSeance] = useState<number>(1);
 
-  // Récupération des terrains actifs
   const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
   const createAbonnement = useCreateAbonnement();
-
-  // Récupération des réservations et abonnements existants pour disponibilité
   const { data: reservations = [] } = useReservations();
   const { data: abonnements = [] } = useAbonnements();
 
@@ -78,11 +84,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const filteredTerrains = selectedType
     ? allTerrains.filter(t => t.type === selectedType)
     : [];
-
-  useEffect(() => {
-    setSelectedTerrainId(null);
-    setHeure('');
-  }, [selectedType]);
 
   // Trouver le terrain sélectionné
   const selectedTerrain = allTerrains.find(t => t.id === selectedTerrainId);
@@ -103,79 +104,45 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     return defaultTimeSlots;
   }, [selectedTerrain, isFoot6, isFoot7or8]);
 
-  // CORRECTION: Vérifier la disponibilité uniquement pour le jour sélectionné
+  // Vérifier la disponibilité des créneaux pour le mois et jour sélectionnés
   const isTimeSlotAvailable = (time: string) => {
     if (!selectedTerrainId || !time || selectedJourSemaine === null) return false;
-    
-    console.log('Vérification disponibilité:', {
-      time,
-      terrainId: selectedTerrainId,
-      selectedJourSemaine,
-      dateDebut
+
+    // Vérifier les conflits avec les réservations existantes pour ce mois
+    const reservationConflict = reservations.some(res => {
+      const resDate = new Date(res.date);
+      const resMonth = resDate.getMonth() + 1;
+      const resYear = resDate.getFullYear();
+      const resDay = resDate.getDay();
+      
+      return res.terrain_id === selectedTerrainId &&
+        res.heure === time &&
+        resMonth === selectedMonth &&
+        resYear === selectedYear &&
+        resDay === selectedJourSemaine &&
+        res.statut !== 'annulee';
     });
 
-    // Cherche conflits avec réservations exactes sur les dates
-    const reservationConflict = reservations.some(
-      (res) =>
-        res.terrain_id === selectedTerrainId &&
-        res.heure === time &&
-        (
-          (!dateDebut || res.date >= dateDebut) &&
-          (!dateFin || res.date <= dateFin)
-        ) &&
-        res.statut !== 'annulee'
+    // Vérifier les conflits avec les abonnements existants
+    const abonnementConflict = abonnements.some(abo => 
+      abo.terrain_id === selectedTerrainId &&
+      abo.heure_fixe === time &&
+      abo.mois_abonnement === selectedMonth &&
+      abo.annee_abonnement === selectedYear &&
+      abo.jour_semaine === selectedJourSemaine &&
+      abo.statut === 'actif'
     );
 
-    // CORRECTION PRINCIPALE: Vérifier les abonnements uniquement pour le même jour de la semaine
-    const abonnementConflict = abonnements.some(
-      (abo) => {
-        const conflict = abo.terrain_id === selectedTerrainId &&
-          abo.heure_fixe === time &&
-          abo.statut === 'actif' &&
-          abo.jour_semaine === selectedJourSemaine && // Ne bloquer que si c'est le même jour de la semaine
-          (
-            (!dateDebut || !abo.date_fin || abo.date_fin >= dateDebut) &&
-            (!dateFin || !abo.date_debut || abo.date_debut <= dateFin)
-          );
-        
-        if (conflict) {
-          console.log('Conflit détecté avec abonnement:', {
-            aboId: abo.id,
-            aboJourSemaine: abo.jour_semaine,
-            selectedJourSemaine,
-            aboHeure: abo.heure_fixe,
-            selectedHeure: time
-          });
-        }
-        
-        return conflict;
-      }
-    );
-
-    const available = !reservationConflict && !abonnementConflict;
-    console.log('Créneau disponible:', available, 'pour', time, 'le jour', selectedJourSemaine);
-    return available;
+    return !reservationConflict && !abonnementConflict;
   };
 
-  useEffect(() => {
-    if (selectedType === 'foot') {
-      setDureeSeance(footDuration);
-    } else if (selectedType) {
-      setDureeSeance(1); // valeur par défaut pour autres types
-    }
-  }, [selectedType]);
-
-  // Retirer toute logique liée au montant/validation montant
-  const isValid =
+  const isValid = 
     selectedType &&
     selectedTerrainId &&
-    !!dateDebut &&
-    !!dateFin &&
-    !!heure &&
+    selectedMonth &&
     selectedJourSemaine !== null &&
-    !!clientNom.trim() &&
-    !!clientTel.trim() &&
-    dureeSeance > 0;
+    !!heure &&
+    !!clientNom.trim();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -192,14 +159,12 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     createAbonnement.mutate(
       {
         terrain_id: selectedTerrainId!,
-        date_debut: dateDebut,
-        date_fin: dateFin,
+        mois_abonnement: selectedMonth,
+        annee_abonnement: selectedYear,
         jour_semaine: selectedJourSemaine,
         heure_fixe: heure,
-        duree_seance: dureeSeance,
         client_nom: clientNom.trim(),
-        client_email: '', // Toujours obligatoire dans le modèle, mais laissé vide
-        client_tel: clientTel.trim(),
+        client_tel: clientTel.trim() || null,
         statut: 'actif'
       },
       {
@@ -231,31 +196,25 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         </div>
       )}
 
-      {/* Dates */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <Label htmlFor="dateDebut">Date de début *</Label>
-          <Input
-            id="dateDebut"
-            type="date"
-            value={dateDebut}
-            onChange={e => setDateDebut(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="dateFin">Date de fin *</Label>
-          <Input
-            id="dateFin"
-            type="date"
-            value={dateFin}
-            onChange={e => setDateFin(e.target.value)}
-            required
-          />
-        </div>
+      {/* Sélection du mois d'abonnement */}
+      <div>
+        <Label htmlFor="moisAbonnement">Mois d'abonnement *</Label>
+        <select
+          id="moisAbonnement"
+          className="w-full border rounded-md p-2 h-9 mt-1"
+          value={selectedMonth}
+          onChange={e => setSelectedMonth(Number(e.target.value))}
+          required
+        >
+          {months.map(month => (
+            <option key={month.value} value={month.value}>
+              {month.label} {selectedYear}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* Jour de la semaine - MANUEL uniquement */}
+      {/* Jour de la semaine */}
       <div>
         <Label htmlFor="jourSemaine">Jour de la semaine *</Label>
         <select
@@ -264,7 +223,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
           value={selectedJourSemaine !== null ? selectedJourSemaine : ""}
           onChange={e => {
             const newVal = e.target.value === "" ? null : Number(e.target.value);
-            console.log('Jour sélectionné:', newVal);
             setSelectedJourSemaine(newVal);
           }}
           required
@@ -274,37 +232,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
             <option key={day.value} value={day.value}>{day.label}</option>
           ))}
         </select>
-        {selectedJourSemaine !== null && (
-          <p className="text-sm text-gray-600 mt-1">
-            Jour sélectionné: {weekDays.find(d => d.value === selectedJourSemaine)?.label}
-          </p>
-        )}
-      </div>
-
-      {/* Durée de la séance */}
-      <div>
-        <Label htmlFor="dureeSeance">Durée de la séance *</Label>
-        {selectedType === 'foot' ? (
-          <Input
-            id="dureeSeance"
-            value="1h30"
-            readOnly
-            disabled
-            className="w-full border rounded-md p-2 h-9 mt-1 bg-gray-100 text-gray-800"
-          />
-        ) : (
-          <select
-            id="dureeSeance"
-            className="w-full border rounded-md p-2 h-9 mt-1"
-            value={dureeSeance}
-            onChange={e => setDureeSeance(Number(e.target.value))}
-            required
-          >
-            {otherSportDurations.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        )}
       </div>
 
       {/* Heure */}
@@ -334,13 +261,12 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
           />
         </div>
         <div>
-          <Label htmlFor="clientTel">Téléphone du client *</Label>
+          <Label htmlFor="clientTel">Téléphone du client</Label>
           <Input
             id="clientTel"
             type="tel"
             value={clientTel}
             onChange={e => setClientTel(e.target.value)}
-            required
           />
         </div>
       </div>
