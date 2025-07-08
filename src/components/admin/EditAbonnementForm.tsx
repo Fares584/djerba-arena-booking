@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useUpdateAbonnement, useAbonnements } from '@/hooks/useAbonnements';
@@ -92,7 +93,7 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
     return defaultTimeSlots;
   }, [selectedTerrain, isFoot6, isFoot7or8]);
 
-  // CORRECTION: Utiliser selectedJourSemaine au lieu de calculer depuis dateDebut
+  // CORRECTION: Vérifier la disponibilité uniquement pour le jour sélectionné
   const isTimeSlotAvailable = (time: string) => {
     if (!selectedTerrainId || !time || selectedJourSemaine === null) return false;
     
@@ -115,28 +116,36 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
         res.statut !== 'annulee'
     );
 
-    // CORRECTION: utiliser selectedJourSemaine directement et exclure l'abonnement en cours de modification
+    // CORRECTION PRINCIPALE: Vérifier les abonnements uniquement pour le même jour de la semaine
     const abonnementConflict = abonnements.some(
       (abo) => {
         const conflict = abo.id !== abonnement.id && // ne pas se bloquer soi-même
           abo.terrain_id === selectedTerrainId &&
           abo.heure_fixe === time &&
           abo.statut === 'actif' &&
-          abo.jour_semaine === selectedJourSemaine && // CORRECTION: utiliser selectedJourSemaine directement
+          abo.jour_semaine === selectedJourSemaine && // Ne bloquer que si c'est le même jour de la semaine
           (
             (!dateDebut || !abo.date_fin || abo.date_fin >= dateDebut) &&
             (!dateFin || !abo.date_debut || abo.date_debut <= dateFin)
           );
         
         if (conflict) {
-          console.log('Conflit détecté avec abonnement (edit):', abo);
+          console.log('Conflit détecté avec abonnement (edit):', {
+            aboId: abo.id,
+            aboJourSemaine: abo.jour_semaine,
+            selectedJourSemaine,
+            aboHeure: abo.heure_fixe,
+            selectedHeure: time
+          });
         }
         
         return conflict;
       }
     );
     
-    return !reservationConflict && !abonnementConflict;
+    const available = !reservationConflict && !abonnementConflict;
+    console.log('Créneau disponible (edit):', available, 'pour', time, 'le jour', selectedJourSemaine);
+    return available;
   };
 
   const isValid =
@@ -237,6 +246,7 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
           value={selectedJourSemaine !== null ? selectedJourSemaine : ""}
           onChange={e => {
             const newVal = e.target.value === "" ? null : Number(e.target.value);
+            console.log('Jour sélectionné (edit):', newVal);
             setSelectedJourSemaine(newVal);
           }}
           required
@@ -250,6 +260,11 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
           <option value={5}>Vendredi</option>
           <option value={6}>Samedi</option>
         </select>
+        {selectedJourSemaine !== null && (
+          <p className="text-sm text-gray-600 mt-1">
+            Jour sélectionné: {['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'][selectedJourSemaine]}
+          </p>
+        )}
       </div>
 
       {/* Heure */}

@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useCreateAbonnement } from '@/hooks/useAbonnements';
@@ -102,7 +103,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     return defaultTimeSlots;
   }, [selectedTerrain, isFoot6, isFoot7or8]);
 
-  // CORRECTION: Utiliser selectedJourSemaine au lieu de calculer depuis dateDebut
+  // CORRECTION: Vérifier la disponibilité uniquement pour le jour sélectionné
   const isTimeSlotAvailable = (time: string) => {
     if (!selectedTerrainId || !time || selectedJourSemaine === null) return false;
     
@@ -113,7 +114,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       dateDebut
     });
 
-    // Cherche conflits avec réservations
+    // Cherche conflits avec réservations exactes sur les dates
     const reservationConflict = reservations.some(
       (res) =>
         res.terrain_id === selectedTerrainId &&
@@ -125,27 +126,35 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         res.statut !== 'annulee'
     );
 
-    // CORRECTION: Utiliser selectedJourSemaine directement
+    // CORRECTION PRINCIPALE: Vérifier les abonnements uniquement pour le même jour de la semaine
     const abonnementConflict = abonnements.some(
       (abo) => {
         const conflict = abo.terrain_id === selectedTerrainId &&
           abo.heure_fixe === time &&
           abo.statut === 'actif' &&
-          abo.jour_semaine === selectedJourSemaine && // CORRECTION: utiliser selectedJourSemaine directement
+          abo.jour_semaine === selectedJourSemaine && // Ne bloquer que si c'est le même jour de la semaine
           (
             (!dateDebut || !abo.date_fin || abo.date_fin >= dateDebut) &&
             (!dateFin || !abo.date_debut || abo.date_debut <= dateFin)
           );
         
         if (conflict) {
-          console.log('Conflit détecté avec abonnement:', abo);
+          console.log('Conflit détecté avec abonnement:', {
+            aboId: abo.id,
+            aboJourSemaine: abo.jour_semaine,
+            selectedJourSemaine,
+            aboHeure: abo.heure_fixe,
+            selectedHeure: time
+          });
         }
         
         return conflict;
       }
     );
 
-    return !reservationConflict && !abonnementConflict;
+    const available = !reservationConflict && !abonnementConflict;
+    console.log('Créneau disponible:', available, 'pour', time, 'le jour', selectedJourSemaine);
+    return available;
   };
 
   useEffect(() => {
@@ -187,7 +196,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         date_fin: dateFin,
         jour_semaine: selectedJourSemaine,
         heure_fixe: heure,
-        duree_seance: dureeSeance, // Correction ICI !
+        duree_seance: dureeSeance,
         client_nom: clientNom.trim(),
         client_email: '', // Toujours obligatoire dans le modèle, mais laissé vide
         client_tel: clientTel.trim(),
@@ -255,6 +264,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
           value={selectedJourSemaine !== null ? selectedJourSemaine : ""}
           onChange={e => {
             const newVal = e.target.value === "" ? null : Number(e.target.value);
+            console.log('Jour sélectionné:', newVal);
             setSelectedJourSemaine(newVal);
           }}
           required
@@ -264,6 +274,11 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
             <option key={day.value} value={day.value}>{day.label}</option>
           ))}
         </select>
+        {selectedJourSemaine !== null && (
+          <p className="text-sm text-gray-600 mt-1">
+            Jour sélectionné: {weekDays.find(d => d.value === selectedJourSemaine)?.label}
+          </p>
+        )}
       </div>
 
       {/* Durée de la séance */}
