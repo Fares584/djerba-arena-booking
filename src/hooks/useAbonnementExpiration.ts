@@ -11,16 +11,19 @@ export function useAbonnementExpiration(abonnements: Abonnement[] | undefined) {
 
     const checkExpiredAbonnements = () => {
       const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const currentMonth = today.getMonth() + 1;
+      const currentYear = today.getFullYear();
 
       abonnements.forEach((abonnement) => {
         if (abonnement.statut === 'actif') {
-          const dateFinAbonnement = new Date(abonnement.date_fin);
-          dateFinAbonnement.setHours(0, 0, 0, 0);
+          // Vérifier si l'abonnement a expiré (mois passé)
+          const isExpired = (
+            abonnement.annee_abonnement < currentYear ||
+            (abonnement.annee_abonnement === currentYear && abonnement.mois_abonnement < currentMonth)
+          );
 
-          // Si la date de fin est dépassée, marquer comme expiré
-          if (dateFinAbonnement < today) {
-            console.log(`Expiring abonnement ${abonnement.id}: ${abonnement.client_nom}`);
+          if (isExpired) {
+            console.log(`Expiring abonnement ${abonnement.id}: ${abonnement.client_nom} - ${abonnement.mois_abonnement}/${abonnement.annee_abonnement}`);
             updateAbonnement.mutate({
               id: abonnement.id,
               updates: { statut: 'expire' }
@@ -34,12 +37,13 @@ export function useAbonnementExpiration(abonnements: Abonnement[] | undefined) {
   }, [abonnements, updateAbonnement]);
 }
 
-// Fonction utilitaire pour calculer les jours restants
-export function calculateDaysRemaining(dateFin: string): number {
+// Fonction utilitaire pour calculer les jours restants jusqu'à la fin du mois d'abonnement
+export function calculateDaysRemaining(moisAbonnement: number, anneeAbonnement: number): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  const endDate = new Date(dateFin);
+  // Dernier jour du mois d'abonnement
+  const endDate = new Date(anneeAbonnement, moisAbonnement, 0); // 0 = dernier jour du mois précédent
   endDate.setHours(0, 0, 0, 0);
   
   const diffTime = endDate.getTime() - today.getTime();

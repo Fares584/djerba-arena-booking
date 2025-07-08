@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useReservations } from '@/hooks/useReservations';
@@ -108,15 +107,20 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
         res.statut !== 'annulee'
     );
 
+    // Vérifier les conflits d'abonnements avec la nouvelle logique
+    const selectedDate = new Date(formData.date);
+    const selectedDayOfWeek = selectedDate.getDay();
+    const selectedMonth = selectedDate.getMonth() + 1;
+    const selectedYear = selectedDate.getFullYear();
+
     const abonnementConflict = abonnements.some(
       (abo) =>
         abo.terrain_id === formData.terrain_id &&
         abo.heure_fixe === time &&
         abo.statut === 'actif' &&
-        (
-          (!formData.date || !abo.date_fin || abo.date_fin >= formData.date) &&
-          (!formData.date || !abo.date_debut || abo.date_debut <= formData.date)
-        )
+        abo.jour_semaine === selectedDayOfWeek &&
+        abo.mois_abonnement === selectedMonth &&
+        abo.annee_abonnement === selectedYear
     );
 
     return !reservationConflict && !abonnementConflict;
