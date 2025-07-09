@@ -4,7 +4,7 @@ import { useTerrains } from '@/hooks/useTerrains';
 import { format, addDays, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight, Loader2, Calendar, User, Phone, Mail, MapPin, Clock, Info, Crown, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Calendar, User, Phone, Mail, MapPin, Clock, Info, Crown, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -320,7 +320,11 @@ const Planning = () => {
     return terrain ? terrain.nom : 'Inconnu';
   };
 
-  const getCellClassName = (reservation?: Reservation) => {
+  const getCellClassName = (reservation?: Reservation, isAvailable: boolean = true) => {
+    if (!isAvailable) {
+      return 'bg-gray-100 border border-gray-200 relative opacity-60';
+    }
+    
     if (!reservation) return 'bg-white hover:bg-blue-50 border border-gray-200 cursor-pointer group transition-all duration-200 hover:border-blue-300 hover:shadow-sm relative';
     
     // Différents styles pour les abonnements vs réservations normales
@@ -443,6 +447,11 @@ const Planning = () => {
             <div className="w-4 h-4 bg-blue-50 border border-blue-200 rounded"></div>
             <span>Case libre (cliquer pour réserver)</span>
           </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-gray-100 border border-gray-200 rounded opacity-60"></div>
+            <X className="h-3 w-3 text-gray-400" />
+            <span>Non disponible</span>
+          </div>
         </div>
       </div>
 
@@ -462,6 +471,11 @@ const Planning = () => {
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 bg-blue-50 border border-blue-200 rounded"></div>
             <span>Libre (cliquer)</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-gray-100 border border-gray-200 rounded opacity-60"></div>
+            <X className="h-3 w-3 text-gray-400" />
+            <span>Non dispo</span>
           </div>
         </div>
       </div>
@@ -594,6 +608,10 @@ const Planning = () => {
                           <div key={index} className="p-2 lg:p-3 border-b border-r border-gray-200 text-center font-medium text-xs lg:text-sm">
                             <div>{format(day, 'EEE', { locale: fr })}</div>
                             <div>{format(day, 'dd/MM')}</div>
+                            {/* Indicateur spécial samedi pour Foot à 6 */}
+                            {day.getDay() === 6 && isFoot6 && (
+                              <div className="text-orange-600 text-xs font-bold mt-1">Ouv. 10h</div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -631,9 +649,11 @@ const Planning = () => {
                                     return (
                                       <td 
                                         key={dayIndex}
-                                        className="p-1 lg:p-2 border-b border-r bg-gray-200 text-gray-500 w-[12.5%]"
+                                        className="p-1 lg:p-2 border-b border-r bg-gray-50 w-[12.5%] relative"
                                       >
-                                        <div className="text-xs text-center">Non disponible</div>
+                                        <div className="h-12 flex items-center justify-center opacity-40">
+                                          <X className="h-3 w-3 text-gray-400" />
+                                        </div>
                                       </td>
                                     );
                                   }
@@ -653,7 +673,7 @@ const Planning = () => {
                                   return (
                                     <td 
                                       key={dayIndex}
-                                      className={`p-1 lg:p-2 border-b border-r w-[12.5%] ${getCellClassName(occupation.reservation)}`}
+                                      className={`p-1 lg:p-2 border-b border-r w-[12.5%] ${getCellClassName(occupation.reservation, isTimeSlotAvailable)}`}
                                       rowSpan={rowSpan}
                                       onClick={() => occupation.reservation 
                                         ? handleReservationClick(occupation.reservation)
@@ -719,7 +739,7 @@ const Planning = () => {
                           return (
                             <div 
                               key={timeSlot}
-                              className={`p-3 rounded-lg relative group transition-all duration-200 ${getCellClassName(occupation.reservation)} ${
+                              className={`p-3 rounded-lg relative group transition-all duration-200 ${getCellClassName(occupation.reservation, true)} ${
                                 isSpecialSaturdaySlot ? 'ring-2 ring-orange-300 bg-gradient-to-r from-orange-50 to-white' : ''
                               }`}
                               onClick={() => occupation.reservation 
