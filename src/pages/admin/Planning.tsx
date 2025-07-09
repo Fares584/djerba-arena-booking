@@ -4,7 +4,7 @@ import { useTerrains } from '@/hooks/useTerrains';
 import { format, addDays, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight, Loader2, Calendar, User, Phone, Mail, MapPin, Clock, Info, Crown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Calendar, User, Phone, Mail, MapPin, Clock, Info, Crown, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -321,7 +321,7 @@ const Planning = () => {
   };
 
   const getCellClassName = (reservation?: Reservation) => {
-    if (!reservation) return 'bg-white hover:bg-gray-50 border border-gray-200 cursor-pointer hover:bg-blue-50 transition-colors';
+    if (!reservation) return 'bg-white hover:bg-blue-50 border border-gray-200 cursor-pointer group transition-all duration-200 hover:border-blue-300 hover:shadow-sm relative';
     
     // Différents styles pour les abonnements vs réservations normales
     const isSubscription = !!reservation.abonnement_id;
@@ -677,9 +677,13 @@ const Planning = () => {
                                           <div className="text-xs opacity-75">{occupation.reservation.duree}h</div>
                                         </div>
                                       ) : (
-                                        <div className="text-xs text-gray-500 text-center py-2">
-                                          <div className="opacity-60">Cliquer pour</div>
-                                          <div className="font-medium">réserver</div>
+                                        <div className="h-12 flex items-center justify-center relative">
+                                          {/* Icône plus cachée par défaut, visible au hover */}
+                                          <Plus className="h-4 w-4 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                                          {/* Tooltip au hover */}
+                                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                            Cliquer pour réserver
+                                          </div>
                                         </div>
                                       )}
                                     </td>
@@ -715,7 +719,7 @@ const Planning = () => {
                           return (
                             <div 
                               key={timeSlot}
-                              className={`p-3 rounded-lg relative ${getCellClassName(occupation.reservation)} ${
+                              className={`p-3 rounded-lg relative group transition-all duration-200 ${getCellClassName(occupation.reservation)} ${
                                 isSpecialSaturdaySlot ? 'ring-2 ring-orange-300 bg-gradient-to-r from-orange-50 to-white' : ''
                               }`}
                               onClick={() => occupation.reservation 
@@ -763,12 +767,11 @@ const Planning = () => {
                                     <div className="text-xs opacity-75">{occupation.reservation.duree}h</div>
                                   </div>
                                 ) : (
-                                  <div className="text-xs text-blue-600 font-medium flex items-center gap-1">
-                                    {isSpecialSaturdaySlot ? (
-                                      <span className="text-orange-600 font-medium">Libre - Ouverture</span>
-                                    ) : (
-                                      'Cliquer pour réserver'
-                                    )}
+                                  <div className="flex items-center gap-2">
+                                    <Plus className="h-4 w-4 text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                                    <span className="text-xs text-blue-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                      {isSpecialSaturdaySlot ? 'Réserver - Ouverture' : 'Réserver'}
+                                    </span>
                                   </div>
                                 )}
                               </div>
