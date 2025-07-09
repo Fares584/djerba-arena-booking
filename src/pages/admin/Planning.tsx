@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import ReservationCard from '@/components/admin/ReservationCard';
 import EditReservationForm from '@/components/admin/EditReservationForm';
+import QuickReservationForm from '@/components/admin/QuickReservationForm';
 
 // Utilitaire pour générer les créneaux personnalisés Foot
 function generateTimeSlotsForFoot(startHour: number, startMinute: number, endHour: number, endMinute: number) {
@@ -185,6 +186,16 @@ const Planning = () => {
   const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   
+  // Nouveau state pour le formulaire de réservation rapide
+  const [quickReservationData, setQuickReservationData] = useState<{
+    terrainId: number;
+    terrainName: string;
+    date: string;
+    time: string;
+    duration: number;
+  } | null>(null);
+  const [isQuickReservationOpen, setIsQuickReservationOpen] = useState(false);
+  
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
   // Récupérer toutes les réservations (y compris les abonnements)
   const { data: reservations, isLoading: reservationsLoading, refetch } = useReservations({
@@ -310,7 +321,7 @@ const Planning = () => {
   };
 
   const getCellClassName = (reservation?: Reservation) => {
-    if (!reservation) return 'bg-white hover:bg-gray-50 border border-gray-200';
+    if (!reservation) return 'bg-white hover:bg-gray-50 border border-gray-200 cursor-pointer hover:bg-blue-50 transition-colors';
     
     // Différents styles pour les abonnements vs réservations normales
     const isSubscription = !!reservation.abonnement_id;
@@ -318,24 +329,24 @@ const Planning = () => {
     if (isSubscription) {
       switch (reservation.statut) {
         case 'confirmee':
-          return 'bg-gradient-to-br from-purple-100 to-purple-200 text-purple-900 border-2 border-purple-300 hover:from-purple-200 hover:to-purple-300 shadow-sm';
+          return 'bg-gradient-to-br from-purple-100 to-purple-200 text-purple-900 border-2 border-purple-300 hover:from-purple-200 hover:to-purple-300 shadow-sm cursor-pointer';
         case 'en_attente':
-          return 'bg-gradient-to-br from-purple-50 to-yellow-100 text-purple-800 border-2 border-purple-200 hover:from-purple-100 hover:to-yellow-200';
+          return 'bg-gradient-to-br from-purple-50 to-yellow-100 text-purple-800 border-2 border-purple-200 hover:from-purple-100 hover:to-yellow-200 cursor-pointer';
         case 'annulee':
-          return 'bg-gradient-to-br from-red-100 to-purple-100 text-red-800 border-2 border-red-300 hover:from-red-200 hover:to-purple-200';
+          return 'bg-gradient-to-br from-red-100 to-purple-100 text-red-800 border-2 border-red-300 hover:from-red-200 hover:to-purple-200 cursor-pointer';
         default:
-          return 'bg-gradient-to-br from-purple-50 to-white text-purple-800 border-2 border-purple-200';
+          return 'bg-gradient-to-br from-purple-50 to-white text-purple-800 border-2 border-purple-200 cursor-pointer';
       }
     } else {
       switch (reservation.statut) {
         case 'confirmee':
-          return 'bg-green-100 text-green-800 border border-green-300 hover:bg-green-200';
+          return 'bg-green-100 text-green-800 border border-green-300 hover:bg-green-200 cursor-pointer';
         case 'en_attente':
-          return 'bg-yellow-100 text-yellow-800 border border-yellow-300 hover:bg-yellow-200';
+          return 'bg-yellow-100 text-yellow-800 border border-yellow-300 hover:bg-yellow-200 cursor-pointer';
         case 'annulee':
-          return 'bg-red-100 text-red-800 border border-red-300 hover:bg-red-200';
+          return 'bg-red-100 text-red-800 border border-red-300 hover:bg-red-200 cursor-pointer';
         default:
-          return 'bg-white hover:bg-gray-50 border border-gray-200';
+          return 'bg-white hover:bg-gray-50 border border-gray-200 cursor-pointer';
       }
     }
   };
@@ -343,6 +354,25 @@ const Planning = () => {
   const handleReservationClick = (reservation: Reservation) => {
     setSelectedReservation(reservation);
     setIsDialogOpen(true);
+  };
+
+  // Nouveau handler pour créer une réservation rapide
+  const handleEmptyCellClick = (terrain: Terrain, day: Date, timeSlot: string) => {
+    const duration = terrain.type === 'foot' ? 1.5 : 1;
+    
+    setQuickReservationData({
+      terrainId: terrain.id,
+      terrainName: terrain.nom,
+      date: format(day, 'yyyy-MM-dd'),
+      time: timeSlot,
+      duration: duration
+    });
+    setIsQuickReservationOpen(true);
+  };
+
+  const handleQuickReservationSuccess = () => {
+    refetch();
+    setQuickReservationData(null);
   };
 
   const getStatusBadgeVariant = (statut: string) => {
@@ -409,6 +439,10 @@ const Planning = () => {
             <Crown className="h-3 w-3 text-purple-600" />
             <span>Abonnement</span>
           </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-blue-50 border border-blue-200 rounded"></div>
+            <span>Case libre (cliquer pour réserver)</span>
+          </div>
         </div>
       </div>
 
@@ -424,6 +458,10 @@ const Planning = () => {
             <div className="w-3 h-3 bg-gradient-to-br from-purple-100 to-purple-200 border-2 border-purple-300 rounded"></div>
             <Crown className="h-3 w-3 text-purple-600" />
             <span>Abonnement</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-blue-50 border border-blue-200 rounded"></div>
+            <span>Libre (cliquer)</span>
           </div>
         </div>
       </div>
@@ -615,11 +653,12 @@ const Planning = () => {
                                   return (
                                     <td 
                                       key={dayIndex}
-                                      className={`p-1 lg:p-2 border-b border-r w-[12.5%] ${getCellClassName(occupation.reservation)} ${
-                                        occupation.reservation ? 'cursor-pointer hover:opacity-80' : ''
-                                      }`}
+                                      className={`p-1 lg:p-2 border-b border-r w-[12.5%] ${getCellClassName(occupation.reservation)}`}
                                       rowSpan={rowSpan}
-                                      onClick={() => occupation.reservation && handleReservationClick(occupation.reservation)}
+                                      onClick={() => occupation.reservation 
+                                        ? handleReservationClick(occupation.reservation)
+                                        : handleEmptyCellClick(terrain, day, timeSlot)
+                                      }
                                     >
                                       {occupation.reservation ? (
                                         <div className="text-xs relative">
@@ -637,7 +676,12 @@ const Planning = () => {
                                           </div>
                                           <div className="text-xs opacity-75">{occupation.reservation.duree}h</div>
                                         </div>
-                                      ) : null}
+                                      ) : (
+                                        <div className="text-xs text-gray-500 text-center py-2">
+                                          <div className="opacity-60">Cliquer pour</div>
+                                          <div className="font-medium">réserver</div>
+                                        </div>
+                                      )}
                                     </td>
                                   );
                                 })}
@@ -672,9 +716,12 @@ const Planning = () => {
                             <div 
                               key={timeSlot}
                               className={`p-3 rounded-lg relative ${getCellClassName(occupation.reservation)} ${
-                                occupation.reservation ? 'cursor-pointer hover:opacity-80' : ''
-                              } ${isSpecialSaturdaySlot ? 'ring-2 ring-orange-300 bg-gradient-to-r from-orange-50 to-white' : ''}`}
-                              onClick={() => occupation.reservation && handleReservationClick(occupation.reservation)}
+                                isSpecialSaturdaySlot ? 'ring-2 ring-orange-300 bg-gradient-to-r from-orange-50 to-white' : ''
+                              }`}
+                              onClick={() => occupation.reservation 
+                                ? handleReservationClick(occupation.reservation)
+                                : handleEmptyCellClick(terrain, selectedDay, timeSlot)
+                              }
                             >
                               {/* Badge abonnement pour mobile */}
                               {occupation.reservation?.abonnement_id && (
@@ -716,11 +763,11 @@ const Planning = () => {
                                     <div className="text-xs opacity-75">{occupation.reservation.duree}h</div>
                                   </div>
                                 ) : (
-                                  <div className="text-xs text-gray-500 flex items-center gap-1">
+                                  <div className="text-xs text-blue-600 font-medium flex items-center gap-1">
                                     {isSpecialSaturdaySlot ? (
                                       <span className="text-orange-600 font-medium">Libre - Ouverture</span>
                                     ) : (
-                                      'Libre'
+                                      'Cliquer pour réserver'
                                     )}
                                   </div>
                                 )}
@@ -792,6 +839,23 @@ const Planning = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Quick Reservation Dialog */}
+      {quickReservationData && (
+        <QuickReservationForm
+          isOpen={isQuickReservationOpen}
+          onClose={() => {
+            setIsQuickReservationOpen(false);
+            setQuickReservationData(null);
+          }}
+          terrainId={quickReservationData.terrainId}
+          terrainName={quickReservationData.terrainName}
+          date={quickReservationData.date}
+          time={quickReservationData.time}
+          duration={quickReservationData.duration}
+          onSuccess={handleQuickReservationSuccess}
+        />
+      )}
     </div>
   );
 };
