@@ -12,6 +12,10 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Reservation, Terrain } from '@/lib/supabase';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import ReservationCard from '@/components/admin/ReservationCard';
+import EditReservationForm from '@/components/admin/EditReservationForm';
 
 // Utilitaire pour générer les créneaux personnalisés Foot
 function generateTimeSlotsForFoot(startHour: number, startMinute: number, endHour: number, endMinute: number) {
@@ -177,10 +181,13 @@ const Planning = () => {
   const [selectedDay, setSelectedDay] = useState<Date>(new Date());
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
   
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
   // Récupérer toutes les réservations (y compris les abonnements)
-  const { data: reservations, isLoading: reservationsLoading } = useReservations({
+  const { data: reservations, isLoading: reservationsLoading, refetch } = useReservations({
     terrain_id: selectedTerrain || undefined
   });
 
@@ -232,6 +239,74 @@ const Planning = () => {
       setStartDate(newStartDate);
       setSelectedDay(newStartDate);
     }
+  };
+
+  const handleStatusChange = async (id: number, newStatus: 'confirmee' | 'annulee') => {
+    setIsUpdating(true);
+    
+    try {
+      const { error } = await supabase
+        .from('reservations')
+        .update({ statut: newStatus })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      toast.success(
+        newStatus === 'confirmee'
+          ? 'Réservation confirmée avec succès'
+          : 'Réservation annulée avec succès'
+      );
+      
+      refetch();
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Error updating reservation status:', error);
+      toast.error('Erreur lors de la mise à jour du statut');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleEdit = (reservation: Reservation) => {
+    setEditingReservation(reservation);
+    setIsEditDialogOpen(true);
+    setIsDialogOpen(false);
+  };
+
+  const handleEditSuccess = () => {
+    setIsEditDialogOpen(false);
+    setEditingReservation(null);
+    refetch();
+  };
+
+  const handleDelete = async (id: number) => {
+    setIsUpdating(true);
+    
+    try {
+      const { error } = await supabase
+        .from('reservations')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      toast.success('Réservation supprimée avec succès');
+      
+      refetch();
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Error deleting reservation:', error);
+      toast.error('Erreur lors de la suppression de la réservation');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const getTerrainName = (terrainId: number) => {
+    if (!terrains) return 'Inconnu';
+    const terrain = terrains.find(t => t.id === terrainId);
+    return terrain ? terrain.nom : 'Inconnu';
   };
 
   const getCellClassName = (reservation?: Reservation) => {
@@ -669,13 +744,13 @@ const Planning = () => {
         )}
       </div>
 
-      {/* Dialog pour afficher les détails de la réservation */}
+      {/* Dialog pour afficher le card de réservation complet avec actions */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto p-0">
+          <DialogHeader className="p-6 pb-0">
             <DialogTitle className="flex items-center gap-2 text-xl">
               <User className="h-6 w-6" />
-              Détails de la réservation
+              Réservation #{selectedReservation?.id}
               {selectedReservation?.abonnement_id && (
                 <Badge className="bg-purple-500 text-white flex items-center gap-1">
                   <Crown className="h-4 w-4" />
@@ -686,116 +761,35 @@ const Planning = () => {
           </DialogHeader>
           
           {selectedReservation && (
-            <div className="space-y-6 p-2">
-              {/* Statut */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-600">Statut:</span>
-                <Badge variant={getStatusBadgeVariant(selectedReservation.statut)} className="text-sm">
-                  {getStatusLabel(selectedReservation.statut)}
-                </Badge>
-              </div>
-
-              {/* Informations client */}
-              <div className="space-y-4 bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-lg border-l-4 border-blue-500">
-                <h4 className="font-semibold text-lg text-blue-900 flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Informations client
-                </h4>
-                
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
-                    <User className="h-5 w-5 text-blue-500 flex-shrink-0" />
-                    <div className="flex-1">
-                      <div className="text-sm text-gray-600">Nom complet</div>
-                      <div className="font-semibold text-lg">{selectedReservation.nom_client}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
-                    <Phone className="h-5 w-5 text-blue-500 flex-shrink-0" />
-                    <div className="flex-1">
-                      <div className="text-sm text-gray-600">Téléphone</div>
-                      <div className="font-semibold text-lg">{selectedReservation.tel}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
-                    <Mail className="h-5 w-5 text-blue-500 flex-shrink-0" />
-                    <div className="flex-1">
-                      <div className="text-sm text-gray-600">Email</div>
-                      <div className="font-semibold break-all">{selectedReservation.email}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Informations réservation */}
-              <div className="space-y-4 bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg border-l-4 border-green-500">
-                <h4 className="font-semibold text-lg text-green-900 flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Détails de la réservation
-                </h4>
-                
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
-                    <MapPin className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <div className="flex-1">
-                      <div className="text-sm text-gray-600">Terrain</div>
-                      <div className="font-semibold text-lg">
-                        {terrains?.find(t => t.id === selectedReservation.terrain_id)?.nom || 'Terrain inconnu'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
-                    <Calendar className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <div className="flex-1">
-                      <div className="text-sm text-gray-600">Date</div>
-                      <div className="font-semibold text-lg">
-                        {format(new Date(selectedReservation.date), 'EEEE dd MMMM yyyy', { locale: fr })}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
-                    <Clock className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <div className="flex-1">
-                      <div className="text-sm text-gray-600">Heure et durée</div>
-                      <div className="font-semibold text-lg">
-                        {selectedReservation.heure} - {selectedReservation.duree}h
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Remarque si présente */}
-              {selectedReservation.remarque && (
-                <div className="bg-yellow-50 p-6 rounded-lg border-l-4 border-yellow-500">
-                  <h4 className="font-semibold text-lg text-yellow-900 mb-3">Remarque</h4>
-                  <p className="text-yellow-800 bg-white p-3 rounded-lg">{selectedReservation.remarque}</p>
-                </div>
-              )}
-
-              {/* Informations d'abonnement si présente */}
-              {selectedReservation.abonnement_id && (
-                <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg border-l-4 border-purple-500">
-                  <h4 className="font-semibold text-lg text-purple-900 mb-3 flex items-center gap-2">
-                    <Crown className="h-5 w-5" />
-                    Abonnement Premium
-                  </h4>
-                  <div className="bg-white p-4 rounded-lg space-y-2">
-                    <p className="text-purple-700 font-medium">
-                      Cette réservation fait partie de l'abonnement #{selectedReservation.abonnement_id}
-                    </p>
-                    <p className="text-sm text-purple-600">
-                      Réservation automatique générée par le système d'abonnement
-                    </p>
-                  </div>
-                </div>
-              )}
+            <div className="p-0">
+              <ReservationCard
+                reservation={selectedReservation}
+                terrainName={getTerrainName(selectedReservation.terrain_id)}
+                onStatusChange={handleStatusChange}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                isUpdating={isUpdating}
+              />
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Reservation Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-5xl h-[90vh] w-[95vw] sm:w-full flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Modifier la Réservation #{editingReservation?.id}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto">
+            {editingReservation && (
+              <EditReservationForm 
+                reservation={editingReservation}
+                onSuccess={handleEditSuccess}
+                onCancel={() => setIsEditDialogOpen(false)}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
