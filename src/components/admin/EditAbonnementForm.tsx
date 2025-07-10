@@ -1,5 +1,4 @@
-
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useUpdateAbonnement } from '@/hooks/useAbonnements';
 import { Button } from '@/components/ui/button';
@@ -78,12 +77,14 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
   const updateAbonnement = useUpdateAbonnement();
 
   // Sélection automatique du type à partir du terrain_id au montage
-  useState(() => {
-    if (abonnement.terrain_id) {
+  useEffect(() => {
+    if (abonnement.terrain_id && allTerrains.length > 0) {
       const foundTerrain = allTerrains.find(t => t.id === abonnement.terrain_id);
-      if (foundTerrain) setSelectedType(foundTerrain.type);
+      if (foundTerrain) {
+        setSelectedType(foundTerrain.type);
+      }
     }
-  });
+  }, [abonnement.terrain_id, allTerrains]);
 
   // Filtrage terrains selon type
   const filteredTerrains = selectedType

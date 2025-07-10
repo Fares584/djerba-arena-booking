@@ -118,7 +118,8 @@ export function useUpdateAbonnement() {
       try {
         console.log("Updating abonnement:", id, updates);
         
-        const { data, error } = await supabase
+        // Mettre à jour l'abonnement
+        const { data: updatedAbonnement, error } = await supabase
           .from('abonnements')
           .update({ ...updates, updated_at: new Date().toISOString() })
           .eq('id', id)
@@ -129,16 +130,75 @@ export function useUpdateAbonnement() {
           console.error("Error updating abonnement:", error);
           throw error;
         }
+
+        // Si des informations critiques ont changé (terrain, jour, heure, mois, année), 
+        // supprimer les anciennes réservations et régénérer
+        const criticalFields = ['terrain_id', 'jour_semaine', 'heure_fixe', 'mois_abonnement', 'annee_abonnement'];
+        const hasCriticalChanges = criticalFields.some(field => updates.hasOwnProperty(field));
+
+        if (hasCriticalChanges && updatedAbonnement.terrain_id && updatedAbonnement.jour_semaine !== null && updatedAbonnement.heure_fixe) {
+          console.log("Critical changes detected, regenerating reservations...");
+          
+          // Supprimer les anciennes réservations automatiques de cet abonnement
+          const { error: deleteError } = await supabase
+            .from('reservations')
+            .delete()
+            .eq('abonnement_id', id);
+
+          if (deleteError) {
+            console.error("Error deleting old reservations:", deleteError);
+            throw deleteError;
+          }
+
+          // Régénérer les réservations avec les nouvelles informations
+          const { error: functionError } = await supabase.rpc('generer_reservations_mensuelles', {
+            p_abonnement_id: id,
+            p_terrain_id: updatedAbonnement.terrain_id,
+            p_mois: updatedAbonnement.mois_abonnement,
+            p_annee: updatedAbonnement.annee_abonnement,
+            p_jour_semaine: updatedAbonnement.jour_semaine,
+            p_heure: updatedAbonnement.heure_fixe,
+            p_client_nom: updatedAbonnement.client_nom,
+            p_client_tel: updatedAbonnement.client_tel || ''
+          });
+
+          if (functionError) {
+            console.error("Error regenerating monthly reservations:", functionError);
+            throw functionError;
+          }
+
+          console.log("Monthly reservations regenerated successfully");
+        } else {
+          // Si seules les informations client ont changé, mettre à jour les réservations existantes
+          if (updates.client_nom || updates.client_tel) {
+            console.log("Updating client info in existing reservations...");
+            
+            const updateData: any = {};
+            if (updates.client_nom) updateData.nom_client = updates.client_nom;
+            if (updates.client_tel !== undefined) updateData.tel = updates.client_tel || '';
+
+            const { error: updateReservationsError } = await supabase
+              .from('reservations')
+              .update(updateData)
+              .eq('abonnement_id', id);
+
+            if (updateReservationsError) {
+              console.error("Error updating reservations client info:", updateReservationsError);
+              throw updateReservationsError;
+            }
+          }
+        }
         
-        return data;
+        return updatedAbonnement;
       } catch (error) {
         console.error("Error in updateAbonnement mutation:", error);
         throw error;
       }
     },
     onSuccess: () => {
-      toast.success("Abonnement mis à jour avec succès!");
+      toast.success("Abonnement mis à jour avec succès et réservations régénérées!");
       queryClient.invalidateQueries({ queryKey: ['abonnements'] });
+      queryClient.invalidateQueries({ queryKey: ['reservations'] });
     },
     onError: (error) => {
       toast.error("Erreur lors de la mise à jour de l'abonnement");
