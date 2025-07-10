@@ -1,6 +1,6 @@
 
 import { useState, useMemo } from 'react';
-import { useAbonnements, useDeleteAbonnement, useUpdateAbonnement } from '@/hooks/useAbonnements';
+import { useAbonnements, useDeleteAbonnement, useUpdateAbonnement, useCreateAbonnement } from '@/hooks/useAbonnements';
 import { useAbonnementExpiration } from '@/hooks/useAbonnementExpiration';
 import { useTerrains } from '@/hooks/useTerrains';
 import { Button } from '@/components/ui/button';
@@ -10,12 +10,14 @@ import { Abonnement } from '@/lib/supabase';
 import AbonnementForm from '@/components/admin/AbonnementForm';
 import EditAbonnementForm from '@/components/admin/EditAbonnementForm';
 import AbonnementCard from '@/components/admin/AbonnementCard';
+import { toast } from 'sonner';
 
 const Abonnements = () => {
   const { data: abonnements, isLoading, refetch } = useAbonnements();
   const { data: terrains } = useTerrains({ actif: true });
   const deleteAbonnement = useDeleteAbonnement();
   const updateAbonnement = useUpdateAbonnement();
+  const createAbonnement = useCreateAbonnement();
   
   // Ajouter la vérification automatique d'expiration
   useAbonnementExpiration(abonnements);
@@ -61,6 +63,31 @@ const Abonnements = () => {
       });
     } catch (error) {
       console.error('Error updating status:', error);
+    }
+  };
+
+  const handleRenew = async (abonnement: Abonnement) => {
+    try {
+      // Calculer le mois et l'année suivants
+      const nextMonth = abonnement.mois_abonnement === 12 ? 1 : abonnement.mois_abonnement + 1;
+      const nextYear = abonnement.mois_abonnement === 12 ? abonnement.annee_abonnement + 1 : abonnement.annee_abonnement;
+
+      const newAbonnement = {
+        terrain_id: abonnement.terrain_id,
+        mois_abonnement: nextMonth,
+        annee_abonnement: nextYear,
+        jour_semaine: abonnement.jour_semaine,
+        heure_fixe: abonnement.heure_fixe,
+        client_nom: abonnement.client_nom,
+        client_tel: abonnement.client_tel,
+        statut: 'actif' as const
+      };
+
+      await createAbonnement.mutateAsync(newAbonnement);
+      toast.success('Abonnement renouvelé avec succès pour le mois suivant !');
+    } catch (error) {
+      console.error('Error renewing abonnement:', error);
+      toast.error('Erreur lors du renouvellement de l\'abonnement');
     }
   };
 
@@ -141,6 +168,7 @@ const Abonnements = () => {
               onStatusChange={handleStatusChange}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onRenew={handleRenew}
             />
           ))}
         </div>

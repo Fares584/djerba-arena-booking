@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Calendar, Clock, MapPin, User, Phone, Trash2 } from 'lucide-react';
+import { Edit, Calendar, Clock, MapPin, User, Phone, Trash2, RotateCcw } from 'lucide-react';
 import { Abonnement } from '@/lib/supabase';
 import { getMonthName, getDayName } from '@/lib/supabase';
 
@@ -13,6 +13,7 @@ interface AbonnementCardProps {
   onStatusChange: (id: number, status: 'actif' | 'expire' | 'annule') => void;
   onEdit: (abonnement: Abonnement) => void;
   onDelete: (id: number) => void;
+  onRenew: (abonnement: Abonnement) => void;
 }
 
 const AbonnementCard = ({ 
@@ -21,7 +22,8 @@ const AbonnementCard = ({
   typeLabel, 
   onStatusChange, 
   onEdit, 
-  onDelete 
+  onDelete,
+  onRenew
 }: AbonnementCardProps) => {
   const getStatusColor = (statut: string) => {
     switch (statut) {
@@ -44,6 +46,12 @@ const AbonnementCard = ({
   const handleDelete = () => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cet abonnement ?')) {
       onDelete(abonnement.id);
+    }
+  };
+
+  const handleRenew = () => {
+    if (window.confirm('Créer un nouvel abonnement pour le mois suivant ?')) {
+      onRenew(abonnement);
     }
   };
 
@@ -105,6 +113,17 @@ const AbonnementCard = ({
             </select>
             
             <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRenew}
+                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                title="Renouveler pour le mois suivant"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Renouveler
+              </Button>
+              
               <Button
                 size="sm"
                 variant="outline"
