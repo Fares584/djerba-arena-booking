@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from 'react';
 import { useAbonnements, useDeleteAbonnement, useUpdateAbonnement, useCreateAbonnement } from '@/hooks/useAbonnements';
 import { useAbonnementExpiration } from '@/hooks/useAbonnementExpiration';
@@ -54,7 +55,7 @@ const Abonnements = () => {
     }
   };
 
-  const handleStatusChange = async (abonnementId: number, newStatus: 'actif' | 'expire') => {
+  const handleStatusChange = async (abonnementId: number, newStatus: 'actif' | 'expire' | 'annule') => {
     try {
       await updateAbonnement.mutateAsync({
         id: abonnementId,

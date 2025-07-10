@@ -312,11 +312,12 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
         <select
           id="statut"
           value={statut}
-          onChange={e => setStatut(e.target.value as 'actif' | 'expire')}
+          onChange={e => setStatut(e.target.value as Abonnement['statut'])}
           className="w-full border rounded-md p-2 h-9"
         >
           <option value="actif">Actif</option>
           <option value="expire">Expiré</option>
+          <option value="annule">Annulé</option>
         </select>
       </div>
 

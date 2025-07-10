@@ -12,13 +12,7 @@ export function useReservations(filters?: {
     queryKey: ['reservations', filters],
     queryFn: async () => {
       try {
-        let query = supabase.from('reservations').select(`
-          *,
-          abonnements!fk_abonnement (
-            id,
-            statut
-          )
-        `);
+        let query = supabase.from('reservations').select('*');
         
         if (filters?.terrain_id) {
           query = query.eq('terrain_id', filters.terrain_id);
@@ -32,6 +26,8 @@ export function useReservations(filters?: {
           query = query.eq('statut', filters.statut);
         }
         
+        // SUPPRIMÉ: Plus de filtrage automatique des statuts
+        
         const { data, error } = await query.order('date', { ascending: true }).order('heure', { ascending: true });
         
         if (error) {
@@ -39,17 +35,7 @@ export function useReservations(filters?: {
           throw error;
         }
         
-        // Filtrer les réservations des abonnements expirés
-        const filteredData = data?.filter(reservation => {
-          // Si c'est une réservation d'abonnement, vérifier que l'abonnement n'est pas expiré
-          if (reservation.abonnement_id && reservation.abonnements) {
-            return reservation.abonnements.statut === 'actif';
-          }
-          // Garder les réservations ponctuelles
-          return true;
-        }) || [];
-        
-        return filteredData as Reservation[];
+        return data as Reservation[];
       } catch (error) {
         console.error("Error in useReservations hook:", error);
         throw error;
@@ -76,13 +62,7 @@ export function useAvailability({
       try {
         const { data, error } = await supabase
           .from('reservations')
-          .select(`
-            *,
-            abonnements!fk_abonnement (
-              id,
-              statut
-            )
-          `)
+          .select('*')
           .eq('terrain_id', terrainId)
           .eq('date', date)
           .in('statut', ['en_attente', 'confirmee']);
@@ -92,17 +72,7 @@ export function useAvailability({
           throw error;
         }
         
-        // Filtrer les réservations des abonnements expirés
-        const filteredData = data?.filter(reservation => {
-          // Si c'est une réservation d'abonnement, vérifier que l'abonnement n'est pas expiré
-          if (reservation.abonnement_id && reservation.abonnements) {
-            return reservation.abonnements.statut === 'actif';
-          }
-          // Garder les réservations ponctuelles
-          return true;
-        }) || [];
-        
-        return filteredData as Reservation[];
+        return data as Reservation[];
       } catch (error) {
         console.error("Error in useAvailability hook:", error);
         throw error;
@@ -112,7 +82,7 @@ export function useAvailability({
   });
 }
 
-// Check if a specific time slot is available - avec filtrage des abonnements expirés
+// Check if a specific time slot is available - garde la logique existante pour la disponibilité
 export function isTimeSlotAvailable(
   reservations: Reservation[] | undefined,
   terrainId: number,
@@ -122,13 +92,11 @@ export function isTimeSlotAvailable(
 ): boolean {
   if (!reservations) return true;
   
-  // Filtrer les réservations actives (en excluant celles des abonnements expirés)
+  // Seules les réservations confirmées et en attente bloquent la disponibilité
   const activeReservations = reservations.filter(
     r => r.terrain_id === terrainId && 
          r.date === date && 
-         (r.statut === 'en_attente' || r.statut === 'confirmee') &&
-         // Exclure les réservations d'abonnements expirés
-         (!r.abonnement_id || (r.abonnements && r.abonnements.statut === 'actif'))
+         (r.statut === 'en_attente' || r.statut === 'confirmee')
   );
   
   const startHour = parseInt(startTime.split(':')[0]);
@@ -151,7 +119,7 @@ export function isTimeSlotAvailable(
   return true; // Time slot is available
 }
 
-// Get dates that are completely unavailable for a specific terrain - avec filtrage des abonnements expirés
+// Get dates that are completely unavailable for a specific terrain
 export function getUnavailableDates(
   reservations: Reservation[] | undefined,
   terrainId: number
@@ -161,12 +129,9 @@ export function getUnavailableDates(
   const unavailableDates: string[] = [];
   const dateReservations: { [key: string]: Reservation[] } = {};
   
-  // Group active reservations by date (only 'en_attente' and 'confirmee', excluding expired subscriptions)
+  // Group active reservations by date (only 'en_attente' and 'confirmee')
   reservations
-    .filter(r => r.terrain_id === terrainId && 
-                (r.statut === 'en_attente' || r.statut === 'confirmee') &&
-                (!r.abonnement_id || (r.abonnements && r.abonnements.statut === 'actif'))
-           )
+    .filter(r => r.terrain_id === terrainId && (r.statut === 'en_attente' || r.statut === 'confirmee'))
     .forEach(reservation => {
       if (!dateReservations[reservation.date]) {
         dateReservations[reservation.date] = [];
