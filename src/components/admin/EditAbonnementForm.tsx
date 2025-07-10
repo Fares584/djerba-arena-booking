@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useUpdateAbonnement } from '@/hooks/useAbonnements';
+import { useAvailability } from '@/hooks/useAvailability';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +10,7 @@ import ReservationTypeSelector from '@/components/reservation/ReservationTypeSel
 import TerrainSelector from '@/components/TerrainSelector';
 import TimeSlotSelector from '@/components/TimeSlotSelector';
 import { Abonnement } from '@/lib/supabase';
+import { format, addDays } from 'date-fns';
 
 const defaultTimeSlots = [
   '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
@@ -76,6 +78,26 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
   const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
   const updateAbonnement = useUpdateAbonnement();
 
+  // Calculer une date exemple pour vérifier la disponibilité des créneaux
+  const exampleDate = useMemo(() => {
+    if (selectedJourSemaine === null) return null;
+    
+    // Trouver le prochain jour correspondant au jour de la semaine sélectionné
+    const today = new Date();
+    const currentDay = today.getDay();
+    let daysToAdd = selectedJourSemaine - currentDay;
+    if (daysToAdd < 0) daysToAdd += 7;
+    
+    return format(addDays(today, daysToAdd), 'yyyy-MM-dd');
+  }, [selectedJourSemaine]);
+
+  // Récupérer les réservations pour le terrain et la date exemple
+  const { data: reservations = [] } = useAvailability({
+    terrainId: selectedTerrainId,
+    date: exampleDate,
+    enabled: !!selectedTerrainId && !!exampleDate
+  });
+
   // Sélection automatique du type à partir du terrain_id au montage
   useEffect(() => {
     if (abonnement.terrain_id && allTerrains.length > 0) {
@@ -110,9 +132,35 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
     return defaultTimeSlots;
   }, [selectedTerrain, isFoot6, isFoot7or8]);
 
-  // Pour l'édition, on permet tous les créneaux
+  // Vérifier la disponibilité des créneaux en excluant les réservations de l'abonnement actuel
   const isTimeSlotAvailable = (time: string) => {
-    return true; // En édition, on permet de changer l'heure
+    if (!selectedTerrainId || !exampleDate) return true;
+
+    // Filtrer les réservations pour exclure celles de l'abonnement en cours de modification
+    const otherReservations = reservations.filter(r => 
+      r.abonnement_id !== abonnement.id && 
+      (r.statut === 'en_attente' || r.statut === 'confirmee')
+    );
+
+    const startHour = parseInt(time.split(':')[0]);
+    const duration = 1.5; // Durée standard pour les abonnements
+    const endHour = startHour + duration;
+
+    for (const reservation of otherReservations) {
+      const reservationStartHour = parseInt(reservation.heure.split(':')[0]);
+      const reservationEndHour = reservationStartHour + reservation.duree;
+
+      // Vérifier les chevauchements
+      if (
+        (startHour >= reservationStartHour && startHour < reservationEndHour) ||
+        (endHour > reservationStartHour && endHour <= reservationEndHour) ||
+        (startHour <= reservationStartHour && endHour >= reservationEndHour)
+      ) {
+        return false;
+      }
+    }
+
+    return true;
   };
 
   const isValid =
