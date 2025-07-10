@@ -142,20 +142,25 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
       (r.statut === 'en_attente' || r.statut === 'confirmee')
     );
 
-    const startHour = parseInt(time.split(':')[0]);
-    const duration = 1.5; // Durée standard pour les abonnements
-    const endHour = startHour + duration;
+    // Convertir l'heure en minutes pour une comparaison plus précise
+    const [startHour, startMinute] = time.split(':').map(Number);
+    const startTimeInMinutes = startHour * 60 + startMinute;
+    const durationInMinutes = 90; // 1.5 heures = 90 minutes
+    const endTimeInMinutes = startTimeInMinutes + durationInMinutes;
 
     for (const reservation of otherReservations) {
-      const reservationStartHour = parseInt(reservation.heure.split(':')[0]);
-      const reservationEndHour = reservationStartHour + reservation.duree;
+      const [resHour, resMinute] = reservation.heure.split(':').map(Number);
+      const resStartTimeInMinutes = resHour * 60 + resMinute;
+      const resDurationInMinutes = reservation.duree * 60;
+      const resEndTimeInMinutes = resStartTimeInMinutes + resDurationInMinutes;
 
-      // Vérifier les chevauchements
-      if (
-        (startHour >= reservationStartHour && startHour < reservationEndHour) ||
-        (endHour > reservationStartHour && endHour <= reservationEndHour) ||
-        (startHour <= reservationStartHour && endHour >= reservationEndHour)
-      ) {
+      // Vérifier les chevauchements avec une logique plus précise
+      const hasOverlap = (
+        (startTimeInMinutes < resEndTimeInMinutes) && 
+        (endTimeInMinutes > resStartTimeInMinutes)
+      );
+
+      if (hasOverlap) {
         return false;
       }
     }
