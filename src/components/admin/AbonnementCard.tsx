@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +9,7 @@ interface AbonnementCardProps {
   abonnement: Abonnement;
   terrainLabel: string;
   typeLabel: string;
-  onStatusChange: (id: number, status: 'actif' | 'expire' | 'annule') => void;
+  onStatusChange: (id: number, status: 'actif' | 'expire') => void;
   onEdit: (abonnement: Abonnement) => void;
   onDelete: (id: number) => void;
   onRenew: (abonnement: Abonnement) => void;
@@ -31,15 +30,13 @@ const AbonnementCard = ({
         return 'bg-green-100 text-green-800 border-green-200';
       case 'expire':
         return 'bg-red-100 text-red-800 border-red-200';
-      case 'annule':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newStatus = e.target.value as 'actif' | 'expire' | 'annule';
+    const newStatus = e.target.value as 'actif' | 'expire';
     onStatusChange(abonnement.id, newStatus);
   };
 
@@ -109,7 +106,6 @@ const AbonnementCard = ({
             >
               <option value="actif">Actif</option>
               <option value="expire">Expiré</option>
-              <option value="annule">Annulé</option>
             </select>
             
             <div className="flex gap-1">
