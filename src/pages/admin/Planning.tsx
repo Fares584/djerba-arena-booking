@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import ReservationCard from '@/components/admin/ReservationCard';
 import EditReservationForm from '@/components/admin/EditReservationForm';
 import QuickReservationForm from '@/components/admin/QuickReservationForm';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 // Utilitaire pour générer les créneaux personnalisés Foot
 function generateTimeSlotsForFoot(startHour: number, startMinute: number, endHour: number, endMinute: number) {
@@ -110,66 +111,61 @@ function isTimeSlotOccupied(terrain: Terrain, day: Date, timeSlot: string, reser
   return null;
 }
 
-// Fonction pour vérifier si un créneau est occupé par une réservation et retourner les informations d'occupation
-function getTimeSlotOccupation(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): {
+// Fonction simplifiée pour l'affichage des réservations (sans rowspan)
+function getReservationForTimeSlot(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): {
   reservation: Reservation | null;
   isStart: boolean;
-  shouldShow: boolean;
+  position: 'start' | 'middle' | 'end' | 'single';
 } {
-  if (!reservations) return { reservation: null, isStart: false, shouldShow: true };
+  if (!reservations) return { reservation: null, isStart: false, position: 'single' };
   
   const formattedDate = format(day, 'yyyy-MM-dd');
-  
-  // Convertir le timeSlot en minutes depuis minuit pour les calculs
   const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
   const slotTimeInMinutes = slotHour * 60 + slotMinute;
   
-  // Chercher une réservation qui occupe ce créneau
   for (const reservation of reservations) {
     if (reservation.terrain_id !== terrain.id || reservation.date !== formattedDate) {
       continue;
     }
     
-    // Convertir l'heure de début de la réservation en minutes
     const [resHour, resMinute] = reservation.heure.split(':').map(Number);
     const resStartTimeInMinutes = resHour * 60 + resMinute;
-    
-    // Calculer l'heure de fin en ajoutant la durée (en heures)
     const durationInMinutes = reservation.duree * 60;
     const resEndTimeInMinutes = resStartTimeInMinutes + durationInMinutes;
     
-    // Vérifier si le créneau actuel est dans la plage de la réservation
     if (slotTimeInMinutes >= resStartTimeInMinutes && slotTimeInMinutes < resEndTimeInMinutes) {
       const isStart = slotTimeInMinutes === resStartTimeInMinutes;
-      // Montrer seulement la première cellule pour les réservations multi-heures
-      const shouldShow = isStart;
-      return { reservation, isStart, shouldShow };
+      
+      // Déterminer la position dans la réservation multi-créneaux
+      let position: 'start' | 'middle' | 'end' | 'single' = 'single';
+      if (reservation.duree > 1) {
+        if (isStart) {
+          position = 'start';
+        } else {
+          // Vérifier si c'est la fin
+          const timeSlots = getTimeSlotsForTerrain(terrain, day);
+          const currentIndex = timeSlots.indexOf(timeSlot);
+          const nextSlot = timeSlots[currentIndex + 1];
+          
+          if (nextSlot) {
+            const [nextHour, nextMinute] = nextSlot.split(':').map(Number);
+            const nextSlotTimeInMinutes = nextHour * 60 + nextMinute;
+            if (nextSlotTimeInMinutes >= resEndTimeInMinutes) {
+              position = 'end';
+            } else {
+              position = 'middle';
+            }
+          } else {
+            position = 'end';
+          }
+        }
+      }
+      
+      return { reservation, isStart, position };
     }
   }
   
-  return { reservation: null, isStart: false, shouldShow: true };
-}
-
-// Fonction pour calculer le rowspan d'une réservation
-function getReservationRowSpan(reservation: Reservation, terrain: Terrain, day: Date): number {
-  const timeSlots = getTimeSlotsForTerrain(terrain, day);
-  const [resHour, resMinute] = reservation.heure.split(':').map(Number);
-  const resStartTimeInMinutes = resHour * 60 + resMinute;
-  
-  let rowSpan = 0;
-  
-  for (const slot of timeSlots) {
-    const [slotHour, slotMinute] = slot.split(':').map(Number);
-    const slotTimeInMinutes = slotHour * 60 + slotMinute;
-    const durationInMinutes = reservation.duree * 60;
-    const resEndTimeInMinutes = resStartTimeInMinutes + durationInMinutes;
-    
-    if (slotTimeInMinutes >= resStartTimeInMinutes && slotTimeInMinutes < resEndTimeInMinutes) {
-      rowSpan++;
-    }
-  }
-  
-  return Math.max(1, rowSpan);
+  return { reservation: null, isStart: false, position: 'single' };
 }
 
 const Planning = () => {
@@ -320,37 +316,55 @@ const Planning = () => {
     return terrain ? terrain.nom : 'Inconnu';
   };
 
-  const getCellClassName = (reservation?: Reservation, isAvailable: boolean = true) => {
+  const getCellClassName = (reservation?: Reservation, isAvailable: boolean = true, position: 'start' | 'middle' | 'end' | 'single' = 'single') => {
     if (!isAvailable) {
       return 'bg-gray-100 border border-gray-200 relative opacity-60';
     }
     
     if (!reservation) return 'bg-white hover:bg-blue-50 border border-gray-200 cursor-pointer group transition-all duration-200 hover:border-blue-300 hover:shadow-sm relative';
     
-    // Différents styles pour les abonnements vs réservations normales
+    // Classes de base pour les réservations
     const isSubscription = !!reservation.abonnement_id;
+    let baseClasses = 'cursor-pointer border-2 relative ';
+    
+    // Bordures selon la position dans une réservation multi-créneaux
+    if (reservation.duree > 1) {
+      switch (position) {
+        case 'start':
+          baseClasses += 'border-b-0 ';
+          break;
+        case 'middle':
+          baseClasses += 'border-t-0 border-b-0 ';
+          break;
+        case 'end':
+          baseClasses += 'border-t-0 ';
+          break;
+        default:
+          break;
+      }
+    }
     
     if (isSubscription) {
       switch (reservation.statut) {
         case 'confirmee':
-          return 'bg-gradient-to-br from-purple-100 to-purple-200 text-purple-900 border-2 border-purple-300 hover:from-purple-200 hover:to-purple-300 shadow-sm cursor-pointer';
+          return baseClasses + 'bg-gradient-to-br from-purple-100 to-purple-200 text-purple-900 border-purple-300 hover:from-purple-200 hover:to-purple-300 shadow-sm';
         case 'en_attente':
-          return 'bg-gradient-to-br from-purple-50 to-yellow-100 text-purple-800 border-2 border-purple-200 hover:from-purple-100 hover:to-yellow-200 cursor-pointer';
+          return baseClasses + 'bg-gradient-to-br from-purple-50 to-yellow-100 text-purple-800 border-purple-200 hover:from-purple-100 hover:to-yellow-200';
         case 'annulee':
-          return 'bg-gradient-to-br from-red-100 to-purple-100 text-red-800 border-2 border-red-300 hover:from-red-200 hover:to-purple-200 cursor-pointer';
+          return baseClasses + 'bg-gradient-to-br from-red-100 to-purple-100 text-red-800 border-red-300 hover:from-red-200 hover:to-purple-200';
         default:
-          return 'bg-gradient-to-br from-purple-50 to-white text-purple-800 border-2 border-purple-200 cursor-pointer';
+          return baseClasses + 'bg-gradient-to-br from-purple-50 to-white text-purple-800 border-purple-200';
       }
     } else {
       switch (reservation.statut) {
         case 'confirmee':
-          return 'bg-green-100 text-green-800 border border-green-300 hover:bg-green-200 cursor-pointer';
+          return baseClasses + 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200';
         case 'en_attente':
-          return 'bg-yellow-100 text-yellow-800 border border-yellow-300 hover:bg-yellow-200 cursor-pointer';
+          return baseClasses + 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200';
         case 'annulee':
-          return 'bg-red-100 text-red-800 border border-red-300 hover:bg-red-200 cursor-pointer';
+          return baseClasses + 'bg-red-100 text-red-800 border-red-300 hover:bg-red-200';
         default:
-          return 'bg-white hover:bg-gray-50 border border-gray-200 cursor-pointer';
+          return baseClasses + 'bg-white hover:bg-gray-50 border-gray-200';
       }
     }
   };
@@ -599,122 +613,109 @@ const Planning = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                  {/* Desktop & Tablet View - Table */}
+                  {/* Desktop & Tablet View - Table améliorée */}
                   <div className="hidden md:block overflow-x-auto">
-                    <div className="min-w-[600px] lg:min-w-[800px]">
-                      <div className="grid grid-cols-8 bg-gray-100">
-                        <div className="p-2 lg:p-3 border-b border-r border-gray-200 font-medium text-sm lg:text-base">Heure</div>
-                        {weekDays.map((day, index) => (
-                          <div key={index} className="p-2 lg:p-3 border-b border-r border-gray-200 text-center font-medium text-xs lg:text-sm">
-                            <div>{format(day, 'EEE', { locale: fr })}</div>
-                            <div>{format(day, 'dd/MM')}</div>
-                            {/* Indicateur spécial samedi pour Foot à 6 */}
-                            {day.getDay() === 6 && isFoot6 && (
-                              <div className="text-orange-600 text-xs font-bold mt-1">Ouv. 10h</div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                      
-                      {/* Créer une structure de table avec gestion des rowspan */}
-                      <table className="w-full border-collapse">
-                        <tbody>
-                          {(() => {
-                            // Créer un set de tous les créneaux uniques pour ce terrain en fonction des jours
-                            const allTimeSlots = new Set<string>();
-                            weekDays.forEach(day => {
-                              const daySlots = getTimeSlotsForTerrain(terrain, day);
-                              daySlots.forEach(slot => allTimeSlots.add(slot));
-                            });
-                            
-                            // Trier les créneaux par ordre chronologique
-                            const sortedTimeSlots = Array.from(allTimeSlots).sort((a, b) => {
-                              const [aHour, aMin] = a.split(':').map(Number);
-                              const [bHour, bMin] = b.split(':').map(Number);
-                              return (aHour * 60 + aMin) - (bHour * 60 + bMin);
-                            });
+                    <Table className="border-collapse">
+                      <TableHeader>
+                        <TableRow className="bg-gray-100">
+                          <TableHead className="w-[100px] font-medium text-center border-r border-gray-200">
+                            Heure
+                          </TableHead>
+                          {weekDays.map((day, index) => (
+                            <TableHead key={index} className="text-center font-medium border-r border-gray-200 min-w-[120px]">
+                              <div>{format(day, 'EEE', { locale: fr })}</div>
+                              <div className="text-xs">{format(day, 'dd/MM')}</div>
+                              {day.getDay() === 6 && isFoot6 && (
+                                <div className="text-orange-600 text-xs font-bold mt-1">Ouv. 10h</div>
+                              )}
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {(() => {
+                          const allTimeSlots = new Set<string>();
+                          weekDays.forEach(day => {
+                            const daySlots = getTimeSlotsForTerrain(terrain, day);
+                            daySlots.forEach(slot => allTimeSlots.add(slot));
+                          });
+                          
+                          const sortedTimeSlots = Array.from(allTimeSlots).sort((a, b) => {
+                            const [aHour, aMin] = a.split(':').map(Number);
+                            const [bHour, bMin] = b.split(':').map(Number);
+                            return (aHour * 60 + aMin) - (bHour * 60 + bMin);
+                          });
 
-                            return sortedTimeSlots.map((timeSlot) => (
-                              <tr key={timeSlot}>
-                                <td className="p-2 lg:p-3 border-b border-r border-gray-200 font-medium text-sm lg:text-base w-[12.5%]">
-                                  {timeSlot}
-                                </td>
+                          return sortedTimeSlots.map((timeSlot) => (
+                            <TableRow key={timeSlot} className="border-b border-gray-200">
+                              <TableCell className="font-medium text-center bg-gray-50 border-r border-gray-200">
+                                {timeSlot}
+                              </TableCell>
+                              
+                              {weekDays.map((day, dayIndex) => {
+                                const dayTimeSlots = getTimeSlotsForTerrain(terrain, day);
+                                const isTimeSlotAvailable = dayTimeSlots.includes(timeSlot);
                                 
-                                {weekDays.map((day, dayIndex) => {
-                                  // Recalculer les slots pour chaque jour spécifique
-                                  const dayTimeSlots = getTimeSlotsForTerrain(terrain, day);
-                                  const isTimeSlotAvailable = dayTimeSlots.includes(timeSlot);
-                                  
-                                  if (!isTimeSlotAvailable) {
-                                    return (
-                                      <td 
-                                        key={dayIndex}
-                                        className="p-1 lg:p-2 border-b border-r bg-gray-50 w-[12.5%] relative"
-                                      >
-                                        <div className="h-12 flex items-center justify-center opacity-40">
-                                          <X className="h-3 w-3 text-gray-400" />
-                                        </div>
-                                      </td>
-                                    );
-                                  }
-                                  
-                                  // Utiliser la nouvelle fonction pour vérifier l'occupation
-                                  const occupation = getTimeSlotOccupation(terrain, day, timeSlot, reservations || []);
-                                  
-                                  // Ne pas afficher les cellules qui ne sont pas le début d'une réservation multi-heures
-                                  if (occupation.reservation && !occupation.shouldShow) {
-                                    return null;
-                                  }
-                                  
-                                  const rowSpan = occupation.reservation && occupation.isStart 
-                                    ? getReservationRowSpan(occupation.reservation, terrain, day)
-                                    : 1;
-                                  
+                                if (!isTimeSlotAvailable) {
                                   return (
-                                    <td 
+                                    <TableCell 
                                       key={dayIndex}
-                                      className={`p-1 lg:p-2 border-b border-r w-[12.5%] ${getCellClassName(occupation.reservation, isTimeSlotAvailable)}`}
-                                      rowSpan={rowSpan}
-                                      onClick={() => occupation.reservation 
-                                        ? handleReservationClick(occupation.reservation)
-                                        : handleEmptyCellClick(terrain, day, timeSlot)
-                                      }
+                                      className="text-center bg-gray-50 border-r border-gray-200 h-16"
                                     >
-                                      {occupation.reservation ? (
-                                        <div className="text-xs relative">
-                                          {/* Badge abonnement pour desktop */}
-                                          {occupation.reservation.abonnement_id && (
-                                            <div className="absolute -top-1 -right-1">
-                                              <Crown className="h-3 w-3 text-purple-600" />
-                                            </div>
-                                          )}
-                                          <div className="font-medium truncate" title={occupation.reservation.nom_client}>
-                                            {occupation.reservation.nom_client}
-                                          </div>
-                                          <div className="text-gray-600 truncate" title={occupation.reservation.tel}>
-                                            {occupation.reservation.tel}
-                                          </div>
-                                          <div className="text-xs opacity-75">{occupation.reservation.duree}h</div>
-                                        </div>
-                                      ) : (
-                                        <div className="h-12 flex items-center justify-center relative">
-                                          {/* Icône plus cachée par défaut, visible au hover */}
-                                          <Plus className="h-4 w-4 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                                          {/* Tooltip au hover */}
-                                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                                            Cliquer pour réserver
-                                          </div>
-                                        </div>
-                                      )}
-                                    </td>
+                                      <div className="flex items-center justify-center opacity-40">
+                                        <X className="h-3 w-3 text-gray-400" />
+                                      </div>
+                                    </TableCell>
                                   );
-                                })}
-                              </tr>
-                            ));
-                          })()}
-                        </tbody>
-                      </table>
-                    </div>
+                                }
+                                
+                                const reservationInfo = getReservationForTimeSlot(terrain, day, timeSlot, reservations || []);
+                                
+                                return (
+                                  <TableCell 
+                                    key={dayIndex}
+                                    className={`text-center border-r border-gray-200 h-16 p-1 ${getCellClassName(reservationInfo.reservation, isTimeSlotAvailable, reservationInfo.position)}`}
+                                    onClick={() => reservationInfo.reservation 
+                                      ? handleReservationClick(reservationInfo.reservation)
+                                      : handleEmptyCellClick(terrain, day, timeSlot)
+                                    }
+                                  >
+                                    {reservationInfo.reservation ? (
+                                      <div className="text-xs relative h-full flex flex-col justify-center">
+                                        {reservationInfo.reservation.abonnement_id && reservationInfo.position === 'start' && (
+                                          <div className="absolute -top-1 -right-1">
+                                            <Crown className="h-3 w-3 text-purple-600" />
+                                          </div>
+                                        )}
+                                        {reservationInfo.position === 'start' ? (
+                                          <>
+                                            <div className="font-medium truncate" title={reservationInfo.reservation.nom_client}>
+                                              {reservationInfo.reservation.nom_client}
+                                            </div>
+                                            <div className="text-gray-600 truncate text-xs" title={reservationInfo.reservation.tel}>
+                                              {reservationInfo.reservation.tel}
+                                            </div>
+                                            <div className="text-xs opacity-75">{reservationInfo.reservation.duree}h</div>
+                                          </>
+                                        ) : (
+                                          <div className="text-xs opacity-60">
+                                            ⋮
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div className="h-full flex items-center justify-center group-hover:opacity-100 opacity-0 transition-opacity duration-200">
+                                        <Plus className="h-4 w-4 text-blue-400" />
+                                      </div>
+                                    )}
+                                  </TableCell>
+                                );
+                              })}
+                            </TableRow>
+                          ));
+                        })()}
+                      </TableBody>
+                    </Table>
                   </div>
 
                   {/* Mobile View - Cards */}
@@ -726,10 +727,10 @@ const Planning = () => {
                         
                         return timeSlots.map((timeSlot) => {
                           // Utiliser la nouvelle fonction pour vérifier l'occupation
-                          const occupation = getTimeSlotOccupation(terrain, selectedDay, timeSlot, reservations || []);
+                          const occupation = getReservationForTimeSlot(terrain, selectedDay, timeSlot, reservations || []);
                           
                           // Ne pas afficher les créneaux qui ne sont pas le début d'une réservation multi-heures
-                          if (occupation.reservation && !occupation.shouldShow) {
+                          if (occupation.reservation && occupation.position !== 'start') {
                             return null;
                           }
 
@@ -739,7 +740,7 @@ const Planning = () => {
                           return (
                             <div 
                               key={timeSlot}
-                              className={`p-3 rounded-lg relative group transition-all duration-200 ${getCellClassName(occupation.reservation, true)} ${
+                              className={`p-3 rounded-lg relative group transition-all duration-200 ${getCellClassName(occupation.reservation, true, occupation.position)} ${
                                 isSpecialSaturdaySlot ? 'ring-2 ring-orange-300 bg-gradient-to-r from-orange-50 to-white' : ''
                               }`}
                               onClick={() => occupation.reservation 
@@ -748,7 +749,7 @@ const Planning = () => {
                               }
                             >
                               {/* Badge abonnement pour mobile */}
-                              {occupation.reservation?.abonnement_id && (
+                              {occupation.reservation?.abonnement_id && occupation.position === 'start' && (
                                 <div className="absolute -top-2 -right-2 flex items-center">
                                   <Badge className="bg-purple-500 text-white text-xs px-2 py-1 rounded-full shadow-lg flex items-center gap-1">
                                     <Crown className="h-3 w-3" />
