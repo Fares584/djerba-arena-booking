@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useUpdateAbonnement } from '@/hooks/useAbonnements';
@@ -117,33 +116,50 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
   // Trouver le terrain sélectionné
   const selectedTerrain = allTerrains.find(t => t.id === selectedTerrainId);
 
-  // Déterminer s'il s'agit de foot à 6, 7 ou 8
-  const isFoot6 = selectedTerrain?.type === 'foot' && selectedTerrain.nom.includes('6');
-  const isFoot7or8 = selectedTerrain?.type === 'foot' && (selectedTerrain.nom.includes('7') || selectedTerrain.nom.includes('8'));
+  // Déterminer s'il s'agit de foot à 6, 7 ou 8 avec une logique plus robuste
+  const isFoot = selectedTerrain?.type === 'foot';
+  const isFoot6 = isFoot && (selectedTerrain?.nom.toLowerCase().includes('6') || selectedTerrain?.nom.toLowerCase().includes('six'));
+  const isFoot7or8 = isFoot && (selectedTerrain?.nom.toLowerCase().includes('7') || selectedTerrain?.nom.toLowerCase().includes('8') || selectedTerrain?.nom.toLowerCase().includes('sept') || selectedTerrain?.nom.toLowerCase().includes('huit'));
 
   // Générer les créneaux horaires selon le terrain et le jour de la semaine
   const timeSlotsForSelectedTerrain = useMemo(() => {
+    console.log('Edit - Génération des créneaux - Terrain:', selectedTerrain?.nom);
+    console.log('Edit - Jour sélectionné:', selectedJourSemaine);
+    console.log('Edit - Est samedi:', selectedJourSemaine === 6);
+    console.log('Edit - Est foot 6:', isFoot6);
+    console.log('Edit - Est foot 7/8:', isFoot7or8);
+    
     if (!selectedTerrain) return [];
     
-    // Exception pour le samedi : 10h00 à 23h30
-    if (selectedJourSemaine === 6) {
-      if (isFoot6) {
-        return generateTimeSlotsForFoot(10, 0, 23, 30);
-      }
-      if (isFoot7or8) {
-        return generateTimeSlotsForFoot(10, 0, 23, 30);
-      }
+    // Exception pour le samedi : 10h00 à 23h30 pour tous les terrains de foot
+    if (selectedJourSemaine === 6 && isFoot) {
+      console.log('Edit - Application de l\'exception samedi - créneaux 10h00-23h30');
+      const saturdaySlots = generateTimeSlotsForFoot(10, 0, 23, 30);
+      console.log('Edit - Créneaux samedi générés:', saturdaySlots);
+      return saturdaySlots;
     }
     
     // Créneaux normaux pour les autres jours
     if (isFoot6) {
+      console.log('Edit - Créneaux normaux foot 6 - 9h00-22h30');
       return generateTimeSlotsForFoot(9, 0, 22, 30);
     }
     if (isFoot7or8) {
+      console.log('Edit - Créneaux normaux foot 7/8 - 10h00-23h30');
       return generateTimeSlotsForFoot(10, 0, 23, 30);
     }
+    
+    console.log('Edit - Créneaux par défaut');
     return defaultTimeSlots;
-  }, [selectedTerrain, selectedJourSemaine, isFoot6, isFoot7or8]);
+  }, [selectedTerrain, selectedJourSemaine, isFoot, isFoot6, isFoot7or8]);
+
+  // Reset de l'heure quand les créneaux changent et que l'heure actuelle n'est plus disponible
+  useEffect(() => {
+    if (timeSlotsForSelectedTerrain.length > 0 && heure && !timeSlotsForSelectedTerrain.includes(heure)) {
+      console.log('Reset heure car non disponible dans les nouveaux créneaux');
+      setHeure('');
+    }
+  }, [timeSlotsForSelectedTerrain, heure]);
 
   // Vérifier la disponibilité des créneaux en excluant les réservations de l'abonnement actuel
   const isTimeSlotAvailable = (time: string) => {
@@ -271,6 +287,7 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
           value={selectedJourSemaine !== null ? selectedJourSemaine : ""}
           onChange={e => {
             const newVal = e.target.value === "" ? null : Number(e.target.value);
+            console.log('Edit - Changement jour semaine:', newVal);
             setSelectedJourSemaine(newVal);
           }}
           required
@@ -286,6 +303,10 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
       {selectedTerrainId && (
         <div>
           <Label htmlFor="heure">Heure de la séance *</Label>
+          <div className="mt-1 mb-2 text-sm text-gray-600">
+            Créneaux disponibles: {timeSlotsForSelectedTerrain.length} 
+            {selectedJourSemaine === 6 && isFoot && " (Exception samedi appliquée)"}
+          </div>
           <TimeSlotSelector
             timeSlots={timeSlotsForSelectedTerrain}
             selectedTime={heure}

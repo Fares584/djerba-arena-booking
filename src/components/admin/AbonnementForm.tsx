@@ -87,35 +87,51 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   // Trouver le terrain sélectionné
   const selectedTerrain = allTerrains.find(t => t.id === selectedTerrainId);
 
-  // Déterminer s'il s'agit de foot à 6, 7 ou 8
-  const isFoot6 = selectedTerrain?.type === 'foot' && selectedTerrain.nom.includes('6');
-  const isFoot7or8 = selectedTerrain?.type === 'foot' && (selectedTerrain.nom.includes('7') || selectedTerrain.nom.includes('8'));
+  // Déterminer s'il s'agit de foot à 6, 7 ou 8 avec une logique plus robuste
+  const isFoot = selectedTerrain?.type === 'foot';
+  const isFoot6 = isFoot && (selectedTerrain?.nom.toLowerCase().includes('6') || selectedTerrain?.nom.toLowerCase().includes('six'));
+  const isFoot7or8 = isFoot && (selectedTerrain?.nom.toLowerCase().includes('7') || selectedTerrain?.nom.toLowerCase().includes('8') || selectedTerrain?.nom.toLowerCase().includes('sept') || selectedTerrain?.nom.toLowerCase().includes('huit'));
 
   // Générer les créneaux horaires selon le terrain et le jour de la semaine
   const timeSlotsForSelectedTerrain = useMemo(() => {
+    console.log('Génération des créneaux - Terrain:', selectedTerrain?.nom);
+    console.log('Jour sélectionné:', selectedJourSemaine);
+    console.log('Est samedi:', selectedJourSemaine === 6);
+    console.log('Est foot 6:', isFoot6);
+    console.log('Est foot 7/8:', isFoot7or8);
+    
     if (!selectedTerrain) return [];
     
-    // Exception pour le samedi : 10h00 à 23h30
-    if (selectedJourSemaine === 6) {
-      if (isFoot6) {
-        return generateTimeSlotsForFoot(10, 0, 23, 30);
-      }
-      if (isFoot7or8) {
-        return generateTimeSlotsForFoot(10, 0, 23, 30);
-      }
+    // Exception pour le samedi : 10h00 à 23h30 pour tous les terrains de foot
+    if (selectedJourSemaine === 6 && isFoot) {
+      console.log('Application de l\'exception samedi - créneaux 10h00-23h30');
+      const saturdaySlots = generateTimeSlotsForFoot(10, 0, 23, 30);
+      console.log('Créneaux samedi générés:', saturdaySlots);
+      return saturdaySlots;
     }
     
     // Créneaux normaux pour les autres jours
     if (isFoot6) {
+      console.log('Créneaux normaux foot 6 - 9h00-22h30');
       return generateTimeSlotsForFoot(9, 0, 22, 30);
     }
     if (isFoot7or8) {
+      console.log('Créneaux normaux foot 7/8 - 10h00-23h30');
       return generateTimeSlotsForFoot(10, 0, 23, 30);
     }
+    
+    console.log('Créneaux par défaut');
     return defaultTimeSlots;
-  }, [selectedTerrain, selectedJourSemaine, isFoot6, isFoot7or8]);
+  }, [selectedTerrain, selectedJourSemaine, isFoot, isFoot6, isFoot7or8]);
 
-  // Vérifier la disponibilité des créneaux pour le mois et jour sélectionnés
+  // Reset de l'heure quand les créneaux changent
+  const previousTimeSlotsRef = useMemo(() => {
+    if (timeSlotsForSelectedTerrain.length > 0 && !timeSlotsForSelectedTerrain.includes(heure)) {
+      setHeure('');
+    }
+    return timeSlotsForSelectedTerrain;
+  }, [timeSlotsForSelectedTerrain, heure]);
+
   const isTimeSlotAvailable = (time: string) => {
     if (!selectedTerrainId || !time || selectedJourSemaine === null) return false;
 
@@ -234,6 +250,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
           value={selectedJourSemaine !== null ? selectedJourSemaine : ""}
           onChange={e => {
             const newVal = e.target.value === "" ? null : Number(e.target.value);
+            console.log('Changement jour semaine:', newVal);
             setSelectedJourSemaine(newVal);
           }}
           required
@@ -249,6 +266,10 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       {selectedTerrainId && (
         <div>
           <Label htmlFor="heure">Heure de la séance *</Label>
+          <div className="mt-1 mb-2 text-sm text-gray-600">
+            Créneaux disponibles: {timeSlotsForSelectedTerrain.length} 
+            {selectedJourSemaine === 6 && isFoot && " (Exception samedi appliquée)"}
+          </div>
           <TimeSlotSelector
             timeSlots={timeSlotsForSelectedTerrain}
             selectedTime={heure}
