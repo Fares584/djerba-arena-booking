@@ -75,6 +75,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const [formError, setFormError] = useState<string | null>(null);
 
   // Refs for auto-scrolling
+  const formContainerRef = useRef<HTMLFormElement>(null);
   const monthSectionRef = useRef<HTMLDivElement>(null);
   const dayOfWeekSectionRef = useRef<HTMLDivElement>(null);
   const timeSectionRef = useRef<HTMLDivElement>(null);
@@ -85,19 +86,25 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const { data: reservations = [] } = useReservations();
   const { data: abonnements = [] } = useAbonnements();
 
-  // Auto-scroll function
+  // Auto-scroll function modifiée pour utiliser le conteneur du dialogue
   const scrollToSection = (ref: React.RefObject<HTMLDivElement>) => {
     setTimeout(() => {
-      if (ref.current) {
-        const element = ref.current;
-        const offset = 80; // Offset for fixed headers or spacing
-        const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
-        const offsetPosition = elementPosition - offset;
-
-        window.scrollTo({
-          top: offsetPosition,
-          behavior: 'smooth'
-        });
+      if (ref.current && formContainerRef.current) {
+        const dialogContent = formContainerRef.current.closest('[role="dialog"]');
+        if (dialogContent) {
+          const element = ref.current;
+          const containerRect = dialogContent.getBoundingClientRect();
+          const elementRect = element.getBoundingClientRect();
+          
+          // Calculer la position relative dans le conteneur du dialogue
+          const relativeTop = elementRect.top - containerRect.top;
+          const offset = 20; // Petit offset pour éviter que l'élément soit collé au bord
+          
+          dialogContent.scrollTo({
+            top: dialogContent.scrollTop + relativeTop - offset,
+            behavior: 'smooth'
+          });
+        }
       }
     }, 100);
   };
@@ -248,7 +255,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 py-4">
+    <form ref={formContainerRef} onSubmit={handleSubmit} className="space-y-6 py-4">
       <h2 className="text-xl font-semibold mb-4">Créer un Abonnement</h2>
       {formError && <div className="bg-red-100 text-red-700 rounded p-2 text-sm">{formError}</div>}
 
