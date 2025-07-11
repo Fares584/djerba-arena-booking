@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useCreateAbonnement } from '@/hooks/useAbonnements';
 import { useReservations } from '@/hooks/useReservations';
@@ -74,10 +74,54 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const [clientTel, setClientTel] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
+  // Refs for auto-scrolling
+  const monthSectionRef = useRef<HTMLDivElement>(null);
+  const dayOfWeekSectionRef = useRef<HTMLDivElement>(null);
+  const timeSectionRef = useRef<HTMLDivElement>(null);
+  const clientSectionRef = useRef<HTMLDivElement>(null);
+
   const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
   const createAbonnement = useCreateAbonnement();
   const { data: reservations = [] } = useReservations();
   const { data: abonnements = [] } = useAbonnements();
+
+  // Auto-scroll function
+  const scrollToSection = (ref: React.RefObject<HTMLDivElement>) => {
+    setTimeout(() => {
+      if (ref.current) {
+        const element = ref.current;
+        const offset = 80; // Offset for fixed headers or spacing
+        const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+        const offsetPosition = elementPosition - offset;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      }
+    }, 100);
+  };
+
+  // Auto-scroll when terrain is selected
+  useEffect(() => {
+    if (selectedTerrainId) {
+      scrollToSection(monthSectionRef);
+    }
+  }, [selectedTerrainId]);
+
+  // Auto-scroll when day of week is selected
+  useEffect(() => {
+    if (selectedJourSemaine !== null) {
+      scrollToSection(timeSectionRef);
+    }
+  }, [selectedJourSemaine]);
+
+  // Auto-scroll when time is selected
+  useEffect(() => {
+    if (heure) {
+      scrollToSection(clientSectionRef);
+    }
+  }, [heure]);
 
   // Filtrage des terrains selon le type choisi
   const filteredTerrains = selectedType
@@ -224,47 +268,51 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       )}
 
       {/* Sélection du mois d'abonnement */}
-      <div>
-        <Label htmlFor="moisAbonnement">Mois d'abonnement *</Label>
-        <select
-          id="moisAbonnement"
-          className="w-full border rounded-md p-2 h-9 mt-1"
-          value={selectedMonth}
-          onChange={e => setSelectedMonth(Number(e.target.value))}
-          required
-        >
-          {months.map(month => (
-            <option key={month.value} value={month.value}>
-              {month.label} {selectedYear}
-            </option>
-          ))}
-        </select>
-      </div>
+      {selectedTerrainId && (
+        <div ref={monthSectionRef}>
+          <Label htmlFor="moisAbonnement">Mois d'abonnement *</Label>
+          <select
+            id="moisAbonnement"
+            className="w-full border rounded-md p-2 h-9 mt-1"
+            value={selectedMonth}
+            onChange={e => setSelectedMonth(Number(e.target.value))}
+            required
+          >
+            {months.map(month => (
+              <option key={month.value} value={month.value}>
+                {month.label} {selectedYear}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Jour de la semaine */}
-      <div>
-        <Label htmlFor="jourSemaine">Jour de la semaine *</Label>
-        <select
-          id="jourSemaine"
-          className="w-full border rounded-md p-2 h-9 mt-1"
-          value={selectedJourSemaine !== null ? selectedJourSemaine : ""}
-          onChange={e => {
-            const newVal = e.target.value === "" ? null : Number(e.target.value);
-            console.log('Changement jour semaine:', newVal);
-            setSelectedJourSemaine(newVal);
-          }}
-          required
-        >
-          <option value="" disabled>Sélectionnez un jour</option>
-          {weekDays.map(day => (
-            <option key={day.value} value={day.value}>{day.label}</option>
-          ))}
-        </select>
-      </div>
+      {selectedTerrainId && (
+        <div ref={dayOfWeekSectionRef}>
+          <Label htmlFor="jourSemaine">Jour de la semaine *</Label>
+          <select
+            id="jourSemaine"
+            className="w-full border rounded-md p-2 h-9 mt-1"
+            value={selectedJourSemaine !== null ? selectedJourSemaine : ""}
+            onChange={e => {
+              const newVal = e.target.value === "" ? null : Number(e.target.value);
+              console.log('Changement jour semaine:', newVal);
+              setSelectedJourSemaine(newVal);
+            }}
+            required
+          >
+            <option value="" disabled>Sélectionnez un jour</option>
+            {weekDays.map(day => (
+              <option key={day.value} value={day.value}>{day.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Heure */}
-      {selectedTerrainId && (
-        <div>
+      {selectedTerrainId && selectedJourSemaine !== null && (
+        <div ref={timeSectionRef}>
           <Label htmlFor="heure">Heure de la séance *</Label>
           <div className="mt-1 mb-2 text-sm text-gray-600">
             Créneaux disponibles: {timeSlotsForSelectedTerrain.length} 
@@ -281,27 +329,29 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       )}
 
       {/* Infos client */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
-        <div>
-          <Label htmlFor="clientNom">Nom du client *</Label>
-          <Input
-            id="clientNom"
-            type="text"
-            value={clientNom}
-            onChange={e => setClientNom(e.target.value)}
-            required
-          />
+      {heure && (
+        <div ref={clientSectionRef} className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+          <div>
+            <Label htmlFor="clientNom">Nom du client *</Label>
+            <Input
+              id="clientNom"
+              type="text"
+              value={clientNom}
+              onChange={e => setClientNom(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="clientTel">Téléphone du client</Label>
+            <Input
+              id="clientTel"
+              type="tel"
+              value={clientTel}
+              onChange={e => setClientTel(e.target.value)}
+            />
+          </div>
         </div>
-        <div>
-          <Label htmlFor="clientTel">Téléphone du client</Label>
-          <Input
-            id="clientTel"
-            type="tel"
-            value={clientTel}
-            onChange={e => setClientTel(e.target.value)}
-          />
-        </div>
-      </div>
+      )}
 
       <div className="flex justify-end space-x-2 pt-4">
         <Button
