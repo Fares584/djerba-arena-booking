@@ -1,7 +1,16 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
 import { format, addDays } from 'date-fns';
+
+// Extended type for reservations with abonnement data
+type ReservationWithAbonnement = Reservation & {
+  abonnements?: {
+    id: number;
+    statut: string;
+  } | null;
+};
 
 export function useReservations(filters?: { 
   terrain_id?: number; 
@@ -41,9 +50,10 @@ export function useReservations(filters?: {
         
         // Filtrer les réservations des abonnements expirés
         const filteredData = data?.filter(reservation => {
+          const reservationWithAbonnement = reservation as ReservationWithAbonnement;
           // Si c'est une réservation d'abonnement, vérifier que l'abonnement n'est pas expiré
-          if (reservation.abonnement_id && reservation.abonnements) {
-            return reservation.abonnements.statut === 'actif';
+          if (reservationWithAbonnement.abonnement_id && reservationWithAbonnement.abonnements) {
+            return reservationWithAbonnement.abonnements.statut === 'actif';
           }
           // Garder les réservations ponctuelles
           return true;
@@ -94,9 +104,10 @@ export function useAvailability({
         
         // Filtrer les réservations des abonnements expirés
         const filteredData = data?.filter(reservation => {
+          const reservationWithAbonnement = reservation as ReservationWithAbonnement;
           // Si c'est une réservation d'abonnement, vérifier que l'abonnement n'est pas expiré
-          if (reservation.abonnement_id && reservation.abonnements) {
-            return reservation.abonnements.statut === 'actif';
+          if (reservationWithAbonnement.abonnement_id && reservationWithAbonnement.abonnements) {
+            return reservationWithAbonnement.abonnements.statut === 'actif';
           }
           // Garder les réservations ponctuelles
           return true;
@@ -126,9 +137,7 @@ export function isTimeSlotAvailable(
   const activeReservations = reservations.filter(
     r => r.terrain_id === terrainId && 
          r.date === date && 
-         (r.statut === 'en_attente' || r.statut === 'confirmee') &&
-         // Exclure les réservations d'abonnements expirés
-         (!r.abonnement_id || (r.abonnements && r.abonnements.statut === 'actif'))
+         (r.statut === 'en_attente' || r.statut === 'confirmee')
   );
   
   const startHour = parseInt(startTime.split(':')[0]);
@@ -161,12 +170,10 @@ export function getUnavailableDates(
   const unavailableDates: string[] = [];
   const dateReservations: { [key: string]: Reservation[] } = {};
   
-  // Group active reservations by date (only 'en_attente' and 'confirmee', excluding expired subscriptions)
+  // Group active reservations by date (only 'en_attente' and 'confirmee')
   reservations
     .filter(r => r.terrain_id === terrainId && 
-                (r.statut === 'en_attente' || r.statut === 'confirmee') &&
-                (!r.abonnement_id || (r.abonnements && r.abonnements.statut === 'actif'))
-           )
+                (r.statut === 'en_attente' || r.statut === 'confirmee'))
     .forEach(reservation => {
       if (!dateReservations[reservation.date]) {
         dateReservations[reservation.date] = [];
