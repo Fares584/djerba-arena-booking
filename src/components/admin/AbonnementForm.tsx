@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useCreateAbonnement } from '@/hooks/useAbonnements';
@@ -92,9 +91,21 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const isFoot6 = selectedTerrain?.type === 'foot' && selectedTerrain.nom.includes('6');
   const isFoot7or8 = selectedTerrain?.type === 'foot' && (selectedTerrain.nom.includes('7') || selectedTerrain.nom.includes('8'));
 
-  // Générer les créneaux horaires selon le terrain
+  // Générer les créneaux horaires selon le terrain et le jour de la semaine
   const timeSlotsForSelectedTerrain = useMemo(() => {
     if (!selectedTerrain) return [];
+    
+    // Exception pour le samedi : 10h00 à 23h30
+    if (selectedJourSemaine === 6) {
+      if (isFoot6) {
+        return generateTimeSlotsForFoot(10, 0, 23, 30);
+      }
+      if (isFoot7or8) {
+        return generateTimeSlotsForFoot(10, 0, 23, 30);
+      }
+    }
+    
+    // Créneaux normaux pour les autres jours
     if (isFoot6) {
       return generateTimeSlotsForFoot(9, 0, 22, 30);
     }
@@ -102,7 +113,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
       return generateTimeSlotsForFoot(10, 0, 23, 30);
     }
     return defaultTimeSlots;
-  }, [selectedTerrain, isFoot6, isFoot7or8]);
+  }, [selectedTerrain, selectedJourSemaine, isFoot6, isFoot7or8]);
 
   // Vérifier la disponibilité des créneaux pour le mois et jour sélectionnés
   const isTimeSlotAvailable = (time: string) => {

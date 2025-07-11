@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
 import { useUpdateAbonnement } from '@/hooks/useAbonnements';
@@ -120,9 +121,21 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
   const isFoot6 = selectedTerrain?.type === 'foot' && selectedTerrain.nom.includes('6');
   const isFoot7or8 = selectedTerrain?.type === 'foot' && (selectedTerrain.nom.includes('7') || selectedTerrain.nom.includes('8'));
 
-  // Générer les créneaux horaires
+  // Générer les créneaux horaires selon le terrain et le jour de la semaine
   const timeSlotsForSelectedTerrain = useMemo(() => {
     if (!selectedTerrain) return [];
+    
+    // Exception pour le samedi : 10h00 à 23h30
+    if (selectedJourSemaine === 6) {
+      if (isFoot6) {
+        return generateTimeSlotsForFoot(10, 0, 23, 30);
+      }
+      if (isFoot7or8) {
+        return generateTimeSlotsForFoot(10, 0, 23, 30);
+      }
+    }
+    
+    // Créneaux normaux pour les autres jours
     if (isFoot6) {
       return generateTimeSlotsForFoot(9, 0, 22, 30);
     }
@@ -130,7 +143,7 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
       return generateTimeSlotsForFoot(10, 0, 23, 30);
     }
     return defaultTimeSlots;
-  }, [selectedTerrain, isFoot6, isFoot7or8]);
+  }, [selectedTerrain, selectedJourSemaine, isFoot6, isFoot7or8]);
 
   // Vérifier la disponibilité des créneaux en excluant les réservations de l'abonnement actuel
   const isTimeSlotAvailable = (time: string) => {
@@ -317,7 +330,6 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
         >
           <option value="actif">Actif</option>
           <option value="expire">Expiré</option>
-          <option value="annule">Annulé</option>
         </select>
       </div>
 
