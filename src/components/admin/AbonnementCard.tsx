@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Edit, Calendar, Clock, MapPin, User, Phone, Trash2, RotateCcw, Shield, Globe } from 'lucide-react';
 import { Abonnement } from '@/lib/supabase';
 import { getMonthName, getDayName } from '@/lib/supabase';
+import { calculateDaysRemaining } from '@/hooks/useAbonnementExpiration';
 
 interface AbonnementCardProps {
   abonnement: Abonnement;
@@ -85,6 +86,30 @@ const AbonnementCard = ({
       onRenew(abonnement);
     }
   };
+
+  // Calculate remaining days
+  const daysRemaining = calculateDaysRemaining(abonnement.mois_abonnement, abonnement.annee_abonnement);
+  
+  const getDaysRemainingDisplay = () => {
+    if (abonnement.statut === 'expire') {
+      return { text: 'Expiré', color: 'text-red-600', bgColor: 'bg-red-100' };
+    }
+    if (abonnement.statut === 'annule') {
+      return { text: 'Annulé', color: 'text-gray-600', bgColor: 'bg-gray-100' };
+    }
+    
+    if (daysRemaining < 0) {
+      return { text: 'Expiré', color: 'text-red-600', bgColor: 'bg-red-100' };
+    } else if (daysRemaining === 0) {
+      return { text: 'Expire aujourd\'hui', color: 'text-orange-600', bgColor: 'bg-orange-100' };
+    } else if (daysRemaining <= 7) {
+      return { text: `${daysRemaining} jour${daysRemaining > 1 ? 's' : ''} restant${daysRemaining > 1 ? 's' : ''}`, color: 'text-orange-600', bgColor: 'bg-orange-100' };
+    } else {
+      return { text: `${daysRemaining} jours restants`, color: 'text-green-600', bgColor: 'bg-green-100' };
+    }
+  };
+
+  const daysDisplay = getDaysRemainingDisplay();
 
   return (
     <Card className={`hover:shadow-xl transition-all duration-300 ${statusConfig.bgLight} ${statusConfig.borderColor} border-2 w-full max-w-full`}>
@@ -178,6 +203,16 @@ const AbonnementCard = ({
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Section jours restants */}
+        <div className={`${daysDisplay.bgColor} rounded-lg p-3 text-center border`}>
+          <span className="text-xs sm:text-sm text-gray-500 block mb-1">
+            Temps restant
+          </span>
+          <span className={`font-bold text-sm sm:text-base ${daysDisplay.color}`}>
+            {daysDisplay.text}
+          </span>
         </div>
 
         {/* Date de création */}
