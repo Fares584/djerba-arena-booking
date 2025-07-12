@@ -112,13 +112,14 @@ const Abonnements = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col items-start gap-4">
-        <h1 className="text-3xl font-bold">Gestion des Abonnements</h1>
+    <div className="space-y-6 p-2 sm:p-0">
+      {/* En-tête avec bouton d'ajout */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Gestion des Abonnements</h1>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-sport-green hover:bg-sport-dark">
+            <Button className="bg-sport-green hover:bg-sport-dark text-white font-medium px-4 py-2 sm:px-6">
               <Plus className="mr-2 h-4 w-4" />
               Nouvel Abonnement
             </Button>
@@ -132,24 +133,24 @@ const Abonnements = () => {
         </Dialog>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow">
+      {/* Cartes de statistiques */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow border border-gray-200">
           <div className="flex items-center">
-            <Users className="h-8 w-8 text-sport-green mr-3" />
-            <div>
+            <Users className="h-6 w-6 sm:h-8 sm:w-8 text-sport-green mr-3 flex-shrink-0" />
+            <div className="min-w-0">
               <p className="text-sm font-medium text-gray-600">Total Abonnements</p>
-              <p className="text-2xl font-bold">{abonnements?.length || 0}</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">{abonnements?.length || 0}</p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow border border-gray-200">
           <div className="flex items-center">
-            <Users className="h-8 w-8 text-green-600 mr-3" />
-            <div>
+            <Users className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 mr-3 flex-shrink-0" />
+            <div className="min-w-0">
               <p className="text-sm font-medium text-gray-600">Abonnements Actifs</p>
-              <p className="text-2xl font-bold">
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">
                 {abonnements?.filter(a => a.statut === 'actif').length || 0}
               </p>
             </div>
@@ -157,8 +158,9 @@ const Abonnements = () => {
         </div>
       </div>
 
+      {/* Liste des abonnements */}
       {abonnements && abonnements.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
           {abonnements.map((abonnement: Abonnement) => (
             <AbonnementCard
               key={abonnement.id}
@@ -173,13 +175,28 @@ const Abonnements = () => {
           ))}
         </div>
       ) : (
-        <div className="text-center py-20">
-          <h3 className="mt-2 text-xl font-medium text-gray-900">Aucun abonnement</h3>
-          <p className="mt-1 text-gray-500">Il n'y a pas encore d'abonnements à afficher.</p>
+        <div className="text-center py-12 sm:py-20 bg-white rounded-lg border border-gray-200">
+          <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+          <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-2">Aucun abonnement</h3>
+          <p className="text-sm sm:text-base text-gray-500 mb-6">Il n'y a pas encore d'abonnements à afficher.</p>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-sport-green hover:bg-sport-dark text-white">
+                <Plus className="mr-2 h-4 w-4" />
+                Créer le premier abonnement
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Ajouter un Abonnement</DialogTitle>
+              </DialogHeader>
+              <AbonnementForm onSuccess={handleFormSuccess} />
+            </DialogContent>
+          </Dialog>
         </div>
       )}
 
-      {/* Edit Dialog */}
+      {/* Dialog de modification */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>

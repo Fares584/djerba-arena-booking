@@ -56,94 +56,102 @@ const AbonnementCard = ({
   };
 
   return (
-    <Card className="w-full shadow-sm hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-lg font-semibold text-gray-900">
-            {abonnement.client_nom}
-          </CardTitle>
-          <Badge className={`${getStatusColor(abonnement.statut)} font-medium`}>
+    <Card className="w-full shadow-sm hover:shadow-lg transition-all duration-200 border border-gray-200 bg-white">
+      <CardHeader className="pb-4 border-b border-gray-100">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-lg font-semibold text-gray-900 truncate">
+              {abonnement.client_nom}
+            </CardTitle>
+            {abonnement.client_tel && (
+              <div className="flex items-center mt-2 text-sm text-gray-600">
+                <Phone className="h-4 w-4 mr-2 text-sport-green flex-shrink-0" />
+                <span className="truncate">{abonnement.client_tel}</span>
+              </div>
+            )}
+          </div>
+          <Badge className={`${getStatusColor(abonnement.statut)} font-medium text-xs px-3 py-1 flex-shrink-0`}>
             {abonnement.statut.charAt(0).toUpperCase() + abonnement.statut.slice(1)}
           </Badge>
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-3">
-        <div className="grid grid-cols-1 gap-3">
-          <div className="flex items-center text-sm text-gray-600">
-            <MapPin className="h-4 w-4 mr-2 text-sport-green" />
-            <span className="font-medium">{terrainLabel}</span>
-            <span className="ml-2 text-xs bg-gray-100 px-2 py-1 rounded">
-              {typeLabel}
-            </span>
+      <CardContent className="p-4 space-y-4">
+        {/* Information principale */}
+        <div className="space-y-3">
+          <div className="flex items-start gap-3">
+            <MapPin className="h-4 w-4 mt-1 text-sport-green flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span className="font-medium text-gray-900 block truncate">{terrainLabel}</span>
+              {typeLabel && (
+                <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded mt-1 inline-block">
+                  {typeLabel}
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center text-sm text-gray-600">
-            <Calendar className="h-4 w-4 mr-2 text-sport-green" />
-            <span>
+          <div className="flex items-center gap-3">
+            <Calendar className="h-4 w-4 text-sport-green flex-shrink-0" />
+            <span className="text-sm text-gray-600">
               {getMonthName(abonnement.mois_abonnement)} {abonnement.annee_abonnement}
             </span>
           </div>
 
-          <div className="flex items-center text-sm text-gray-600">
-            <Clock className="h-4 w-4 mr-2 text-sport-green" />
-            <span>
+          <div className="flex items-center gap-3">
+            <Clock className="h-4 w-4 text-sport-green flex-shrink-0" />
+            <span className="text-sm text-gray-600">
               {abonnement.jour_semaine !== null && getDayName(abonnement.jour_semaine)} à {abonnement.heure_fixe}
             </span>
           </div>
-
-          {abonnement.client_tel && (
-            <div className="flex items-center text-sm text-gray-600">
-              <Phone className="h-4 w-4 mr-2 text-sport-green" />
-              <span>{abonnement.client_tel}</span>
-            </div>
-          )}
         </div>
 
-        <div className="border-t pt-3 mt-4">
-          <div className="flex flex-col sm:flex-row gap-2">
+        {/* Actions */}
+        <div className="border-t pt-4 space-y-3">
+          {/* Sélecteur de statut */}
+          <div className="w-full">
             <select
               value={abonnement.statut}
               onChange={handleStatusChange}
-              className="text-xs border rounded px-2 py-1 flex-1"
+              className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 bg-white focus:ring-2 focus:ring-sport-green focus:border-transparent"
             >
               <option value="actif">Actif</option>
               <option value="expire">Expiré</option>
               <option value="annule">Annulé</option>
             </select>
+          </div>
+          
+          {/* Boutons d'actions */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleRenew}
+              className="flex items-center justify-center gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-300 transition-colors"
+            >
+              <RotateCcw className="h-4 w-4" />
+              <span className="text-xs font-medium">Renouveler</span>
+            </Button>
             
-            <div className="flex gap-1">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleRenew}
-                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                title="Renouveler pour le mois suivant"
-              >
-                <RotateCcw className="h-3 w-3" />
-                Renouveler
-              </Button>
-              
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onEdit(abonnement)}
-                className="flex items-center gap-1 text-xs"
-              >
-                <Edit className="h-3 w-3" />
-                Modifier
-              </Button>
-              
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleDelete}
-                className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <Trash2 className="h-3 w-3" />
-                Supprimer
-              </Button>
-            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onEdit(abonnement)}
+              className="flex items-center justify-center gap-2 text-gray-600 hover:text-gray-700 hover:bg-gray-50 border-gray-200 hover:border-gray-300 transition-colors"
+            >
+              <Edit className="h-4 w-4" />
+              <span className="text-xs font-medium">Modifier</span>
+            </Button>
+            
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleDelete}
+              className="flex items-center justify-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300 transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="text-xs font-medium">Supprimer</span>
+            </Button>
           </div>
         </div>
       </CardContent>
