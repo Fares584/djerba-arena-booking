@@ -80,21 +80,28 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Powered by DigiSwift */}
-          <div className="flex flex-col items-center justify-center">
-            <div className="mb-3">
+          {/* Powered by DigiSwift - Enhanced */}
+          <div className="flex flex-col items-center justify-center bg-gradient-to-br from-sport-accent/10 to-sport-green/10 rounded-lg p-6 border border-sport-accent/20">
+            <div className="mb-4 transform hover:scale-105 transition-transform duration-300">
               <img 
                 src="/lovable-uploads/5c20a202-3479-48e0-888e-0b7fd9c6c27d.png" 
                 alt="DigiSwift Logo" 
-                className="h-12 w-auto opacity-80 hover:opacity-100 transition-opacity"
+                className="h-16 w-auto opacity-90 hover:opacity-100 transition-opacity shadow-lg"
               />
             </div>
-            <p className="text-gray-400 text-sm text-center">
-              Powered by <span className="text-sport-accent font-medium">DigiSwift</span>
-            </p>
-            <p className="text-gray-500 text-xs text-center mt-1">
-              Solutions Digitales Créatives
-            </p>
+            <div className="text-center">
+              <p className="text-sport-accent font-bold text-lg mb-1">
+                Powered by <span className="text-sport-accent">DigiSwift</span>
+              </p>
+              <p className="text-gray-300 text-sm font-medium">
+                Solutions Digitales Créatives
+              </p>
+              <div className="mt-3 px-4 py-1 bg-sport-accent/20 rounded-full">
+                <p className="text-sport-accent text-xs font-semibold">
+                  Web Development Agency
+                </p>
+              </div>
+            </div>
           </div>
         </div>
         
