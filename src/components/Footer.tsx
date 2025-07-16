@@ -98,7 +98,7 @@ const Footer = () => {
               </p>
               <div className="mt-3 px-4 py-1 bg-sport-accent/20 rounded-full">
                 <p className="text-sport-accent text-xs font-semibold">
-                  Web Development Agency
+                  Digital Agency
                 </p>
               </div>
             </div>
