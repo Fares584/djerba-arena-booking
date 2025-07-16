@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -57,7 +56,11 @@ const Reservation = () => {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   // -------- 1. Declare hooks first, so allTerrains exists! -----------
-  const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
+  // Côté utilisateur, ne montrer que les terrains actifs
+  const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ 
+    actif: true,
+    includeInactive: false 
+  });
   const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
   const createReservation = useCreateReservation({
     onSuccess: () => {

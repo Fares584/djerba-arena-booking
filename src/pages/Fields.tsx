@@ -8,10 +8,13 @@ import { useTerrains } from '@/hooks/useTerrains';
 const Fields = () => {
   const [selectedType, setSelectedType] = useState<string>('all');
 
-  // Fetch terrains from Supabase
-  const { data: terrains, isLoading, error } = useTerrains();
+  // Fetch only active terrains for users (includeInactive: false)
+  const { data: terrains, isLoading, error } = useTerrains({ 
+    type: selectedType === 'all' ? undefined : selectedType,
+    includeInactive: false // Ne montrer que les terrains actifs côté utilisateur
+  });
 
-  // Appliquer seulement le filtre sur le type de terrain
+  // Filtrer seulement par type puisque les terrains inactifs sont déjà exclus
   const filteredFields = terrains?.filter((field) => {
     const matchesType = selectedType === 'all' || field.type === selectedType;
     return matchesType;

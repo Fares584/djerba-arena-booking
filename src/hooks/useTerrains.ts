@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Terrain } from '@/lib/supabase';
 import { toast } from 'sonner';
 
-export function useTerrains(filters?: { type?: string; actif?: boolean }) {
+export function useTerrains(filters?: { type?: string; actif?: boolean; includeInactive?: boolean }) {
   return useQuery({
     queryKey: ['terrains', filters],
     queryFn: async () => {
@@ -16,8 +16,13 @@ export function useTerrains(filters?: { type?: string; actif?: boolean }) {
           query = query.eq('type', filters.type);
         }
         
+        // Si includeInactive est false (côté utilisateur), ne montrer que les terrains actifs
+        // Si includeInactive est true ou undefined (côté admin), montrer tous les terrains
         if (filters?.actif !== undefined) {
           query = query.eq('actif', filters.actif);
+        } else if (!filters?.includeInactive) {
+          // Par défaut, côté utilisateur, ne montrer que les terrains actifs
+          query = query.eq('actif', true);
         }
         
         const { data, error } = await query;
