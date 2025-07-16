@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 
@@ -77,6 +78,23 @@ const Footer = () => {
                 <span className="text-sport-green">10:00 - 22:00</span>
               </li>
             </ul>
+          </div>
+
+          {/* Powered by DigiSwift */}
+          <div className="flex flex-col items-center justify-center">
+            <div className="mb-3">
+              <img 
+                src="/lovable-uploads/a12fd98b-cf75-4f69-9284-451cff5425fa.png" 
+                alt="DigiSwift Logo" 
+                className="h-12 w-auto opacity-80 hover:opacity-100 transition-opacity"
+              />
+            </div>
+            <p className="text-gray-400 text-sm text-center">
+              Powered by <span className="text-sport-accent font-medium">DigiSwift</span>
+            </p>
+            <p className="text-gray-500 text-xs text-center mt-1">
+              Solutions Digitales Créatives
+            </p>
           </div>
         </div>
         
