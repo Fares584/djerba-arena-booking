@@ -84,7 +84,7 @@ const Footer = () => {
           <div className="flex flex-col items-center justify-center">
             <div className="mb-3">
               <img 
-                src="/lovable-uploads/a12fd98b-cf75-4f69-9284-451cff5425fa.png" 
+                src="/lovable-uploads/5c20a202-3479-48e0-888e-0b7fd9c6c27d.png" 
                 alt="DigiSwift Logo" 
                 className="h-12 w-auto opacity-80 hover:opacity-100 transition-opacity"
               />
