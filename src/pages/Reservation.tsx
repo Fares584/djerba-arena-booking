@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -34,10 +33,12 @@ const defaultTimeSlots = [
   '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
 ];
 
-// Options de durée pour les terrains non-football
+// Options de durée pour tennis et padel - nouvelles options avec minimum 1h
 const durationOptions = [
   { value: '1', label: '1 heure' },
+  { value: '1.5', label: '1h30' },
   { value: '2', label: '2 heures' },
+  { value: '2.5', label: '2h30' },
   { value: '3', label: '3 heures' },
 ];
 
@@ -155,22 +156,28 @@ const Reservation = () => {
       return calculatePrice(selectedTerrain, selectedTime, globalNightStartTime);
     }
 
-    // Pour les autres terrains (tennis, padel) : calcul par heure
+    // Pour les autres terrains (tennis, padel) : calcul par heure/demi-heure
     let total = 0;
     let timeHour = parseInt(selectedTime.split(':')[0], 10);
     let timeMinute = parseInt(selectedTime.split(':')[1], 10);
 
-    for (let i = 0; i < effectiveDuration; i++) {
+    // Calculer le prix par tranches de 30 minutes
+    const totalHalfHours = effectiveDuration * 2; // Convertir en demi-heures
+    
+    for (let i = 0; i < totalHalfHours; i++) {
       const slotTime = 
         timeHour.toString().padStart(2, '0') + ':' + 
         timeMinute.toString().padStart(2, '0');
-      total += calculatePrice(selectedTerrain, slotTime, globalNightStartTime);
+      
+      // Ajouter la moitié du prix horaire pour chaque demi-heure
+      total += calculatePrice(selectedTerrain, slotTime, globalNightStartTime) / 2;
 
-      // Avance de 1h pour chaque unité d'heure supplémentaire
-      let newDate = new Date(2000, 0, 1, timeHour, timeMinute);
-      newDate.setHours(newDate.getHours() + 1);
-      timeHour = newDate.getHours();
-      timeMinute = newDate.getMinutes();
+      // Avance de 30 minutes
+      timeMinute += 30;
+      if (timeMinute >= 60) {
+        timeHour += 1;
+        timeMinute = 0;
+      }
     }
     return total;
   };

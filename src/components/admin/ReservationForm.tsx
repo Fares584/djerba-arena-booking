@@ -165,15 +165,29 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       return calculatePrice(terrain, formData.heure, globalNightStartTime);
     }
     
-    // Pour les autres terrains, calculer par heure
+    // Pour les autres terrains, calculer par demi-heure
     const duration = parseFloat(effectiveDuration);
     let totalPrice = 0;
+    let timeHour = parseInt(formData.heure.split(':')[0], 10);
+    let timeMinute = parseInt(formData.heure.split(':')[1], 10);
+
+    // Calculer le prix par tranches de 30 minutes
+    const totalHalfHours = duration * 2; // Convertir en demi-heures
     
-    for (let i = 0; i < duration; i++) {
-      const currentHour = parseInt(formData.heure.split(':')[0]) + i;
-      const timeString = `${currentHour.toString().padStart(2, '0')}:00`;
-      const hourPrice = calculatePrice(terrain, timeString, globalNightStartTime);
-      totalPrice += hourPrice;
+    for (let i = 0; i < totalHalfHours; i++) {
+      const slotTime = 
+        timeHour.toString().padStart(2, '0') + ':' + 
+        timeMinute.toString().padStart(2, '0');
+      
+      // Ajouter la moitié du prix horaire pour chaque demi-heure
+      totalPrice += calculatePrice(terrain, slotTime, globalNightStartTime) / 2;
+
+      // Avance de 30 minutes
+      timeMinute += 30;
+      if (timeMinute >= 60) {
+        timeHour += 1;
+        timeMinute = 0;
+      }
     }
     
     return totalPrice;
@@ -341,7 +355,9 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="1">1 heure</SelectItem>
+                  <SelectItem value="1.5">1h30</SelectItem>
                   <SelectItem value="2">2 heures</SelectItem>
+                  <SelectItem value="2.5">2h30</SelectItem>
                   <SelectItem value="3">3 heures</SelectItem>
                 </SelectContent>
               </Select>

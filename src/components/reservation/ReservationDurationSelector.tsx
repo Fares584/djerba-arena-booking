@@ -31,7 +31,7 @@ const ReservationDurationSelector: React.FC<Props> = ({
       </div>
     );
   }
-  // Non-football
+  // Pour tennis et padel - nouvelles options de durée
   return (
     <div className="mb-8">
       <Label htmlFor="duration" className="text-lg font-semibold mb-2 block">
