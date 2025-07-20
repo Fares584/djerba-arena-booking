@@ -6,15 +6,46 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Loader2, Plus } from 'lucide-react';
 import TerrainForm from '@/components/admin/TerrainForm';
 import TerrainCard from '@/components/admin/TerrainCard';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Terrain } from '@/lib/supabase';
 
 const Terrains = () => {
   // Inclure tous les terrains (y compris inactifs et football) pour l'admin
   const { data: terrains, isLoading, refetch } = useTerrains({ includeInactive: true });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingTerrain, setEditingTerrain] = useState<Terrain | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const handleTerrainAdded = () => {
     setIsDialogOpen(false);
+    setEditingTerrain(null);
     refetch();
+  };
+
+  const handleStatusChange = async (id: number, isActive: boolean) => {
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('terrains')
+        .update({ actif: isActive })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success(`Terrain ${isActive ? 'activé' : 'désactivé'} avec succès`);
+      refetch();
+    } catch (error) {
+      console.error('Error updating terrain status:', error);
+      toast.error('Erreur lors de la mise à jour du statut');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleEdit = (terrain: Terrain) => {
+    setEditingTerrain(terrain);
+    setIsDialogOpen(true);
   };
 
   if (isLoading) {
@@ -30,7 +61,10 @@ const Terrains = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Gestion des Terrains</h1>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) setEditingTerrain(null);
+        }}>
           <DialogTrigger asChild>
             <Button className="bg-sport-green hover:bg-sport-dark">
               <Plus className="mr-2 h-4 w-4" />
@@ -39,9 +73,14 @@ const Terrains = () => {
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Ajouter un Terrain</DialogTitle>
+              <DialogTitle>
+                {editingTerrain ? 'Modifier le Terrain' : 'Ajouter un Terrain'}
+              </DialogTitle>
             </DialogHeader>
-            <TerrainForm onSuccess={handleTerrainAdded} />
+            <TerrainForm 
+              onSuccess={handleTerrainAdded} 
+              terrainToEdit={editingTerrain}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -52,7 +91,9 @@ const Terrains = () => {
             <TerrainCard
               key={terrain.id}
               terrain={terrain}
-              onUpdate={() => refetch()}
+              onStatusChange={handleStatusChange}
+              onEdit={handleEdit}
+              isUpdating={isUpdating}
             />
           ))}
         </div>
