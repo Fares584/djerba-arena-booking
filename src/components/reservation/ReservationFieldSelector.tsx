@@ -10,6 +10,7 @@ interface Props {
   filteredTerrains: any[];
   selectedTerrainId: number | null;
   setSelectedTerrainId: (id: number | null) => void;
+  isAdminView?: boolean;
 }
 
 const ReservationFieldSelector: React.FC<Props> = ({
@@ -18,6 +19,7 @@ const ReservationFieldSelector: React.FC<Props> = ({
   filteredTerrains,
   selectedTerrainId,
   setSelectedTerrainId,
+  isAdminView = false,
 }) => {
   // Auto-scroll to date/time section when terrain is selected
   useEffect(() => {

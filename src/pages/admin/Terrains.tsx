@@ -52,7 +52,7 @@ const Terrains = () => {
             <TerrainCard
               key={terrain.id}
               terrain={terrain}
-              onUpdate={refetch}
+              onUpdate={() => refetch()}
             />
           ))}
         </div>

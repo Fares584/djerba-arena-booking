@@ -7,9 +7,10 @@ import { MapPin } from "lucide-react";
 interface Props {
   selectedType: string;
   setSelectedType: (type: string) => void;
+  isAdminView?: boolean;
 }
 
-const ReservationTypeSelector: React.FC<Props> = ({ selectedType, setSelectedType }) => {
+const ReservationTypeSelector: React.FC<Props> = ({ selectedType, setSelectedType, isAdminView = false }) => {
   // Auto-scroll to terrain section when type is selected
   useEffect(() => {
     if (selectedType) {
@@ -40,6 +41,7 @@ const ReservationTypeSelector: React.FC<Props> = ({ selectedType, setSelectedTyp
         <SelectContent>
           <SelectItem value="tennis">Tennis</SelectItem>
           <SelectItem value="padel">Padel</SelectItem>
+          {isAdminView && <SelectItem value="foot">Football</SelectItem>}
         </SelectContent>
       </Select>
     </div>
