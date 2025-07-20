@@ -15,7 +15,7 @@ import { Reservation } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
-  // Exclure les réservations d'abonnement des statistiques
+  // Inclure TOUTES les réservations (y compris annulées) pour les statistiques du dashboard
   const { data: reservations } = useReservations({ excludeSubscriptions: true });
   const { data: terrains } = useTerrains();
   
@@ -35,11 +35,24 @@ const Dashboard = () => {
   
   useEffect(() => {
     if (reservations) {
+      // Calculer les statistiques en incluant TOUTES les réservations
+      const totalReservations = reservations.length;
+      const confirmeesCount = reservations.filter(r => r.statut === 'confirmee').length;
+      const enAttenteCount = reservations.filter(r => r.statut === 'en_attente').length;
+      const annuleesCount = reservations.filter(r => r.statut === 'annulee').length;
+      
+      console.log('Dashboard stats calculation:', {
+        total: totalReservations,
+        confirmees: confirmeesCount,
+        enAttente: enAttenteCount,
+        annulees: annuleesCount
+      });
+      
       setReservationStats({
-        total: reservations.length,
-        confirmees: reservations.filter(r => r.statut === 'confirmee').length,
-        enAttente: reservations.filter(r => r.statut === 'en_attente').length,
-        annulees: reservations.filter(r => r.statut === 'annulee').length
+        total: totalReservations,
+        confirmees: confirmeesCount,
+        enAttente: enAttenteCount,
+        annulees: annuleesCount
       });
     }
     

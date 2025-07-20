@@ -44,8 +44,9 @@ export function useReservations(filters?: {
         
         const now = new Date();
         const currentReservations = (data as Reservation[]).filter(reservation => {
+          // Pour les réservations annulées, on les garde toujours pour les stats
           if (reservation.statut === 'annulee') {
-            return false;
+            return true;
           }
           
           const reservationDate = new Date(reservation.date);
