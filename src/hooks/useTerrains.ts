@@ -39,7 +39,7 @@ export function useTerrains(filters?: {
           filteredData = filteredData.filter(terrain => terrain.actif);
         }
         
-        // Exclure les terrains de football pour les utilisateurs non-admin
+        // Exclure les terrains de football UNIQUEMENT pour les utilisateurs (pas pour les admins)
         if (filters?.excludeFootballForUsers) {
           filteredData = filteredData.filter(terrain => terrain.type !== 'foot');
         }

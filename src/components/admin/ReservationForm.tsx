@@ -52,7 +52,11 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     remarque: ''
   });
 
-  const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
+  // Inclure tous les terrains (y compris football) pour l'admin
+  const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ 
+    actif: true, 
+    includeInactive: false 
+  });
   const { data: reservations = [] } = useReservations();
   const { data: abonnements = [] } = useAbonnements();
   const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
@@ -238,8 +242,12 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 p-4">
-      {/* Choix du type de sport */}
-      <ReservationTypeSelector selectedType={selectedType} setSelectedType={setSelectedType} />
+      {/* Choix du type de sport - AVEC isAdminView=true */}
+      <ReservationTypeSelector 
+        selectedType={selectedType} 
+        setSelectedType={setSelectedType} 
+        isAdminView={true}
+      />
 
       {/* Choix du terrain - affiché après sélection du type */}
       {selectedType && (
