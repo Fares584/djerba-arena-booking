@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Calendar, Clock, User, Phone, Mail, MapPin, AlertTriangle } from 'lucide-react';
+import { Loader2, Calendar, Clock, User, Phone, Mail, MapPin, AlertTriangle, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import TerrainSelector from '@/components/TerrainSelector';
 import { calculatePrice, isNightTime } from '@/lib/supabase';
@@ -57,7 +57,11 @@ const Reservation = () => {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   // -------- 1. Declare hooks first, so allTerrains exists! -----------
-  const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
+  // Exclure les terrains de football pour les utilisateurs
+  const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ 
+    actif: true, 
+    excludeFootballForUsers: true 
+  });
   const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
   const createReservation = useCreateReservation({
     onSuccess: () => {
@@ -317,6 +321,15 @@ const Reservation = () => {
 
       <section className="section-padding bg-sport-gray">
         <div className="container-custom max-w-4xl">
+          {/* Alert pour les terrains de football */}
+          <Alert className="mb-8 border-blue-200 bg-blue-50">
+            <Info className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              <strong>Information :</strong> Les réservations de terrains de football ne sont pas encore disponibles en ligne. 
+              Pour réserver un terrain de football, veuillez nous contacter directement au <strong>29 612 809</strong>.
+            </AlertDescription>
+          </Alert>
+
           {/* Alert Message */}
           <Alert className="mb-8 border-orange-200 bg-orange-50">
             <AlertTriangle className="h-4 w-4 text-orange-600" />

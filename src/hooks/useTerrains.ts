@@ -4,7 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Terrain } from '@/lib/supabase';
 import { toast } from 'sonner';
 
-export function useTerrains(filters?: { type?: string; actif?: boolean }) {
+export function useTerrains(filters?: { 
+  type?: string; 
+  actif?: boolean; 
+  includeInactive?: boolean;
+  excludeFootballForUsers?: boolean;
+}) {
   return useQuery({
     queryKey: ['terrains', filters],
     queryFn: async () => {
@@ -27,8 +32,20 @@ export function useTerrains(filters?: { type?: string; actif?: boolean }) {
           throw error;
         }
         
-        console.log('Terrains fetched successfully:', data);
-        return data as Terrain[];
+        let filteredData = data as Terrain[];
+        
+        // Filtrer les terrains inactifs si includeInactive n'est pas défini ou false
+        if (!filters?.includeInactive) {
+          filteredData = filteredData.filter(terrain => terrain.actif);
+        }
+        
+        // Exclure les terrains de football pour les utilisateurs non-admin
+        if (filters?.excludeFootballForUsers) {
+          filteredData = filteredData.filter(terrain => terrain.type !== 'foot');
+        }
+        
+        console.log('Terrains fetched successfully:', filteredData);
+        return filteredData;
       } catch (error) {
         console.error("Error in useTerrains hook:", error);
         toast.error("Erreur lors du chargement des terrains");

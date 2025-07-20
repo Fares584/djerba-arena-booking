@@ -38,7 +38,6 @@ const ReservationTypeSelector: React.FC<Props> = ({ selectedType, setSelectedTyp
           <SelectValue placeholder="Sélectionnez un type de terrain" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="foot">Football</SelectItem>
           <SelectItem value="tennis">Tennis</SelectItem>
           <SelectItem value="padel">Padel</SelectItem>
         </SelectContent>
