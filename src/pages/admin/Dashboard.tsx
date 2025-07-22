@@ -101,11 +101,11 @@ const Dashboard = () => {
   };
 
   const handleClientClick = (clientName: string) => {
-    navigate(`/admin/reservations?search=${encodeURIComponent(clientName)}`);
+    navigate(`/admin-control-panel-secure-dashboard-2k24-mgmt-xyz789/reservations?search=${encodeURIComponent(clientName)}`);
   };
 
   const handleViewAllReservations = () => {
-    navigate('/admin/reservations');
+    navigate('/admin-control-panel-secure-dashboard-2k24-mgmt-xyz789/reservations');
   };
 
   const getTerrainName = (terrainId: number) => {
