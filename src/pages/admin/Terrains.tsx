@@ -1,39 +1,39 @@
 
 import { useState } from 'react';
 import { useTerrains } from '@/hooks/useTerrains';
+import { toast } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Loader2, Plus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Terrain } from '@/lib/supabase';
 import TerrainForm from '@/components/admin/TerrainForm';
 import TerrainCard from '@/components/admin/TerrainCard';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Terrain } from '@/lib/supabase';
+// SUPPRESSION: import GlobalSettings from '@/components/admin/GlobalSettings';
 
 const Terrains = () => {
-  // Inclure tous les terrains (y compris inactifs et football) pour l'admin
-  const { data: terrains, isLoading, refetch } = useTerrains({ includeInactive: true });
+  const { data: terrains, isLoading, refetch } = useTerrains();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingTerrain, setEditingTerrain] = useState<Terrain | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-
-  const handleTerrainAdded = () => {
-    setIsDialogOpen(false);
-    setEditingTerrain(null);
-    refetch();
-  };
-
+  const [editingTerrain, setEditingTerrain] = useState<Terrain | null>(null);
+  
   const handleStatusChange = async (id: number, isActive: boolean) => {
     setIsUpdating(true);
+    
     try {
       const { error } = await supabase
         .from('terrains')
         .update({ actif: isActive })
         .eq('id', id);
-
+      
       if (error) throw error;
-
-      toast.success(`Terrain ${isActive ? 'activé' : 'désactivé'} avec succès`);
+      
+      toast.success(
+        isActive
+          ? 'Terrain activé avec succès'
+          : 'Terrain désactivé avec succès'
+      );
+      
       refetch();
     } catch (error) {
       console.error('Error updating terrain status:', error);
@@ -46,6 +46,12 @@ const Terrains = () => {
   const handleEdit = (terrain: Terrain) => {
     setEditingTerrain(terrain);
     setIsDialogOpen(true);
+  };
+
+  const handleFormSuccess = () => {
+    setIsDialogOpen(false);
+    setEditingTerrain(null);
+    refetch();
   };
 
   if (isLoading) {
@@ -78,16 +84,18 @@ const Terrains = () => {
               </DialogTitle>
             </DialogHeader>
             <TerrainForm 
-              onSuccess={handleTerrainAdded} 
+              onSuccess={handleFormSuccess} 
               terrainToEdit={editingTerrain}
             />
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* SUPPRIMÉ : Section des paramètres globaux */}
       
       {terrains && terrains.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {terrains.map((terrain) => (
+          {terrains.map((terrain: Terrain) => (
             <TerrainCard
               key={terrain.id}
               terrain={terrain}
@@ -99,8 +107,8 @@ const Terrains = () => {
         </div>
       ) : (
         <div className="text-center py-20">
-          <h3 className="text-xl font-medium text-gray-900">Aucun terrain</h3>
-          <p className="mt-1 text-gray-500">Commencez par ajouter votre premier terrain.</p>
+          <h3 className="mt-2 text-xl font-medium text-gray-900">Aucun terrain</h3>
+          <p className="mt-1 text-gray-500">Il n'y a pas encore de terrains à afficher.</p>
         </div>
       )}
     </div>
@@ -108,3 +116,4 @@ const Terrains = () => {
 };
 
 export default Terrains;
+

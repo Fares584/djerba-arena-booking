@@ -4,8 +4,9 @@ import { useTerrains } from '@/hooks/useTerrains';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
-import { CalendarCheck, Users, ChartBar, ExternalLink, MapPin, Clock, Calendar, Phone, Mail, User } from 'lucide-react';
+import { CalendarCheck, Users, ChartBar, ExternalLink } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
@@ -14,6 +15,7 @@ import { Reservation } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
+  // Exclure les réservations d'abonnement des statistiques
   const { data: reservations } = useReservations({ excludeSubscriptions: true });
   const { data: terrains } = useTerrains();
   
@@ -33,23 +35,11 @@ const Dashboard = () => {
   
   useEffect(() => {
     if (reservations) {
-      const totalReservations = reservations.length;
-      const confirmeesCount = reservations.filter(r => r.statut === 'confirmee').length;
-      const enAttenteCount = reservations.filter(r => r.statut === 'en_attente').length;
-      const annuleesCount = reservations.filter(r => r.statut === 'annulee').length;
-      
-      console.log('Dashboard stats calculation:', {
-        total: totalReservations,
-        confirmees: confirmeesCount,
-        enAttente: enAttenteCount,
-        annulees: annuleesCount
-      });
-      
       setReservationStats({
-        total: totalReservations,
-        confirmees: confirmeesCount,
-        enAttente: enAttenteCount,
-        annulees: annuleesCount
+        total: reservations.length,
+        confirmees: reservations.filter(r => r.statut === 'confirmee').length,
+        enAttente: reservations.filter(r => r.statut === 'en_attente').length,
+        annulees: reservations.filter(r => r.statut === 'annulee').length
       });
     }
     
@@ -101,11 +91,8 @@ const Dashboard = () => {
   };
 
   const handleClientClick = (clientName: string) => {
-    navigate(`/admin-control-panel-secure-dashboard-2k24-mgmt-xyz789/reservations?search=${encodeURIComponent(clientName)}`);
-  };
-
-  const handleViewAllReservations = () => {
-    navigate('/admin-control-panel-secure-dashboard-2k24-mgmt-xyz789/reservations');
+    // Naviguer vers la page des réservations avec le nom du client comme paramètre de recherche
+    navigate(`/admin/reservations?search=${encodeURIComponent(clientName)}`);
   };
 
   const getTerrainName = (terrainId: number) => {
@@ -275,92 +262,145 @@ const Dashboard = () => {
         </Card>
       </div>
 
+      {/* Dialog for showing reservation details */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader className="border-b pb-4">
-            <DialogTitle className="text-2xl font-bold text-center">
-              {dialogTitle} ({selectedReservations.length})
-            </DialogTitle>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{dialogTitle} ({selectedReservations.length})</DialogTitle>
           </DialogHeader>
           
-          <div className="flex-1 overflow-y-auto p-6">
-            {selectedReservations.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {selectedReservations.map((reservation) => (
-                  <Card key={reservation.id} className="border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start">
-                        <div>
+          {selectedReservations.length > 0 ? (
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Téléphone</TableHead>
+                      <TableHead>Terrain</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Heure</TableHead>
+                      <TableHead>Durée</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedReservations.map((reservation) => (
+                      <TableRow key={reservation.id}>
+                        <TableCell className="font-medium">#{reservation.id}</TableCell>
+                        <TableCell>
                           <button
                             onClick={() => handleClientClick(reservation.nom_client)}
-                            className="text-xl font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left transition-colors"
+                            className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-medium text-left"
                             title={`Voir les réservations de ${reservation.nom_client}`}
                           >
                             {reservation.nom_client}
                           </button>
-                          <p className="text-sm text-gray-600 font-medium">Réservation #{reservation.id}</p>
+                        </TableCell>
+                        <TableCell>{reservation.email}</TableCell>
+                        <TableCell>{reservation.tel}</TableCell>
+                        <TableCell>{getTerrainName(reservation.terrain_id)}</TableCell>
+                        <TableCell>
+                          {format(new Date(reservation.date), 'dd/MM/yyyy', { locale: fr })}
+                        </TableCell>
+                        <TableCell>{reservation.heure}</TableCell>
+                        <TableCell>{reservation.duree}h</TableCell>
+                        <TableCell>
+                          <Badge className={getStatusClass(reservation.statut)}>
+                            {getStatusLabel(reservation.statut)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleClientClick(reservation.nom_client)}
+                            className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            Voir
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {selectedReservations.map((reservation) => (
+                  <Card key={reservation.id} className="border border-gray-200">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <button
+                            onClick={() => handleClientClick(reservation.nom_client)}
+                            className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-semibold text-lg text-left"
+                            title={`Voir les réservations de ${reservation.nom_client}`}
+                          >
+                            {reservation.nom_client}
+                          </button>
+                          <p className="text-sm text-gray-600">#{reservation.id}</p>
                         </div>
-                        <Badge className={getStatusClass(reservation.statut)}>
-                          {getStatusLabel(reservation.statut)}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 gap-3">
-                        <div className="flex items-center gap-3">
-                          <Mail className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                          <span className="text-sm text-gray-900 break-all">{reservation.email}</span>
-                        </div>
-                        
-                        <div className="flex items-center gap-3">
-                          <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                          <span className="text-sm text-gray-900">{reservation.tel}</span>
-                        </div>
-                        
-                        <div className="flex items-center gap-3">
-                          <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                          <span className="text-sm text-gray-900 font-medium">{getTerrainName(reservation.terrain_id)}</span>
-                        </div>
-                        
-                        <div className="flex items-center gap-3">
-                          <Calendar className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                          <span className="text-sm text-gray-900 font-medium">
-                            {format(new Date(reservation.date), 'EEEE dd MMMM yyyy', { locale: fr })}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center gap-3">
-                          <Clock className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                          <span className="text-sm text-gray-900 font-medium">
-                            {reservation.heure} - {reservation.duree}h
-                          </span>
+                        <div className="flex flex-col items-end gap-2">
+                          <Badge className={getStatusClass(reservation.statut)}>
+                            {getStatusLabel(reservation.statut)}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleClientClick(reservation.nom_client)}
+                            className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            Voir
+                          </Button>
                         </div>
                       </div>
                       
-                      <div className="pt-3 border-t">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={handleViewAllReservations}
-                          className="w-full text-blue-600 border-blue-600 hover:bg-blue-50 transition-colors"
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Voir toutes les réservations
-                        </Button>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Email:</span>
+                          <span className="font-medium">{reservation.email}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Téléphone:</span>
+                          <span className="font-medium">{reservation.tel}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Terrain:</span>
+                          <span className="font-medium">{getTerrainName(reservation.terrain_id)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Date:</span>
+                          <span className="font-medium">
+                            {format(new Date(reservation.date), 'dd/MM/yyyy', { locale: fr })}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Heure:</span>
+                          <span className="font-medium">{reservation.heure}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Durée:</span>
+                          <span className="font-medium">{reservation.duree}h</span>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-12">
-                <CalendarCheck className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-                <h3 className="text-xl font-medium text-gray-900 mb-2">Aucune réservation trouvée</h3>
-                <p className="text-gray-500">Aucune réservation ne correspond à cette catégorie.</p>
-              </div>
-            )}
-          </div>
+            </>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Aucune réservation trouvée pour cette catégorie.</p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

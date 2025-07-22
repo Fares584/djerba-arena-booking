@@ -4,16 +4,12 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import FieldCard from '@/components/FieldCard';
 import { useTerrains } from '@/hooks/useTerrains';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info } from 'lucide-react';
 
 const Fields = () => {
   const [selectedType, setSelectedType] = useState<string>('all');
 
-  // Exclure les terrains de football pour les utilisateurs
-  const { data: terrains, isLoading, error } = useTerrains({ 
-    excludeFootballForUsers: true 
-  });
+  // Fetch terrains from Supabase
+  const { data: terrains, isLoading, error } = useTerrains();
 
   // Appliquer seulement le filtre sur le type de terrain
   const filteredFields = terrains?.filter((field) => {
@@ -39,15 +35,6 @@ const Fields = () => {
       {/* Filters and Fields List */}
       <section className="section-padding bg-sport-gray">
         <div className="container-custom">
-          {/* Alert pour les terrains de football */}
-          <Alert className="mb-8 border-blue-200 bg-blue-50">
-            <Info className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800">
-              <strong>Information :</strong> Les réservations de terrains de football ne sont pas encore disponibles en ligne. 
-              Pour réserver un terrain de football, veuillez nous contacter directement au <strong>29 612 809</strong>.
-            </AlertDescription>
-          </Alert>
-
           {/* Filters */}
           <div className="bg-white p-6 rounded-lg shadow-md mb-8">
             <h2 className="text-xl font-bold mb-4">Filtrer les terrains</h2>
@@ -60,6 +47,7 @@ const Fields = () => {
                   onChange={(e) => setSelectedType(e.target.value)}
                 >
                   <option value="all">Tous les types</option>
+                  <option value="foot">Football</option>
                   <option value="tennis">Tennis</option>
                   <option value="padel">Padel</option>
                 </select>

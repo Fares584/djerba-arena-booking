@@ -35,7 +35,6 @@ const QuickReservationForm = ({
     tel: ''
   });
 
-  // Les admins peuvent créer des réservations pour tous les terrains, y compris football
   const createReservation = useCreateReservation({ isAdminCreation: true });
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -52,11 +52,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     remarque: ''
   });
 
-  // Inclure tous les terrains (y compris football) pour l'admin
-  const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ 
-    actif: true, 
-    includeInactive: false 
-  });
+  const { data: allTerrains = [], isLoading: terrainsLoading } = useTerrains({ actif: true });
   const { data: reservations = [] } = useReservations();
   const { data: abonnements = [] } = useAbonnements();
   const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
@@ -165,29 +161,15 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       return calculatePrice(terrain, formData.heure, globalNightStartTime);
     }
     
-    // Pour les autres terrains, calculer par demi-heure
+    // Pour les autres terrains, calculer par heure
     const duration = parseFloat(effectiveDuration);
     let totalPrice = 0;
-    let timeHour = parseInt(formData.heure.split(':')[0], 10);
-    let timeMinute = parseInt(formData.heure.split(':')[1], 10);
-
-    // Calculer le prix par tranches de 30 minutes
-    const totalHalfHours = duration * 2; // Convertir en demi-heures
     
-    for (let i = 0; i < totalHalfHours; i++) {
-      const slotTime = 
-        timeHour.toString().padStart(2, '0') + ':' + 
-        timeMinute.toString().padStart(2, '0');
-      
-      // Ajouter la moitié du prix horaire pour chaque demi-heure
-      totalPrice += calculatePrice(terrain, slotTime, globalNightStartTime) / 2;
-
-      // Avance de 30 minutes
-      timeMinute += 30;
-      if (timeMinute >= 60) {
-        timeHour += 1;
-        timeMinute = 0;
-      }
+    for (let i = 0; i < duration; i++) {
+      const currentHour = parseInt(formData.heure.split(':')[0]) + i;
+      const timeString = `${currentHour.toString().padStart(2, '0')}:00`;
+      const hourPrice = calculatePrice(terrain, timeString, globalNightStartTime);
+      totalPrice += hourPrice;
     }
     
     return totalPrice;
@@ -256,12 +238,8 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 p-4">
-      {/* Choix du type de sport - AVEC isAdminView=true */}
-      <ReservationTypeSelector 
-        selectedType={selectedType} 
-        setSelectedType={setSelectedType} 
-        isAdminView={true}
-      />
+      {/* Choix du type de sport */}
+      <ReservationTypeSelector selectedType={selectedType} setSelectedType={setSelectedType} />
 
       {/* Choix du terrain - affiché après sélection du type */}
       {selectedType && (
@@ -355,9 +333,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="1">1 heure</SelectItem>
-                  <SelectItem value="1.5">1h30</SelectItem>
                   <SelectItem value="2">2 heures</SelectItem>
-                  <SelectItem value="2.5">2h30</SelectItem>
                   <SelectItem value="3">3 heures</SelectItem>
                 </SelectContent>
               </Select>

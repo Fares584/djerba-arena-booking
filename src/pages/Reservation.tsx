@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Calendar, Clock, User, Phone, Mail, MapPin, AlertTriangle, Info } from 'lucide-react';
+import { Loader2, Calendar, Clock, User, Phone, Mail, MapPin, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import TerrainSelector from '@/components/TerrainSelector';
 import { calculatePrice, isNightTime } from '@/lib/supabase';
@@ -34,12 +34,10 @@ const defaultTimeSlots = [
   '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
 ];
 
-// Options de durée pour tennis et padel - nouvelles options avec minimum 1h
+// Options de durée pour les terrains non-football
 const durationOptions = [
   { value: '1', label: '1 heure' },
-  { value: '1.5', label: '1h30' },
   { value: '2', label: '2 heures' },
-  { value: '2.5', label: '2h30' },
   { value: '3', label: '3 heures' },
 ];
 
@@ -59,20 +57,12 @@ const Reservation = () => {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   // -------- 1. Declare hooks first, so allTerrains exists! -----------
-  // Exclure les terrains de football pour les utilisateurs
-  const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ 
-    actif: true, 
-    excludeFootballForUsers: true 
-  });
+  const { data: allTerrains, isLoading: terrainsLoading } = useTerrains({ actif: true });
   const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
   const createReservation = useCreateReservation({
     onSuccess: () => {
-      console.log('✅ USER RESERVATION: Réservation créée avec succès côté utilisateur');
       setShowSuccessDialog(true);
     },
-    onError: (error) => {
-      console.error('❌ USER RESERVATION: Erreur lors de la création de la réservation:', error);
-    }
   });
 
   // ------ Gestion chaînée de la sélection initiale du terrain ----------
@@ -131,13 +121,6 @@ const Reservation = () => {
 
   // Check if selected time slot is available
   const isTimeSlotAvailable = (time: string): boolean => {
-    console.log('🔍 USER RESERVATION: Vérification disponibilité créneau:', {
-      time,
-      terrainId: selectedTerrainId,
-      date: selectedDate,
-      availability: availability?.length || 0
-    });
-    
     if (!availability || !selectedTerrainId) return true;
     
     const effectiveDuration = parseFloat(getEffectiveDuration());
@@ -146,25 +129,14 @@ const Reservation = () => {
     const startTime = timeHour + timeMinutes / 60;
     const endTime = startTime + effectiveDuration;
     
-    const isBlocked = availability.some(reservation => {
+    return !availability.some(reservation => {
       const resHour = parseInt(reservation.heure.split(':')[0]);
       const resMinutes = parseInt(reservation.heure.split(':')[1]);
       const resStart = resHour + resMinutes / 60;
       const resEnd = resStart + reservation.duree;
       
-      const hasConflict = !(endTime <= resStart || startTime >= resEnd);
-      if (hasConflict) {
-        console.log('⚠️ USER RESERVATION: Conflit détecté avec réservation:', {
-          existingReservation: reservation,
-          requestedTime: time,
-          requestedDuration: effectiveDuration
-        });
-      }
-      return hasConflict;
+      return !(endTime <= resStart || startTime >= resEnd);
     });
-    
-    console.log('✅ USER RESERVATION: Créneau disponible:', !isBlocked);
-    return !isBlocked;
   };
 
   // Calcul du prix total avec gestion correcte pour les terrains de foot
@@ -179,28 +151,22 @@ const Reservation = () => {
       return calculatePrice(selectedTerrain, selectedTime, globalNightStartTime);
     }
 
-    // Pour les autres terrains (tennis, padel) : calcul par heure/demi-heure
+    // Pour les autres terrains (tennis, padel) : calcul par heure
     let total = 0;
     let timeHour = parseInt(selectedTime.split(':')[0], 10);
     let timeMinute = parseInt(selectedTime.split(':')[1], 10);
 
-    // Calculer le prix par tranches de 30 minutes
-    const totalHalfHours = effectiveDuration * 2; // Convertir en demi-heures
-    
-    for (let i = 0; i < totalHalfHours; i++) {
+    for (let i = 0; i < effectiveDuration; i++) {
       const slotTime = 
         timeHour.toString().padStart(2, '0') + ':' + 
         timeMinute.toString().padStart(2, '0');
-      
-      // Ajouter la moitié du prix horaire pour chaque demi-heure
-      total += calculatePrice(selectedTerrain, slotTime, globalNightStartTime) / 2;
+      total += calculatePrice(selectedTerrain, slotTime, globalNightStartTime);
 
-      // Avance de 30 minutes
-      timeMinute += 30;
-      if (timeMinute >= 60) {
-        timeHour += 1;
-        timeMinute = 0;
-      }
+      // Avance de 1h pour chaque unité d'heure supplémentaire
+      let newDate = new Date(2000, 0, 1, timeHour, timeMinute);
+      newDate.setHours(newDate.getHours() + 1);
+      timeHour = newDate.getHours();
+      timeMinute = newDate.getMinutes();
     }
     return total;
   };
@@ -280,20 +246,9 @@ const Reservation = () => {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // --- Modification de handleSubmit avec validation et debug amélioré ---
+  // --- Modification de handleSubmit avec validation ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    console.log('🚀 USER RESERVATION: Début du processus de soumission');
-    console.log('📋 USER RESERVATION: Données du formulaire:', {
-      selectedTerrainId,
-      selectedDate,
-      selectedTime,
-      duration: getEffectiveDuration(),
-      customerName,
-      customerPhone,
-      customerEmail
-    });
 
     // Validation des champs
     const nameError = validateName(customerName);
@@ -301,7 +256,6 @@ const Reservation = () => {
     const emailError = validateEmail(customerEmail);
 
     if (nameError || phoneError || emailError) {
-      console.error('❌ USER RESERVATION: Erreurs de validation:', { nameError, phoneError, emailError });
       if (nameError) toast.error(`Nom: ${nameError}`);
       if (phoneError) toast.error(`Téléphone: ${phoneError}`);
       if (emailError) toast.error(`Email: ${emailError}`);
@@ -317,30 +271,17 @@ const Reservation = () => {
       !customerPhone ||
       !customerEmail
     ) {
-      console.error('❌ USER RESERVATION: Champs manquants');
       toast.error("Veuillez remplir tous les champs obligatoires.");
       return;
     }
 
     // Check slot availability
     if (!isTimeSlotAvailable(selectedTime)) {
-      console.error('❌ USER RESERVATION: Créneau non disponible');
       toast.error("Ce créneau horaire n'est pas disponible.");
       return;
     }
 
     const effectiveDuration = parseFloat(getEffectiveDuration());
-    
-    console.log('📤 USER RESERVATION: Envoi de la réservation avec les données:', {
-      nom_client: customerName,
-      tel: customerPhone,
-      email: customerEmail,
-      terrain_id: selectedTerrainId,
-      date: selectedDate,
-      heure: selectedTime,
-      duree: effectiveDuration,
-      statut: "en_attente"
-    });
 
     // Créer la réservation avec statut "en_attente"
     createReservation.mutate({
@@ -376,15 +317,6 @@ const Reservation = () => {
 
       <section className="section-padding bg-sport-gray">
         <div className="container-custom max-w-4xl">
-          {/* Alert pour les terrains de football */}
-          <Alert className="mb-8 border-blue-200 bg-blue-50">
-            <Info className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800">
-              <strong>Information :</strong> Les réservations de terrains de football ne sont pas encore disponibles en ligne. 
-              Pour réserver un terrain de football, veuillez nous contacter directement au <strong>29 612 809</strong>.
-            </AlertDescription>
-          </Alert>
-
           {/* Alert Message */}
           <Alert className="mb-8 border-orange-200 bg-orange-50">
             <AlertTriangle className="h-4 w-4 text-orange-600" />

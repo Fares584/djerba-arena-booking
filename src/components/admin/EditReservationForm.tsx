@@ -241,7 +241,7 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
           />
         </div>
 
-        {/* Durée avec nouvelles options pour tennis/padel */}
+        {/* Durée */}
         <div>
           <Label htmlFor="duree">Durée</Label>
           {selectedTerrain?.type === 'foot' ? (
@@ -258,9 +258,7 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="1">1 heure</SelectItem>
-                <SelectItem value="1.5">1h30</SelectItem>
                 <SelectItem value="2">2 heures</SelectItem>
-                <SelectItem value="2.5">2h30</SelectItem>
                 <SelectItem value="3">3 heures</SelectItem>
               </SelectContent>
             </Select>
