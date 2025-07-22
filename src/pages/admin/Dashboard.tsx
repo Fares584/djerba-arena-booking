@@ -104,6 +104,10 @@ const Dashboard = () => {
     navigate(`/admin/reservations?search=${encodeURIComponent(clientName)}`);
   };
 
+  const handleViewAllReservations = () => {
+    navigate('/admin/reservations');
+  };
+
   const getTerrainName = (terrainId: number) => {
     if (!terrains) return 'Inconnu';
     const terrain = terrains.find(t => t.id === terrainId);
@@ -338,7 +342,7 @@ const Dashboard = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleClientClick(reservation.nom_client)}
+                          onClick={handleViewAllReservations}
                           className="w-full text-blue-600 border-blue-600 hover:bg-blue-50 transition-colors"
                         >
                           <ExternalLink className="h-4 w-4 mr-2" />
