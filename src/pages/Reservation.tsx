@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -66,8 +67,12 @@ const Reservation = () => {
   const { data: nightTimeSetting } = useAppSetting('heure_debut_nuit_globale');
   const createReservation = useCreateReservation({
     onSuccess: () => {
+      console.log('✅ USER RESERVATION: Réservation créée avec succès côté utilisateur');
       setShowSuccessDialog(true);
     },
+    onError: (error) => {
+      console.error('❌ USER RESERVATION: Erreur lors de la création de la réservation:', error);
+    }
   });
 
   // ------ Gestion chaînée de la sélection initiale du terrain ----------
@@ -126,6 +131,13 @@ const Reservation = () => {
 
   // Check if selected time slot is available
   const isTimeSlotAvailable = (time: string): boolean => {
+    console.log('🔍 USER RESERVATION: Vérification disponibilité créneau:', {
+      time,
+      terrainId: selectedTerrainId,
+      date: selectedDate,
+      availability: availability?.length || 0
+    });
+    
     if (!availability || !selectedTerrainId) return true;
     
     const effectiveDuration = parseFloat(getEffectiveDuration());
@@ -134,14 +146,25 @@ const Reservation = () => {
     const startTime = timeHour + timeMinutes / 60;
     const endTime = startTime + effectiveDuration;
     
-    return !availability.some(reservation => {
+    const isBlocked = availability.some(reservation => {
       const resHour = parseInt(reservation.heure.split(':')[0]);
       const resMinutes = parseInt(reservation.heure.split(':')[1]);
       const resStart = resHour + resMinutes / 60;
       const resEnd = resStart + reservation.duree;
       
-      return !(endTime <= resStart || startTime >= resEnd);
+      const hasConflict = !(endTime <= resStart || startTime >= resEnd);
+      if (hasConflict) {
+        console.log('⚠️ USER RESERVATION: Conflit détecté avec réservation:', {
+          existingReservation: reservation,
+          requestedTime: time,
+          requestedDuration: effectiveDuration
+        });
+      }
+      return hasConflict;
     });
+    
+    console.log('✅ USER RESERVATION: Créneau disponible:', !isBlocked);
+    return !isBlocked;
   };
 
   // Calcul du prix total avec gestion correcte pour les terrains de foot
@@ -257,9 +280,20 @@ const Reservation = () => {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // --- Modification de handleSubmit avec validation ---
+  // --- Modification de handleSubmit avec validation et debug amélioré ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    console.log('🚀 USER RESERVATION: Début du processus de soumission');
+    console.log('📋 USER RESERVATION: Données du formulaire:', {
+      selectedTerrainId,
+      selectedDate,
+      selectedTime,
+      duration: getEffectiveDuration(),
+      customerName,
+      customerPhone,
+      customerEmail
+    });
 
     // Validation des champs
     const nameError = validateName(customerName);
@@ -267,6 +301,7 @@ const Reservation = () => {
     const emailError = validateEmail(customerEmail);
 
     if (nameError || phoneError || emailError) {
+      console.error('❌ USER RESERVATION: Erreurs de validation:', { nameError, phoneError, emailError });
       if (nameError) toast.error(`Nom: ${nameError}`);
       if (phoneError) toast.error(`Téléphone: ${phoneError}`);
       if (emailError) toast.error(`Email: ${emailError}`);
@@ -282,17 +317,30 @@ const Reservation = () => {
       !customerPhone ||
       !customerEmail
     ) {
+      console.error('❌ USER RESERVATION: Champs manquants');
       toast.error("Veuillez remplir tous les champs obligatoires.");
       return;
     }
 
     // Check slot availability
     if (!isTimeSlotAvailable(selectedTime)) {
+      console.error('❌ USER RESERVATION: Créneau non disponible');
       toast.error("Ce créneau horaire n'est pas disponible.");
       return;
     }
 
     const effectiveDuration = parseFloat(getEffectiveDuration());
+    
+    console.log('📤 USER RESERVATION: Envoi de la réservation avec les données:', {
+      nom_client: customerName,
+      tel: customerPhone,
+      email: customerEmail,
+      terrain_id: selectedTerrainId,
+      date: selectedDate,
+      heure: selectedTime,
+      duree: effectiveDuration,
+      statut: "en_attente"
+    });
 
     // Créer la réservation avec statut "en_attente"
     createReservation.mutate({
