@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -34,10 +33,12 @@ const defaultTimeSlots = [
   '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
 ];
 
-// Options de durée pour les terrains non-football
-const durationOptions = [
+// Options de durée étendues pour tennis et padel
+const extendedDurationOptions = [
   { value: '1', label: '1 heure' },
+  { value: '1.5', label: '1h30' },
   { value: '2', label: '2 heures' },
+  { value: '2.5', label: '2h30' },
   { value: '3', label: '3 heures' },
 ];
 
@@ -368,7 +369,7 @@ const Reservation = () => {
                 selectedTerrain={selectedTerrain}
                 duration={duration}
                 setDuration={setDuration}
-                durationOptions={durationOptions}
+                durationOptions={extendedDurationOptions}
               />
             )}
             {/* Duration Display for Football */}

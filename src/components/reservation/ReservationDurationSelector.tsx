@@ -18,6 +18,7 @@ const ReservationDurationSelector: React.FC<Props> = ({
   durationOptions
 }) => {
   if (!selectedTerrain) return null;
+  
   if (selectedTerrain.type === 'foot') {
     return (
       <div className="mb-8">
@@ -31,7 +32,16 @@ const ReservationDurationSelector: React.FC<Props> = ({
       </div>
     );
   }
-  // Non-football
+
+  // Pour tennis et padel, options étendues avec 30 minutes en plus
+  const extendedDurationOptions = [
+    { value: '1', label: '1 heure' },
+    { value: '1.5', label: '1h30' },
+    { value: '2', label: '2 heures' },
+    { value: '2.5', label: '2h30' },
+    { value: '3', label: '3 heures' },
+  ];
+  
   return (
     <div className="mb-8">
       <Label htmlFor="duration" className="text-lg font-semibold mb-2 block">
@@ -42,7 +52,7 @@ const ReservationDurationSelector: React.FC<Props> = ({
           <SelectValue placeholder="Sélectionnez la durée" />
         </SelectTrigger>
         <SelectContent>
-          {durationOptions.map((option) => (
+          {extendedDurationOptions.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}
             </SelectItem>
