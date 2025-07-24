@@ -43,12 +43,11 @@ const ReservationSuccessDialog: React.FC<ReservationSuccessDialogProps> = ({
                 📞 Confirmation par téléphone :
               </p>
               <p className="text-sm text-blue-700 mb-2">
-                <strong>Nouveaux clients :</strong> Si c'est votre première réservation sur notre site, 
-                veuillez garder votre téléphone à côté de vous pour recevoir notre appel de confirmation.
+                <strong>Important :</strong> Veuillez garder votre téléphone à côté de vous 
+                pour recevoir notre appel de confirmation de votre réservation.
               </p>
               <p className="text-sm text-blue-600">
-                <em>Clients habitués :</em> Pas d'inquiétude, nous vous connaissons déjà ! 
-                Votre réservation est automatiquement confirmée.
+                <em>Nous contactons tous nos clients pour confirmer leur réservation.</em>
               </p>
             </div>
           </div>
