@@ -249,6 +249,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
             terrains={filteredTerrains}
             selectedTerrainId={formData.terrain_id}
             onTerrainSelect={(terrainId) => handleChange('terrain_id', terrainId)}
+            isAdminContext={true}
           />
         </div>
       )}

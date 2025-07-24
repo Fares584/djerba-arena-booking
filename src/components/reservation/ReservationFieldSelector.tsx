@@ -51,6 +51,7 @@ const ReservationFieldSelector: React.FC<Props> = ({
           terrains={filteredTerrains}
           selectedTerrainId={selectedTerrainId}
           onTerrainSelect={setSelectedTerrainId}
+          isAdminContext={false} // Site public
         />
       )}
     </div>
