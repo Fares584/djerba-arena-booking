@@ -15,8 +15,8 @@ import { Reservation } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
-  // Exclure les réservations d'abonnement des statistiques
-  const { data: reservations } = useReservations({ excludeSubscriptions: true });
+  // Récupérer toutes les réservations (y compris celles d'aujourd'hui) pour les statistiques du dashboard
+  const { data: reservations } = useReservations({ excludeSubscriptions: true, showAllCurrent: true });
   const { data: terrains } = useTerrains();
   
   const [reservationStats, setReservationStats] = useState({
