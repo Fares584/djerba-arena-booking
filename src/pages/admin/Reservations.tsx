@@ -14,8 +14,8 @@ import EditReservationForm from '@/components/admin/EditReservationForm';
 import ReservationCard from '@/components/admin/ReservationCard';
 
 const Reservations = () => {
-  // Afficher toutes les réservations (en_attente, confirmée, etc.) sauf abonnements
-  const { data: reservations, isLoading, refetch } = useReservations({ excludeSubscriptions: true });
+  // Afficher toutes les réservations (en_attente, confirmée, etc.) sauf abonnements, y compris celles d'aujourd'hui
+  const { data: reservations, isLoading, refetch } = useReservations({ excludeSubscriptions: true, showAllCurrent: true });
   const { data: terrains } = useTerrains();
   const [searchParams] = useSearchParams();
   const [isDialogOpen, setIsDialogOpen] = useState(false);

@@ -12,6 +12,7 @@ export function useReservations(filters?: {
   date?: string;
   statut?: string;
   excludeSubscriptions?: boolean;
+  showAllCurrent?: boolean; // Pour afficher toutes les réservations d'aujourd'hui et futures
 }) {
   return useQuery({
     queryKey: ['reservations', filters],
@@ -49,6 +50,15 @@ export function useReservations(filters?: {
           }
           
           const reservationDate = new Date(reservation.date);
+          
+          // Si showAllCurrent est activé (pour l'admin), afficher toutes les réservations d'aujourd'hui et futures
+          if (filters?.showAllCurrent) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return reservationDate >= today;
+          }
+          
+          // Sinon, filtrer par heure de fin (comportement original)
           const [hours, minutes] = reservation.heure.split(':').map(Number);
           const reservationStart = new Date(reservationDate);
           reservationStart.setHours(hours, minutes, 0, 0);
