@@ -161,15 +161,26 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       return calculatePrice(terrain, formData.heure, globalNightStartTime);
     }
     
-    // Pour les autres terrains, calculer par heure
+    // Pour les autres terrains, calculer proportionnellement par heure
     const duration = parseFloat(effectiveDuration);
+    const wholeHours = Math.floor(duration);
+    const fractionalHour = duration - wholeHours;
     let totalPrice = 0;
     
-    for (let i = 0; i < duration; i++) {
+    // Calculer le prix pour les heures entières
+    for (let i = 0; i < wholeHours; i++) {
       const currentHour = parseInt(formData.heure.split(':')[0]) + i;
       const timeString = `${currentHour.toString().padStart(2, '0')}:00`;
       const hourPrice = calculatePrice(terrain, timeString, globalNightStartTime);
       totalPrice += hourPrice;
+    }
+    
+    // Ajouter le prix proportionnel pour la fraction d'heure restante
+    if (fractionalHour > 0) {
+      const currentHour = parseInt(formData.heure.split(':')[0]) + wholeHours;
+      const timeString = `${currentHour.toString().padStart(2, '0')}:00`;
+      const hourPrice = calculatePrice(terrain, timeString, globalNightStartTime);
+      totalPrice += hourPrice * fractionalHour;
     }
     
     return totalPrice;

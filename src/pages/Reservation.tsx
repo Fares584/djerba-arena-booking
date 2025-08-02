@@ -152,24 +152,38 @@ const Reservation = () => {
       return calculatePrice(selectedTerrain, selectedTime, globalNightStartTime);
     }
 
-    // Pour les autres terrains (tennis, padel) : calcul par heure
-    let total = 0;
-    let timeHour = parseInt(selectedTime.split(':')[0], 10);
-    let timeMinute = parseInt(selectedTime.split(':')[1], 10);
+  // Pour les autres terrains (tennis, padel) : calcul proportionnel par heure
+  const wholeHours = Math.floor(effectiveDuration);
+  const fractionalHour = effectiveDuration - wholeHours;
+  
+  let total = 0;
+  let timeHour = parseInt(selectedTime.split(':')[0], 10);
+  let timeMinute = parseInt(selectedTime.split(':')[1], 10);
 
-    for (let i = 0; i < effectiveDuration; i++) {
-      const slotTime = 
-        timeHour.toString().padStart(2, '0') + ':' + 
-        timeMinute.toString().padStart(2, '0');
-      total += calculatePrice(selectedTerrain, slotTime, globalNightStartTime);
+  // Calculer le prix pour les heures entières
+  for (let i = 0; i < wholeHours; i++) {
+    const slotTime = 
+      timeHour.toString().padStart(2, '0') + ':' + 
+      timeMinute.toString().padStart(2, '0');
+    total += calculatePrice(selectedTerrain, slotTime, globalNightStartTime);
 
-      // Avance de 1h pour chaque unité d'heure supplémentaire
-      let newDate = new Date(2000, 0, 1, timeHour, timeMinute);
-      newDate.setHours(newDate.getHours() + 1);
-      timeHour = newDate.getHours();
-      timeMinute = newDate.getMinutes();
-    }
-    return total;
+    // Avance de 1h pour chaque heure entière
+    let newDate = new Date(2000, 0, 1, timeHour, timeMinute);
+    newDate.setHours(newDate.getHours() + 1);
+    timeHour = newDate.getHours();
+    timeMinute = newDate.getMinutes();
+  }
+
+  // Ajouter le prix proportionnel pour la fraction d'heure restante
+  if (fractionalHour > 0) {
+    const slotTime = 
+      timeHour.toString().padStart(2, '0') + ':' + 
+      timeMinute.toString().padStart(2, '0');
+    const hourlyPrice = calculatePrice(selectedTerrain, slotTime, globalNightStartTime);
+    total += hourlyPrice * fractionalHour;
+  }
+
+  return total;
   };
 
   // Memoized/computed values related to terrain selection and slot calculation

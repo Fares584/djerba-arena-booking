@@ -113,7 +113,7 @@ export const calculatePrice = (terrain: Terrain, time: string, globalNightStartT
 
   // Padel - HOURLY PRICING
   if (terrain.type === 'padel') {
-    return night ? 60 : 50; // 50/60 DT per hour for 4 joueurs
+    return night ? 80 : 60; // 60/80 DT per hour for 4 joueurs
   }
   
   // Fallback to generic logic
