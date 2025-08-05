@@ -70,9 +70,9 @@ const handler = async (req: Request): Promise<Response> => {
                 <td style="padding: 10px 0; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Client:</td>
                 <td style="padding: 10px 0; border-bottom: 1px solid #eee;">${reservation.nom_client}</td>
               </tr>
-              <tr>
+               <tr>
                 <td style="padding: 10px 0; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Téléphone:</td>
-                <td style="padding: 10px 0; border-bottom: 1px solid #eee;">${reservation.tel}</td>
+                <td style="padding: 10px 0; border-bottom: 1px solid #eee;"><a href="tel:${reservation.tel}" style="color: #1976d2; text-decoration: none;">${reservation.tel}</a></td>
               </tr>
               <tr>
                 <td style="padding: 10px 0; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Email:</td>
