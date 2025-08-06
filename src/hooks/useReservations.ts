@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -13,8 +14,11 @@ export function useReservations(filters?: {
   statut?: string;
   excludeSubscriptions?: boolean;
   showAllCurrent?: boolean; // Pour afficher toutes les réservations d'aujourd'hui et futures
+  enableRealtime?: boolean; // Pour activer les mises à jour en temps réel
 }) {
-  return useQuery({
+  const queryClient = useQueryClient();
+  
+  const query = useQuery({
     queryKey: ['reservations', filters],
     queryFn: async () => {
       try {
@@ -78,6 +82,54 @@ export function useReservations(filters?: {
       }
     },
   });
+
+  // Configurer les mises à jour en temps réel si activé
+  useEffect(() => {
+    if (!filters?.enableRealtime) return;
+
+    console.log('🔄 Activation des mises à jour en temps réel pour les réservations');
+    
+    const channel = supabase
+      .channel('reservations-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Écouter tous les événements (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'reservations'
+        },
+        (payload) => {
+          console.log('📡 Mise à jour en temps réel reçue:', payload);
+          
+          // Invalider et rafraîchir les requêtes de réservations
+          queryClient.invalidateQueries({ queryKey: ['reservations'] });
+          queryClient.invalidateQueries({ queryKey: ['reservations-history'] });
+          
+          // Afficher une notification discrète pour les admins
+          if (payload.eventType === 'INSERT') {
+            toast.success('📅 Nouvelle réservation reçue !', {
+              duration: 3000,
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            toast.info('📝 Réservation mise à jour', {
+              duration: 2000,
+            });
+          } else if (payload.eventType === 'DELETE') {
+            toast.info('🗑️ Réservation supprimée', {
+              duration: 2000,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🔄 Désactivation des mises à jour en temps réel');
+      supabase.removeChannel(channel);
+    };
+  }, [filters?.enableRealtime, queryClient]);
+
+  return query;
 }
 
 // Hook pour l'historique des réservations - réservations terminées ou annulées

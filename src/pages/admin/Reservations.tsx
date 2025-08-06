@@ -15,7 +15,12 @@ import ReservationCard from '@/components/admin/ReservationCard';
 
 const Reservations = () => {
   // Afficher toutes les réservations (en_attente, confirmée, etc.) sauf abonnements, y compris celles d'aujourd'hui
-  const { data: reservations, isLoading, refetch } = useReservations({ excludeSubscriptions: true, showAllCurrent: true });
+  // Activation des mises à jour en temps réel pour voir les nouvelles réservations instantanément
+  const { data: reservations, isLoading, refetch } = useReservations({ 
+    excludeSubscriptions: true, 
+    showAllCurrent: true,
+    enableRealtime: true // 🔄 Mises à jour en temps réel activées
+  });
   const { data: terrains } = useTerrains();
   const [searchParams] = useSearchParams();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
