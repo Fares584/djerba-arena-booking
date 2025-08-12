@@ -22,9 +22,6 @@ interface ReservationNotificationData {
 export const useReservationNotification = () => {
   return useMutation({
     mutationFn: async ({ reservation, terrain }: ReservationNotificationData) => {
-      console.log('📧 Envoi de notification email pour réservation:', reservation.id);
-      console.log('📧 Données à envoyer:', { reservation, terrain });
-      
       const { data, error } = await supabase.functions.invoke('send-reservation-notification', {
         body: {
           reservation,
@@ -45,11 +42,9 @@ export const useReservationNotification = () => {
         throw new Error(`Erreur serveur: ${data.error}`);
       }
 
-      console.log('✅ Notification envoyée avec succès:', data);
       return data;
     },
     onSuccess: (data) => {
-      console.log('✅ Hook: Notification envoyée avec succès');
       // Suppression du toast de succès - l'utilisateur n'a pas besoin de savoir si l'email a été envoyé
     },
     onError: (error) => {

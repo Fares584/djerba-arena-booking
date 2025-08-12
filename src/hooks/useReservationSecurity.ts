@@ -38,35 +38,19 @@ export function useReservationSecurity() {
     isAdminCreation: boolean = false
   ): Promise<SecurityCheckResult> => {
     try {
-      console.log('=== DÉBUT VÉRIFICATION SÉCURITÉ RENFORCÉE ===');
-      console.log('Vérification de sécurité pour:', { phone, email, isAdminCreation });
-      
       // Si c'est une création admin, contourner TOUTES les vérifications
       if (isAdminCreation) {
-        console.log('✅ ADMIN CRÉATION - Toutes les vérifications de sécurité contournées');
         return { canReserve: true };
       }
 
       // Normaliser les données d'entrée
       const normalizedPhone = normalizePhoneNumber(phone);
       const normalizedEmail = email.trim().toLowerCase();
-      
-      console.log('Données normalisées:', {
-        originalPhone: phone,
-        normalizedPhone: normalizedPhone,
-        originalEmail: email,
-        normalizedEmail: normalizedEmail
-      });
 
       // Obtenir le fingerprint de l'appareil
       const deviceFingerprint = getDeviceFingerprint();
-      console.log('Fingerprint de l\'appareil:', deviceFingerprint);
 
-      // 1. Vérification de la blacklist - VERSION SIMPLIFIÉE ET ROBUSTE
-      console.log('1. Vérification de la blacklist...');
-      
-      // NOUVEAU: Une seule requête pour récupérer TOUS les éléments de blacklist
-      console.log('🔍 Récupération de toute la blacklist...');
+      // 1. Vérification de la blacklist
       const { data: allBlacklistItems, error: blacklistError } = await supabase
         .from('blacklist')
         .select('*');
@@ -79,24 +63,14 @@ export function useReservationSecurity() {
         };
       }
 
-      console.log('📋 BLACKLIST RÉCUPÉRÉE:', allBlacklistItems);
-      console.log('📋 Nombre d\'entrées:', allBlacklistItems?.length || 0);
-
       // Vérifier manuellement si le téléphone ou l'email sont dans la blacklist
       if (allBlacklistItems && allBlacklistItems.length > 0) {
         // Vérifier téléphone - test avec plusieurs variations
         const phoneVariations = [phone, normalizedPhone, phone.trim()];
-        console.log('📞 Variations de téléphone à tester:', phoneVariations);
         
         for (const phoneItem of allBlacklistItems.filter(item => item.type === 'phone')) {
-          console.log('🔍 Comparaison avec blacklist phone:', phoneItem.value);
           for (const phoneVar of phoneVariations) {
             if (phoneItem.value === phoneVar || phoneItem.value.includes(phoneVar) || phoneVar.includes(phoneItem.value)) {
-              console.log('❌ TÉLÉPHONE BLOQUÉ:', { 
-                blacklistValue: phoneItem.value, 
-                testValue: phoneVar,
-                reason: phoneItem.reason 
-              });
               return {
                 canReserve: false,
                 reason: 'Ce contact est bloqué. Contactez l\'administration.'
@@ -104,21 +78,13 @@ export function useReservationSecurity() {
             }
           }
         }
-        console.log('✅ Téléphone NON trouvé dans la blacklist');
 
         // Vérifier email - test avec plusieurs variations
         const emailVariations = [email, normalizedEmail, email.trim()];
-        console.log('📧 Variations d\'email à tester:', emailVariations);
         
         for (const emailItem of allBlacklistItems.filter(item => item.type === 'email')) {
-          console.log('🔍 Comparaison avec blacklist email:', emailItem.value);
           for (const emailVar of emailVariations) {
             if (emailItem.value === emailVar || emailItem.value.includes(emailVar) || emailVar.includes(emailItem.value)) {
-              console.log('❌ EMAIL BLOQUÉ:', { 
-                blacklistValue: emailItem.value, 
-                testValue: emailVar,
-                reason: emailItem.reason 
-              });
               return {
                 canReserve: false,
                 reason: 'Ce contact est bloqué. Contactez l\'administration.'
@@ -126,15 +92,9 @@ export function useReservationSecurity() {
             }
           }
         }
-        console.log('✅ Email NON trouvé dans la blacklist');
-      } else {
-        console.log('ℹ️ Aucune entrée dans la blacklist');
       }
 
-      console.log('✅ Contact non présent dans la blacklist');
-
       // 2. Vérification des limites par contact (email + téléphone)
-      console.log('2. Vérification des limites par contact...');
       const today = new Date().toISOString().split('T')[0];
       const todayStart = `${today}T00:00:00.000Z`;
       const todayEnd = `${today}T23:59:59.999Z`;
@@ -152,15 +112,8 @@ export function useReservationSecurity() {
       }
 
       const contactReservationsCount = contactReservations?.length || 0;
-      console.log(`Réservations par ce contact aujourd'hui: ${contactReservationsCount}/2`);
 
       if (contactReservationsCount >= 2) {
-        console.log('❌ BLOQUÉ - Limite quotidienne par contact atteinte:', {
-          contactReservationsCount,
-          phone,
-          email: email.slice(0, 5) + '...'
-        });
-        
         return {
           canReserve: false,
           reason: `Limite quotidienne atteinte : maximum 2 réservations par personne par jour. Vous avez déjà fait ${contactReservationsCount} réservation(s) aujourd'hui.`
@@ -168,7 +121,6 @@ export function useReservationSecurity() {
       }
 
       // 3. Vérification des limites par appareil (fingerprint)
-      console.log('3. Vérification des limites par appareil...');
       const { data: deviceReservations, error: deviceError } = await supabase
         .from('reservations')
         .select('id, created_at, tel, email, nom_client, ip_address')
@@ -181,14 +133,8 @@ export function useReservationSecurity() {
       }
 
       const deviceReservationsCount = deviceReservations?.length || 0;
-      console.log(`Réservations par cet appareil aujourd'hui: ${deviceReservationsCount}/2`);
 
       if (deviceReservationsCount >= 2) {
-        console.log('❌ BLOQUÉ - Limite quotidienne par appareil atteinte:', {
-          deviceReservationsCount,
-          deviceFingerprint
-        });
-        
         return {
           canReserve: false,
           reason: `Limite quotidienne atteinte : maximum 2 réservations par appareil par jour. Cet appareil a déjà fait ${deviceReservationsCount} réservation(s) aujourd'hui.`
@@ -196,7 +142,6 @@ export function useReservationSecurity() {
       }
 
       // 4. Vérification temporelle par contact (5 minutes)
-      console.log('4. Vérification temporelle par contact...');
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       
       const { data: recentContactReservations, error: recentContactError } = await supabase
@@ -213,12 +158,6 @@ export function useReservationSecurity() {
         const timeDiff = new Date().getTime() - new Date(lastReservation.created_at).getTime();
         const minutesLeft = Math.ceil((5 * 60 * 1000 - timeDiff) / (60 * 1000));
         
-        console.log('❌ BLOQUÉ - Limitation temporelle par contact:', {
-          lastReservation: lastReservation.created_at,
-          timeDiff: timeDiff / 1000 / 60,
-          minutesLeft
-        });
-        
         return {
           canReserve: false,
           reason: `Veuillez attendre ${minutesLeft} minute(s) avant de faire une nouvelle réservation.`
@@ -226,7 +165,6 @@ export function useReservationSecurity() {
       }
 
       // 5. Vérification temporelle par appareil (2 minutes)
-      console.log('5. Vérification temporelle par appareil...');
       const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
       
       const { data: recentDeviceReservations, error: recentDeviceError } = await supabase
@@ -242,12 +180,6 @@ export function useReservationSecurity() {
         const timeDiff = new Date().getTime() - new Date(lastDeviceReservation.created_at).getTime();
         const minutesLeft = Math.ceil((2 * 60 * 1000 - timeDiff) / (60 * 1000));
         
-        console.log('❌ BLOQUÉ - Limitation temporelle par appareil:', {
-          lastReservation: lastDeviceReservation.created_at,
-          timeDiff: timeDiff / 1000 / 60,
-          minutesLeft
-        });
-        
         return {
           canReserve: false,
           reason: `Cet appareil doit attendre ${minutesLeft} minute(s) avant de faire une nouvelle réservation.`
@@ -255,7 +187,6 @@ export function useReservationSecurity() {
       }
 
       // 6. Vérification anti-spam global (protection du système)
-      console.log('6. Vérification anti-spam global...');
       const { data: recentGlobalReservations, error: globalError } = await supabase
         .from('reservations')
         .select('created_at')
@@ -263,15 +194,12 @@ export function useReservationSecurity() {
         .order('created_at', { ascending: false });
 
       if (!globalError && recentGlobalReservations && recentGlobalReservations.length >= 15) {
-        console.log('❌ BLOQUÉ - Trop de réservations récentes globalement:', recentGlobalReservations.length);
         return {
           canReserve: false,
           reason: 'Système temporairement surchargé. Veuillez réessayer dans quelques minutes.'
         };
       }
 
-      console.log('✅ Toutes les vérifications de sécurité sont passées');
-      console.log('=== FIN VÉRIFICATION SÉCURITÉ RENFORCÉE ===');
       return { canReserve: true };
       
     } catch (error) {

@@ -9,7 +9,6 @@ export function useTerrains(filters?: { type?: string; actif?: boolean }) {
     queryKey: ['terrains', filters],
     queryFn: async () => {
       try {
-        console.log('Fetching terrains with filters:', filters);
         let query = supabase.from('terrains').select('*');
         
         if (filters?.type && filters.type !== 'all') {
@@ -27,7 +26,6 @@ export function useTerrains(filters?: { type?: string; actif?: boolean }) {
           throw error;
         }
         
-        console.log('Terrains fetched successfully:', data);
         return data as Terrain[];
       } catch (error) {
         console.error("Error in useTerrains hook:", error);

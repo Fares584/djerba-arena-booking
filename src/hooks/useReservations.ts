@@ -205,26 +205,16 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
   return useMutation({
     mutationFn: async (newReservation: Omit<Reservation, 'id' | 'created_at' | 'updated_at'>) => {
       try {
-        console.log('=== DÉBUT CRÉATION RÉSERVATION ===');
-        console.log('Données de réservation:', newReservation);
-        console.log('Mode admin:', options?.isAdminCreation);
-        
         // Vérification des limites de sécurité renforcée
-        console.log('Vérification des limites de sécurité...');
         const securityCheck = await checkReservationLimits(
           newReservation.tel,
           newReservation.email,
           options?.isAdminCreation || false
         );
 
-        console.log('Résultat vérification sécurité:', securityCheck);
-
         if (!securityCheck.canReserve) {
-          console.log('❌ Réservation bloquée:', securityCheck.reason);
           throw new Error(securityCheck.reason || 'Réservation non autorisée');
         }
-
-        console.log('✅ Sécurité validée, création de la réservation...');
         
         // Obtenir le fingerprint de l'appareil pour traçabilité et limitation
         const deviceFingerprint = getDeviceFingerprint();
@@ -236,11 +226,6 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
           ip_address: deviceFingerprint, // Stocke le fingerprint de l'appareil
           user_agent: navigator.userAgent.slice(0, 255)
         };
-        
-        console.log('Données finales de la réservation:', {
-          ...reservationData,
-          ip_address: `device_${deviceFingerprint.slice(0, 8)}...` // Affichage tronqué pour la console
-        });
         
         const { data, error } = await supabase
           .from('reservations')
@@ -255,14 +240,11 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
           console.error("❌ Error creating reservation:", error);
           throw error;
         }
-
-        console.log('✅ Réservation créée avec succès:', data);
         
         // Envoyer la notification email à l'admin SEULEMENT si ce n'est PAS une création admin
         if (!options?.isAdminCreation && terrains) {
           const terrain = terrains.find(t => t.id === data.terrain_id);
           if (terrain) {
-            console.log('📧 Envoi de la notification email...');
             sendNotification({
               reservation: {
                 id: data.id,
@@ -278,11 +260,8 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
               terrain
             });
           }
-        } else if (options?.isAdminCreation) {
-          console.log('📧 Pas d\'envoi de notification - Création admin');
         }
         
-        console.log('=== FIN CRÉATION RÉSERVATION ===');
         toast.success("Réservation créée avec succès !");
 
         return data;
@@ -311,8 +290,6 @@ export function useDeleteReservation() {
   return useMutation({
     mutationFn: async (reservationId: number) => {
       try {
-        console.log('🗑️ Suppression de la réservation:', reservationId);
-        
         const { error } = await supabase
           .from('reservations')
           .delete()
@@ -323,7 +300,6 @@ export function useDeleteReservation() {
           throw error;
         }
 
-        console.log('✅ Réservation supprimée avec succès');
         return reservationId;
       } catch (error) {
         console.error("❌ Erreur dans la mutation de suppression:", error);
