@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -306,33 +306,33 @@ export type Database = {
       generer_reservations_abonnement: {
         Args: {
           p_abonnement_id: number
-          p_terrain_id: number
-          p_date_debut: string
-          p_date_fin: string
-          p_jour_semaine: number
-          p_heure: string
-          p_duree: number
+          p_client_email: string
           p_client_nom: string
           p_client_tel: string
-          p_client_email: string
+          p_date_debut: string
+          p_date_fin: string
+          p_duree: number
+          p_heure: string
+          p_jour_semaine: number
+          p_terrain_id: number
         }
         Returns: undefined
       }
       generer_reservations_mensuelles: {
         Args: {
           p_abonnement_id: number
-          p_terrain_id: number
-          p_mois: number
           p_annee: number
-          p_jour_semaine: number
-          p_heure: string
           p_client_nom: string
           p_client_tel: string
+          p_heure: string
+          p_jour_semaine: number
+          p_mois: number
+          p_terrain_id: number
         }
         Returns: undefined
       }
       has_role: {
-        Args: { user_uuid: string; role_name: string }
+        Args: { role_name: string; user_uuid: string }
         Returns: boolean
       }
     }
