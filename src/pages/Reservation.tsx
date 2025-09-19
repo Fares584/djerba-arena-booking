@@ -30,7 +30,7 @@ import { validateName, validateTunisianPhone, validateEmail } from '@/lib/valida
 // Créneaux horaires par défaut (pour terrains autres que foot à 7 ou 8)
 const defaultTimeSlots = [
   '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', 
-  '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
+  '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'
 ];
 
 // Options de durée étendues pour tennis et padel
