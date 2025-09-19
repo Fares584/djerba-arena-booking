@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { getTennisPricing } from '@/lib/supabase';
+import { Sun, Moon, Users } from 'lucide-react';
 
 export type FieldType = 'foot' | 'tennis' | 'padel';
 export type FieldStatus = 'available' | 'reserved' | 'pending';
@@ -129,22 +130,56 @@ const FieldCard: React.FC<FieldCardProps> = ({ field }) => {
           </span>
         </div>
         <h3 className="font-bold text-xl mb-2">{field.name}</h3>
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <p className="text-sm text-gray-600">Capacité: {field.capacity} personnes</p>
-            {field.type === 'tennis' && getTennisPricing({ nom: field.nom || field.name, type: field.type } as any) ? (
-              <div className="space-y-1 mt-2">
-                <div className="text-sm font-semibold text-sport-green">
-                  Simple (2p): {getTennisPricing({ nom: field.nom || field.name, type: field.type } as any)!.simple.jour} DT | Nuit: {getTennisPricing({ nom: field.nom || field.name, type: field.type } as any)!.simple.nuit} DT
+        <div className="mb-4">
+          <p className="text-sm text-gray-600 mb-3">Capacité: {field.capacity} personnes</p>
+          {field.type === 'tennis' && getTennisPricing({ nom: field.nom || field.name, type: field.type } as any) ? (
+            <div className="space-y-2">
+              <div className="bg-green-50 p-3 rounded-lg border-l-4 border-sport-green">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="h-4 w-4 text-sport-green" />
+                  <span className="text-sm font-medium text-gray-700">Simple (2 personnes)</span>
                 </div>
-                <div className="text-sm font-semibold text-sport-green">
-                  Double (4p): {getTennisPricing({ nom: field.nom || field.name, type: field.type } as any)!.double.jour} DT | Nuit: {getTennisPricing({ nom: field.nom || field.name, type: field.type } as any)!.double.nuit} DT
+                <div className="flex justify-between">
+                  <div className="flex items-center gap-1">
+                    <Sun className="h-3 w-3 text-yellow-500" />
+                    <span className="text-sm font-semibold text-sport-green">
+                      {getTennisPricing({ nom: field.nom || field.name, type: field.type } as any)!.simple.jour} DT
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Moon className="h-3 w-3 text-blue-500" />
+                    <span className="text-sm font-semibold text-sport-green">
+                      {getTennisPricing({ nom: field.nom || field.name, type: field.type } as any)!.simple.nuit} DT
+                    </span>
+                  </div>
                 </div>
               </div>
-            ) : (
+              <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-500">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm font-medium text-gray-700">Double (4 personnes)</span>
+                </div>
+                <div className="flex justify-between">
+                  <div className="flex items-center gap-1">
+                    <Sun className="h-3 w-3 text-yellow-500" />
+                    <span className="text-sm font-semibold text-sport-green">
+                      {getTennisPricing({ nom: field.nom || field.name, type: field.type } as any)!.double.jour} DT
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Moon className="h-3 w-3 text-blue-500" />
+                    <span className="text-sm font-semibold text-sport-green">
+                      {getTennisPricing({ nom: field.nom || field.name, type: field.type } as any)!.double.nuit} DT
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-green-50 p-3 rounded-lg">
               <p className="text-lg font-bold text-sport-green">{field.price} DT/heure</p>
-            )}
-          </div>
+            </div>
+          )}
         </div>
         <Link 
           to={`/reservation?fieldId=${field.id}`}

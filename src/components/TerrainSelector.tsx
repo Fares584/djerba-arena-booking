@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Terrain, getTennisPricing } from '@/lib/supabase';
-import { Image, SquareCheckBig, Lock } from 'lucide-react';
+import { Image, SquareCheckBig, Lock, Sun, Moon, Users } from 'lucide-react';
 
 interface TerrainSelectorProps {
   terrains: Terrain[];
@@ -95,28 +95,65 @@ const TerrainSelector = ({
                   Capacité: {terrain.capacite} personnes
                 </span>
               </div>
-              <div className="flex justify-between items-center mt-auto">
-                <div>
+              <div className="flex justify-between items-start mt-auto">
+                <div className="flex-1">
                   {terrain.type === 'tennis' && getTennisPricing(terrain) ? (
-                    <div className="space-y-1">
-                      <div className={`text-sm font-semibold ${isDisabled ? 'text-gray-400' : 'text-sport-green'}`}>
-                        Simple (2p): {getTennisPricing(terrain)!.simple.jour} DT | Nuit: {getTennisPricing(terrain)!.simple.nuit} DT
+                    <div className="space-y-3">
+                      <div className={`bg-gradient-to-r ${isDisabled ? 'from-gray-100 to-gray-50' : 'from-green-50 to-green-100'} p-3 rounded-lg border-l-4 ${isDisabled ? 'border-gray-300' : 'border-sport-green'}`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Users className={`h-4 w-4 ${isDisabled ? 'text-gray-400' : 'text-sport-green'}`} />
+                          <span className={`text-sm font-medium ${isDisabled ? 'text-gray-500' : 'text-gray-700'}`}>Simple (2 personnes)</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            <Sun className={`h-3 w-3 ${isDisabled ? 'text-gray-400' : 'text-yellow-500'}`} />
+                            <span className={`text-sm font-semibold ${isDisabled ? 'text-gray-400' : 'text-sport-green'}`}>
+                              {getTennisPricing(terrain)!.simple.jour} DT
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Moon className={`h-3 w-3 ${isDisabled ? 'text-gray-400' : 'text-blue-500'}`} />
+                            <span className={`text-sm font-semibold ${isDisabled ? 'text-gray-400' : 'text-sport-green'}`}>
+                              {getTennisPricing(terrain)!.simple.nuit} DT
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div className={`text-sm font-semibold ${isDisabled ? 'text-gray-400' : 'text-sport-green'}`}>
-                        Double (4p): {getTennisPricing(terrain)!.double.jour} DT | Nuit: {getTennisPricing(terrain)!.double.nuit} DT
+                      <div className={`bg-gradient-to-r ${isDisabled ? 'from-gray-100 to-gray-50' : 'from-blue-50 to-blue-100'} p-3 rounded-lg border-l-4 ${isDisabled ? 'border-gray-300' : 'border-blue-500'}`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Users className={`h-4 w-4 ${isDisabled ? 'text-gray-400' : 'text-blue-500'}`} />
+                          <span className={`text-sm font-medium ${isDisabled ? 'text-gray-500' : 'text-gray-700'}`}>Double (4 personnes)</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            <Sun className={`h-3 w-3 ${isDisabled ? 'text-gray-400' : 'text-yellow-500'}`} />
+                            <span className={`text-sm font-semibold ${isDisabled ? 'text-gray-400' : 'text-sport-green'}`}>
+                              {getTennisPricing(terrain)!.double.jour} DT
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Moon className={`h-3 w-3 ${isDisabled ? 'text-gray-400' : 'text-blue-500'}`} />
+                            <span className={`text-sm font-semibold ${isDisabled ? 'text-gray-400' : 'text-sport-green'}`}>
+                              {getTennisPricing(terrain)!.double.nuit} DT
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ) : (
-                    <>
-                      <p className={`text-lg font-bold ${isDisabled ? 'text-gray-400' : 'text-sport-green'}`}>
+                    <div className={`bg-gradient-to-r ${isDisabled ? 'from-gray-100 to-gray-50' : 'from-green-50 to-green-100'} p-3 rounded-lg`}>
+                      <p className={`text-lg font-bold ${isDisabled ? 'text-gray-400' : 'text-sport-green'} mb-1`}>
                         {terrain.prix} DT/h
                       </p>
                       {terrain.prix_nuit && (
-                        <p className={`text-sm ${isDisabled ? 'text-gray-400' : 'text-gray-600'}`}>
-                          Nuit&nbsp;: {terrain.prix_nuit} DT/h
-                        </p>
+                        <div className="flex items-center gap-1">
+                          <Moon className={`h-3 w-3 ${isDisabled ? 'text-gray-400' : 'text-blue-500'}`} />
+                          <span className={`text-sm ${isDisabled ? 'text-gray-400' : 'text-gray-600'}`}>
+                            {terrain.prix_nuit} DT/h
+                          </span>
+                        </div>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
                 <div

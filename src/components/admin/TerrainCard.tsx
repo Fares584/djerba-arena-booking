@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Check, X, Edit, Users, DollarSign, Image } from 'lucide-react';
+import { Check, X, Edit, Users, DollarSign, Image, Sun, Moon } from 'lucide-react';
 import { Terrain, getTennisPricing } from '@/lib/supabase';
 
 interface TerrainCardProps {
@@ -79,19 +79,55 @@ const TerrainCard = ({
             <Users className="h-4 w-4" />
             <span>{terrain.capacite} personnes</span>
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <DollarSign className="h-4 w-4" />
+          <div className="text-sm text-gray-600">
             {terrain.type === 'tennis' && getTennisPricing(terrain) ? (
-              <div className="space-y-1">
-                <div className="text-xs">
-                  Simple (2p): {getTennisPricing(terrain)!.simple.jour} DT | Nuit: {getTennisPricing(terrain)!.simple.nuit} DT
+              <div className="space-y-2">
+                <div className="bg-green-50 p-2 rounded border-l-2 border-sport-green">
+                  <div className="flex items-center gap-1 mb-1">
+                    <Users className="h-3 w-3 text-sport-green" />
+                    <span className="text-xs font-medium text-gray-700">Simple (2p)</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <div className="flex items-center gap-1">
+                      <Sun className="h-3 w-3 text-yellow-500" />
+                      <span className="font-semibold text-sport-green">{getTennisPricing(terrain)!.simple.jour} DT</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Moon className="h-3 w-3 text-blue-500" />
+                      <span className="font-semibold text-sport-green">{getTennisPricing(terrain)!.simple.nuit} DT</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-xs">
-                  Double (4p): {getTennisPricing(terrain)!.double.jour} DT | Nuit: {getTennisPricing(terrain)!.double.nuit} DT
+                <div className="bg-blue-50 p-2 rounded border-l-2 border-blue-500">
+                  <div className="flex items-center gap-1 mb-1">
+                    <Users className="h-3 w-3 text-blue-500" />
+                    <span className="text-xs font-medium text-gray-700">Double (4p)</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <div className="flex items-center gap-1">
+                      <Sun className="h-3 w-3 text-yellow-500" />
+                      <span className="font-semibold text-sport-green">{getTennisPricing(terrain)!.double.jour} DT</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Moon className="h-3 w-3 text-blue-500" />
+                      <span className="font-semibold text-sport-green">{getTennisPricing(terrain)!.double.nuit} DT</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : (
-              <span>{terrain.prix} DT/h {terrain.prix_nuit && `| Nuit: ${terrain.prix_nuit} DT/h`}</span>
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                <div>
+                  <span className="font-semibold">{terrain.prix} DT/h</span>
+                  {terrain.prix_nuit && (
+                    <div className="flex items-center gap-1 mt-1">
+                      <Moon className="h-3 w-3 text-blue-500" />
+                      <span className="text-xs">{terrain.prix_nuit} DT/h</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>
