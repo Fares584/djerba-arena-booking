@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Terrain } from '@/lib/supabase';
+import { Terrain, getTennisPricing } from '@/lib/supabase';
 import { Image, SquareCheckBig, Lock } from 'lucide-react';
 
 interface TerrainSelectorProps {
@@ -97,13 +97,26 @@ const TerrainSelector = ({
               </div>
               <div className="flex justify-between items-center mt-auto">
                 <div>
-                  <p className={`text-lg font-bold ${isDisabled ? 'text-gray-400' : 'text-sport-green'}`}>
-                    {terrain.prix} DT/h
-                  </p>
-                  {terrain.prix_nuit && (
-                    <p className={`text-sm ${isDisabled ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Nuit&nbsp;: {terrain.prix_nuit} DT/h
-                    </p>
+                  {terrain.type === 'tennis' && getTennisPricing(terrain) ? (
+                    <div className="space-y-1">
+                      <div className={`text-sm font-semibold ${isDisabled ? 'text-gray-400' : 'text-sport-green'}`}>
+                        Simple (2p): {getTennisPricing(terrain)!.simple.jour} DT | Nuit: {getTennisPricing(terrain)!.simple.nuit} DT
+                      </div>
+                      <div className={`text-sm font-semibold ${isDisabled ? 'text-gray-400' : 'text-sport-green'}`}>
+                        Double (4p): {getTennisPricing(terrain)!.double.jour} DT | Nuit: {getTennisPricing(terrain)!.double.nuit} DT
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className={`text-lg font-bold ${isDisabled ? 'text-gray-400' : 'text-sport-green'}`}>
+                        {terrain.prix} DT/h
+                      </p>
+                      {terrain.prix_nuit && (
+                        <p className={`text-sm ${isDisabled ? 'text-gray-400' : 'text-gray-600'}`}>
+                          Nuit&nbsp;: {terrain.prix_nuit} DT/h
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
                 <div

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { getTennisPricing } from '@/lib/supabase';
 
 export type FieldType = 'foot' | 'tennis' | 'padel';
 export type FieldStatus = 'available' | 'reserved' | 'pending';
@@ -13,6 +14,7 @@ export interface Field {
   price: number;
   imageUrl: string;
   status: FieldStatus;
+  nom?: string; // Add this for compatibility with Terrain type
 }
 
 interface FieldCardProps {
@@ -130,7 +132,18 @@ const FieldCard: React.FC<FieldCardProps> = ({ field }) => {
         <div className="flex justify-between items-center mb-4">
           <div>
             <p className="text-sm text-gray-600">Capacité: {field.capacity} personnes</p>
-            <p className="text-lg font-bold text-sport-green">{field.price} DT/heure</p>
+            {field.type === 'tennis' && getTennisPricing({ nom: field.nom || field.name, type: field.type } as any) ? (
+              <div className="space-y-1 mt-2">
+                <div className="text-sm font-semibold text-sport-green">
+                  Simple (2p): {getTennisPricing({ nom: field.nom || field.name, type: field.type } as any)!.simple.jour} DT | Nuit: {getTennisPricing({ nom: field.nom || field.name, type: field.type } as any)!.simple.nuit} DT
+                </div>
+                <div className="text-sm font-semibold text-sport-green">
+                  Double (4p): {getTennisPricing({ nom: field.nom || field.name, type: field.type } as any)!.double.jour} DT | Nuit: {getTennisPricing({ nom: field.nom || field.name, type: field.type } as any)!.double.nuit} DT
+                </div>
+              </div>
+            ) : (
+              <p className="text-lg font-bold text-sport-green">{field.price} DT/heure</p>
+            )}
           </div>
         </div>
         <Link 

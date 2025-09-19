@@ -80,6 +80,27 @@ export const isNightTime = (time: string, globalNightStartTime?: string): boolea
 
 // Function to calculate the price based on terrain and time (using global night time setting)
 // Refactored to handle football terrains with fixed pricing for 1h30 sessions
+// Function to get detailed tennis pricing information
+export const getTennisPricing = (terrain: Terrain) => {
+  if (terrain.type !== 'tennis') return null;
+  
+  if (/green set/i.test(terrain.nom)) {
+    return {
+      simple: { jour: 20, nuit: 25 },
+      double: { jour: 30, nuit: 40 }
+    };
+  }
+  
+  if (/pelouse/i.test(terrain.nom)) {
+    return {
+      simple: { jour: 15, nuit: 20 },
+      double: { jour: 20, nuit: 30 }
+    };
+  }
+  
+  return null;
+};
+
 export const calculatePrice = (terrain: Terrain, time: string, globalNightStartTime?: string): number => {
   const night = isNightTime(time, globalNightStartTime);
 

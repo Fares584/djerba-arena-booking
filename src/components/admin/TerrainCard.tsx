@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Check, X, Edit, Users, DollarSign, Image } from 'lucide-react';
-import { Terrain } from '@/lib/supabase';
+import { Terrain, getTennisPricing } from '@/lib/supabase';
 
 interface TerrainCardProps {
   terrain: Terrain;
@@ -81,7 +81,18 @@ const TerrainCard = ({
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <DollarSign className="h-4 w-4" />
-            <span>{terrain.prix} DT/h</span>
+            {terrain.type === 'tennis' && getTennisPricing(terrain) ? (
+              <div className="space-y-1">
+                <div className="text-xs">
+                  Simple (2p): {getTennisPricing(terrain)!.simple.jour} DT | Nuit: {getTennisPricing(terrain)!.simple.nuit} DT
+                </div>
+                <div className="text-xs">
+                  Double (4p): {getTennisPricing(terrain)!.double.jour} DT | Nuit: {getTennisPricing(terrain)!.double.nuit} DT
+                </div>
+              </div>
+            ) : (
+              <span>{terrain.prix} DT/h {terrain.prix_nuit && `| Nuit: ${terrain.prix_nuit} DT/h`}</span>
+            )}
           </div>
         </div>
 
