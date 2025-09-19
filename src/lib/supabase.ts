@@ -98,16 +98,24 @@ export const calculatePrice = (terrain: Terrain, time: string, globalNightStartT
     return night ? 65 : 60;
   }
 
-  // Tennis Green Set types based on 'nom' - HOURLY PRICING
+  // Tennis types based on 'nom' - HOURLY PRICING
   if (terrain.type === 'tennis') {
     if (/green set/i.test(terrain.nom)) {
-      // Tennis Green Set distinguished by 'autre' in name
-      if (/autre/i.test(terrain.nom)) {
-        return night ? 10 : 7.5;
+      // Green Set Tennis: simple (2 personnes) vs double (4 personnes)
+      // Assuming simple/double is determined by context - for now using capacity or name
+      if (/simple/i.test(terrain.nom) || terrain.capacite === 2) {
+        return night ? 25 : 20; // Simple: 20 DT jour, 25 DT nuit
       }
-      return night ? 12.5 : 10;
+      return night ? 40 : 30; // Double: 30 DT jour, 40 DT nuit
     }
-    // Fallback default if needed for classic tennis
+    if (/pelouse/i.test(terrain.nom)) {
+      // Pelouse Tennis: simple vs double
+      if (/simple/i.test(terrain.nom) || terrain.capacite === 2) {
+        return night ? 20 : 15; // Simple: 15 DT jour, 20 DT nuit
+      }
+      return night ? 30 : 20; // Double: 20 DT jour, 30 DT nuit
+    }
+    // Fallback default for other tennis courts
     return night ? (terrain.prix_nuit || 30) : terrain.prix;
   }
 
