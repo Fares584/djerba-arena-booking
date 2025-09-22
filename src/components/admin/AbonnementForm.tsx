@@ -26,7 +26,7 @@ const generateTimeSlotsForFoot = (startHour: number, startMinute: number, endHou
       ':' +
       dt.getMinutes().toString().padStart(2, '0')
     );
-    dt.setMinutes(dt.getMinutes() + 90);
+    dt.setMinutes(dt.getMinutes() + 30);
   }
   return slots;
 };
@@ -153,22 +153,10 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     
     if (!selectedTerrain) return [];
     
-    // Exception pour le samedi : 10h00 à 23h30 pour tous les terrains de foot
-    if (selectedJourSemaine === 6 && isFoot) {
-      console.log('Application de l\'exception samedi - créneaux 10h00-23h30');
-      const saturdaySlots = generateTimeSlotsForFoot(10, 0, 23, 30);
-      console.log('Créneaux samedi générés:', saturdaySlots);
-      return saturdaySlots;
-    }
-    
-    // Créneaux normaux pour les autres jours
-    if (isFoot6) {
-      console.log('Créneaux normaux foot 6 - 9h00-22h30');
-      return generateTimeSlotsForFoot(9, 0, 22, 30);
-    }
-    if (isFoot7or8) {
-      console.log('Créneaux normaux foot 7/8 - 10h00-23h30');
-      return generateTimeSlotsForFoot(10, 0, 23, 30);
+    if (selectedTerrain.type === 'foot') {
+      // Tous les terrains de foot : de 17:00 à 23:30 avec pas de 30 minutes
+      console.log('Créneaux foot - 17h00-23h30');
+      return generateTimeSlotsForFoot(17, 0, 23, 30);
     }
     
     console.log('Créneaux par défaut');

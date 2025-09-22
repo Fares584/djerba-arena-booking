@@ -19,7 +19,7 @@ import EditReservationForm from '@/components/admin/EditReservationForm';
 import QuickReservationForm from '@/components/admin/QuickReservationForm';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-// Utilitaire pour générer les créneaux personnalisés Foot
+// Fonction pour générer les créneaux personnalisés Foot - pas de 30 minutes
 function generateTimeSlotsForFoot(startHour: number, startMinute: number, endHour: number, endMinute: number) {
   const slots: string[] = [];
   let dt = new Date(2000, 0, 1, startHour, startMinute);
@@ -30,7 +30,7 @@ function generateTimeSlotsForFoot(startHour: number, startMinute: number, endHou
       ':' +
       dt.getMinutes().toString().padStart(2, '0')
     );
-    dt.setMinutes(dt.getMinutes() + 90);
+    dt.setMinutes(dt.getMinutes() + 30);
   }
   return slots;
 }
@@ -44,21 +44,9 @@ const defaultTimeSlots = [
 
 // Fonction pour calculer les slots selon le type du terrain et la date
 function getTimeSlotsForTerrain(terrain: Terrain, date?: Date): string[] {
-  if (terrain.type === 'foot' && terrain.nom && terrain.nom.includes('6')) {
-    // Vérifier si c'est un samedi (jour 6 de la semaine)
-    const isSaturday = date && date.getDay() === 6;
-    
-    if (isSaturday) {
-      // Samedi : de 10:00 à 23:30 pour Foot à 6
-      return generateTimeSlotsForFoot(10, 0, 23, 30);
-    } else {
-      // Autres jours : de 09:00 à 22:30 pour Foot à 6
-      return generateTimeSlotsForFoot(9, 0, 22, 30);
-    }
-  }
-  if (terrain.type === 'foot' && terrain.nom && (terrain.nom.includes('7') || terrain.nom.includes('8'))) {
-    // Foot à 7/8 : de 10:00 à 23:30, toutes les 1h30
-    return generateTimeSlotsForFoot(10, 0, 23, 30);
+  if (terrain.type === 'foot') {
+    // Tous les terrains de foot : de 17:00 à 23:30 avec pas de 30 minutes
+    return generateTimeSlotsForFoot(17, 0, 23, 30);
   }
   // Autres terrains (tennis, padel…) : créneaux horaires standards
   return defaultTimeSlots;

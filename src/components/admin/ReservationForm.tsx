@@ -23,7 +23,7 @@ interface ReservationFormProps {
   onSuccess: () => void;
 }
 
-// Fonction pour générer les créneaux horaires pour le football
+// Fonction pour générer les créneaux horaires pour le football - pas de 30 minutes
 const generateTimeSlotsForFoot = (startHour: number, startMinute: number, endHour: number, endMinute: number) => {
   const slots: string[] = [];
   let dt = new Date(2000, 0, 1, startHour, startMinute);
@@ -34,7 +34,7 @@ const generateTimeSlotsForFoot = (startHour: number, startMinute: number, endHou
       ':' +
       dt.getMinutes().toString().padStart(2, '0')
     );
-    dt.setMinutes(dt.getMinutes() + 90);
+    dt.setMinutes(dt.getMinutes() + 30);
   }
   return slots;
 };
@@ -78,29 +78,16 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
 
   // Générer les créneaux horaires selon le type de terrain
   const timeSlotsForSelectedTerrain = useMemo(() => {
-    if (isFoot6) {
-      // Vérifier si c'est un samedi (jour 6 de la semaine)
-      const selectedDate = formData.date ? new Date(formData.date + 'T00:00:00') : null;
-      const isSaturday = selectedDate && selectedDate.getDay() === 6;
-      
-      if (isSaturday) {
-        // Samedi : de 10:00 à 23:30 pour Foot à 6
-        return generateTimeSlotsForFoot(10, 0, 23, 30);
-      } else {
-        // Autres jours : de 09:00 à 22:30 pour Foot à 6
-        return generateTimeSlotsForFoot(9, 0, 22, 30);
-      }
-    }
-    if (isFoot7or8) {
-      // Foot à 7/8 : de 10:00 à 23:30
-      return generateTimeSlotsForFoot(10, 0, 23, 30);
+    if (selectedTerrain?.type === 'foot') {
+      // Tous les terrains de foot : de 17:00 à 23:30 avec pas de 30 minutes
+      return generateTimeSlotsForFoot(17, 0, 23, 30);
     }
     // Autres terrains : créneaux classiques
     return [
       '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', 
       '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'
     ];
-  }, [isFoot6, isFoot7or8, formData.date]);
+  }, [selectedTerrain]);
 
   // Obtenir l'heure de début de nuit globale
   const getGlobalNightStartTime = (): string => {

@@ -206,7 +206,7 @@ const Reservation = () => {
   };
 
   // Fonction générique pour générer les slots pour foot à 6, 7 et 8
-  // Pour foot à 6 : 9:00 à 22:30 (sauf samedi: 10:00 à 23:30), pour foot à 7/8 : 10:00 à 23:30, pas de 1h30
+  // Pour foot à 6 : 17:00 à 23:30, pour foot à 7/8 : 17:00 à 23:30, pas de 30 minutes
   const generateTimeSlotsForFoot = (startHour: number, startMinute: number, endHour: number, endMinute: number) => {
     const slots: string[] = [];
     let dt = new Date(2000, 0, 1, startHour, startMinute);
@@ -217,33 +217,22 @@ const Reservation = () => {
         ':' +
         dt.getMinutes().toString().padStart(2, '0')
       );
-      dt.setMinutes(dt.getMinutes() + 90);
+      dt.setMinutes(dt.getMinutes() + 30);
     }
     return slots;
   };
 
   // Détermine dynamiquement les créneaux horaires selon le type de terrain sélectionné
   const timeSlotsForSelectedTerrain = React.useMemo(() => {
-    if (isFoot6) {
-      // Vérifier si c'est un samedi (jour 6 de la semaine)
-      const selectedDateObj = selectedDate ? new Date(selectedDate + 'T00:00:00') : null;
-      const isSaturday = selectedDateObj && selectedDateObj.getDay() === 6;
-      
-      if (isSaturday) {
-        // Samedi : de 10:00 à 23:30 pour Foot à 6
-        return generateTimeSlotsForFoot(10, 0, 23, 30);
-      } else {
-        // Autres jours : de 09:00 à 22:30 pour Foot à 6
-        return generateTimeSlotsForFoot(9, 0, 22, 30);
-      }
-    }
-    if (isFoot7or8) {
-      // Foot à 7/8 : de 10:00 à 23:30 (inchangé)
-      return generateTimeSlotsForFoot(10, 0, 23, 30);
+    if (!selectedTerrain) return [];
+    
+    if (selectedTerrain.type === 'foot') {
+      // Tous les terrains de foot : de 17:00 à 23:30 avec pas de 30 minutes
+      return generateTimeSlotsForFoot(17, 0, 23, 30);
     }
     // Pour les autres terrains, on retourne les créneaux standards
     return defaultTimeSlots;
-  }, [isFoot6, isFoot7or8, selectedDate]);
+  }, [selectedTerrain]);
 
   // Update duration when terrain changes
   useEffect(() => {
