@@ -29,7 +29,7 @@ const TerrainSelector = ({
       {terrains.map((terrain) => {
         const isSelected = selectedTerrainId === terrain.id;
         const isFootball = terrain.type === 'foot';
-        const isDisabled = isFootball && !isAdminContext; // Football désactivé seulement côté public
+        const isDisabled = false; // Tous les terrains sont maintenant disponibles
         
         return (
           <div
