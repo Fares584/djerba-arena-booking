@@ -44,34 +44,6 @@ const ReservationTypeSelector: React.FC<Props> = ({ selectedType, setSelectedTyp
         </SelectContent>
       </Select>
 
-      {/* Message d'information pour le football */}
-      {selectedType === 'foot' && (
-        <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <h4 className="font-medium text-orange-800 mb-2">
-                Terrains de foot pas encore disponibles pour réservation
-              </h4>
-              <p className="text-orange-700 text-sm mb-3">
-                Les réservations pour les terrains de football ne sont pas encore ouvertes.
-              </p>
-              <div className="flex items-center gap-2 text-orange-800">
-                <Phone className="h-4 w-4" />
-                <span className="text-sm font-medium">
-                  Pour réserver, veuillez appeler : 
-                  <a 
-                    href="tel:29612809" 
-                    className="ml-1 font-bold underline hover:text-orange-900"
-                  >
-                    29 612 809
-                  </a>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
