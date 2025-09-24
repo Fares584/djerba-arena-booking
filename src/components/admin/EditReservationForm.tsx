@@ -80,35 +80,65 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
     return nightTimeSetting?.setting_value || '19:00';
   };
 
-  // Vérifier si un créneau horaire est disponible
+  // Vérifier si un créneau horaire est disponible avec logique de chevauchement
   const isTimeSlotAvailable = (time: string) => {
     if (!formData.terrain_id || !time || !formData.date) return false;
 
-    // Exclure la réservation actuelle de la vérification
-    const reservationConflict = reservations.some(
-      (res) =>
-        res.id !== reservation.id && // Ne pas considérer la réservation actuelle
-        res.terrain_id === formData.terrain_id &&
-        res.heure === time &&
-        res.date === formData.date &&
-        res.statut !== 'annulee'
-    );
+    const startHour = parseFloat(time.replace(':', '.'));
+    const duration = selectedTerrain?.type === 'foot' ? 1.5 : parseFloat(formData.duree || '1');
+    const endHour = startHour + duration;
 
-    // Vérifier les conflits d'abonnements avec la nouvelle logique
+    // Exclure la réservation actuelle de la vérification
+    const reservationConflict = reservations.some((res) => {
+      if (
+        res.id === reservation.id || // Ne pas considérer la réservation actuelle
+        res.terrain_id !== formData.terrain_id ||
+        res.date !== formData.date ||
+        res.statut === 'annulee'
+      ) {
+        return false;
+      }
+      
+      const resStartHour = parseFloat(res.heure.replace(':', '.'));
+      const resEndHour = resStartHour + res.duree;
+      
+      // Vérifier le chevauchement
+      return (
+        (startHour >= resStartHour && startHour < resEndHour) ||
+        (endHour > resStartHour && endHour <= resEndHour) ||
+        (startHour <= resStartHour && endHour >= resEndHour)
+      );
+    });
+
+    // Vérifier les conflits d'abonnements avec logique de chevauchement
     const selectedDate = new Date(formData.date);
     const selectedDayOfWeek = selectedDate.getDay();
     const selectedMonth = selectedDate.getMonth() + 1;
     const selectedYear = selectedDate.getFullYear();
 
-    const abonnementConflict = abonnements.some(
-      (abo) =>
-        abo.terrain_id === formData.terrain_id &&
-        abo.heure_fixe === time &&
-        abo.statut === 'actif' &&
-        abo.jour_semaine === selectedDayOfWeek &&
-        abo.mois_abonnement === selectedMonth &&
-        abo.annee_abonnement === selectedYear
-    );
+    const abonnementConflict = abonnements.some((abo) => {
+      if (
+        abo.terrain_id !== formData.terrain_id ||
+        abo.statut !== 'actif' ||
+        abo.jour_semaine !== selectedDayOfWeek ||
+        abo.mois_abonnement !== selectedMonth ||
+        abo.annee_abonnement !== selectedYear ||
+        !abo.heure_fixe
+      ) {
+        return false;
+      }
+      
+      const aboStartHour = parseFloat(abo.heure_fixe.replace(':', '.'));
+      const aboDuration = 1.5; // Les abonnements sont toujours pour 1h30 (foot)
+      const aboEndHour = aboStartHour + aboDuration;
+      
+      // Vérifier le chevauchement
+      return (
+        (startHour >= aboStartHour && startHour < aboEndHour) ||
+        (endHour > aboStartHour && endHour <= aboEndHour) ||
+        (startHour <= aboStartHour && endHour >= aboEndHour)
+      );
+    });
 
     return !reservationConflict && !abonnementConflict;
   };
