@@ -22,7 +22,10 @@ export function useReservations(filters?: {
     queryKey: ['reservations', filters],
     queryFn: async () => {
       try {
-        let query = supabase.from('reservations').select('*');
+        let query = supabase.from('reservations').select(`
+          *,
+          terrain:terrains(id, nom, type)
+        `);
         
         if (filters?.terrain_id) {
           query = query.eq('terrain_id', filters.terrain_id);

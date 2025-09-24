@@ -300,7 +300,81 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      admin_reservations: {
+        Row: {
+          abonnement_id: number | null
+          confirmation_token: string | null
+          confirmed_by_user: boolean | null
+          created_at: string | null
+          date: string | null
+          duree: number | null
+          email: string | null
+          heure: string | null
+          id: number | null
+          ip_address: string | null
+          nom_client: string | null
+          remarque: string | null
+          statut: string | null
+          tel: string | null
+          terrain_id: number | null
+          updated_at: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          abonnement_id?: number | null
+          confirmation_token?: string | null
+          confirmed_by_user?: boolean | null
+          created_at?: string | null
+          date?: string | null
+          duree?: number | null
+          email?: string | null
+          heure?: string | null
+          id?: number | null
+          ip_address?: string | null
+          nom_client?: string | null
+          remarque?: string | null
+          statut?: string | null
+          tel?: string | null
+          terrain_id?: number | null
+          updated_at?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          abonnement_id?: number | null
+          confirmation_token?: string | null
+          confirmed_by_user?: boolean | null
+          created_at?: string | null
+          date?: string | null
+          duree?: number | null
+          email?: string | null
+          heure?: string | null
+          id?: number | null
+          ip_address?: string | null
+          nom_client?: string | null
+          remarque?: string | null
+          statut?: string | null
+          tel?: string | null
+          terrain_id?: number | null
+          updated_at?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_abonnement"
+            columns: ["abonnement_id"]
+            isOneToOne: false
+            referencedRelation: "abonnements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_terrain_id_fkey"
+            columns: ["terrain_id"]
+            isOneToOne: false
+            referencedRelation: "terrains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       generer_reservations_abonnement: {
