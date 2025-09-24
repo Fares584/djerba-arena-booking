@@ -84,7 +84,13 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
   const isTimeSlotAvailable = (time: string) => {
     if (!formData.terrain_id || !time || !formData.date) return false;
 
-    const startHour = parseFloat(time.replace(':', '.'));
+    // Convertir l'heure en nombre décimal (19:30 -> 19.5)
+    const timeToDecimal = (timeStr: string) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours + minutes / 60;
+    };
+
+    const startHour = timeToDecimal(time);
     const duration = selectedTerrain?.type === 'foot' ? 1.5 : parseFloat(formData.duree || '1');
     const endHour = startHour + duration;
 
@@ -99,10 +105,10 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
         return false;
       }
       
-      const resStartHour = parseFloat(res.heure.replace(':', '.'));
+      const resStartHour = timeToDecimal(res.heure);
       const resEndHour = resStartHour + res.duree;
       
-      // Vérifier le chevauchement simple : deux créneaux se chevauchent si startA < endB && startB < endA
+      // Vérifier le chevauchement : deux créneaux se chevauchent si startA < endB && startB < endA
       return startHour < resEndHour && resStartHour < endHour;
     });
 
@@ -124,11 +130,11 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
         return false;
       }
       
-      const aboStartHour = parseFloat(abo.heure_fixe.replace(':', '.'));
+      const aboStartHour = timeToDecimal(abo.heure_fixe);
       const aboDuration = 1.5; // Les abonnements sont toujours pour 1h30 (foot)
       const aboEndHour = aboStartHour + aboDuration;
       
-      // Vérifier le chevauchement simple : deux créneaux se chevauchent si startA < endB && startB < endA
+      // Vérifier le chevauchement : deux créneaux se chevauchent si startA < endB && startB < endA
       return startHour < aboEndHour && aboStartHour < endHour;
     });
 
