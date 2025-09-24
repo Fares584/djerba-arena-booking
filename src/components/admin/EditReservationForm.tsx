@@ -102,12 +102,8 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
       const resStartHour = parseFloat(res.heure.replace(':', '.'));
       const resEndHour = resStartHour + res.duree;
       
-      // Vérifier le chevauchement
-      return (
-        (startHour >= resStartHour && startHour < resEndHour) ||
-        (endHour > resStartHour && endHour <= resEndHour) ||
-        (startHour <= resStartHour && endHour >= resEndHour)
-      );
+      // Vérifier le chevauchement simple : deux créneaux se chevauchent si startA < endB && startB < endA
+      return startHour < resEndHour && resStartHour < endHour;
     });
 
     // Vérifier les conflits d'abonnements avec logique de chevauchement
@@ -132,12 +128,8 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
       const aboDuration = 1.5; // Les abonnements sont toujours pour 1h30 (foot)
       const aboEndHour = aboStartHour + aboDuration;
       
-      // Vérifier le chevauchement
-      return (
-        (startHour >= aboStartHour && startHour < aboEndHour) ||
-        (endHour > aboStartHour && endHour <= aboEndHour) ||
-        (startHour <= aboStartHour && endHour >= aboEndHour)
-      );
+      // Vérifier le chevauchement simple : deux créneaux se chevauchent si startA < endB && startB < endA
+      return startHour < aboEndHour && aboStartHour < endHour;
     });
 
     return !reservationConflict && !abonnementConflict;
