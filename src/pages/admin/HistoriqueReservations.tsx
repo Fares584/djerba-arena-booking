@@ -72,11 +72,7 @@ const HistoriqueReservations = () => {
               <ReservationCard
                 reservation={reservation}
                 terrainName={getTerrainName(reservation.terrain_id)}
-                onStatusChange={() => {}} // Pas de changement de statut pour l'historique
-                onEdit={() => {}} // Pas de modification pour l'historique
-                onDelete={(id) => setReservationToDelete(id)} // Permettre la suppression
-                isUpdating={deleteReservation.isPending}
-                isHistoryView={true} // Nouvelle prop pour indiquer que c'est la vue historique
+                onView={(res) => setReservationToDelete(res.id)} // Pour l'instant, ouvre juste la suppression
               />
             </div>
           ))}

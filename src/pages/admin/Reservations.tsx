@@ -5,13 +5,16 @@ import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Plus, Calendar, Search } from 'lucide-react';
+import { Loader2, Plus, Calendar, Search, Users, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
 import ReservationForm from '@/components/admin/ReservationForm';
 import EditReservationForm from '@/components/admin/EditReservationForm';
 import ReservationCard from '@/components/admin/ReservationCard';
+import ReservationDetailModal from '@/components/admin/ReservationDetailModal';
 
 const Reservations = () => {
   // Afficher toutes les réservations (en_attente, confirmée, etc.) sauf abonnements, y compris celles d'aujourd'hui
@@ -28,6 +31,8 @@ const Reservations = () => {
   const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   
   // Récupérer le paramètre de recherche depuis l'URL
   useEffect(() => {
@@ -107,6 +112,11 @@ const Reservations = () => {
     refetch();
   };
 
+  const handleViewReservation = (reservation: Reservation) => {
+    setSelectedReservation(reservation);
+    setIsDetailModalOpen(true);
+  };
+
   // Filter reservations based on search term
   const filteredReservations = reservations?.filter(reservation =>
     reservation.nom_client.toLowerCase().includes(searchTerm.toLowerCase())
@@ -118,6 +128,36 @@ const Reservations = () => {
     const dateB = new Date(b.created_at || 0);
     return dateB.getTime() - dateA.getTime();
   });
+
+  // Catégoriser les réservations par statut
+  const totalReservations = sortedReservations;
+  const confirmedReservations = sortedReservations.filter(r => r.statut === 'confirmee');
+  const pendingReservations = sortedReservations.filter(r => r.statut === 'en_attente');
+  const cancelledReservations = sortedReservations.filter(r => r.statut === 'annulee');
+
+  const renderReservationGrid = (reservations: Reservation[], emptyMessage: string) => {
+    if (reservations.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <Calendar className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-lg font-medium text-gray-900">{emptyMessage}</h3>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {reservations.map((reservation: Reservation) => (
+          <ReservationCard
+            key={reservation.id}
+            reservation={reservation}
+            terrainName={getTerrainName(reservation.terrain_id)}
+            onView={handleViewReservation}
+          />
+        ))}
+      </div>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -160,35 +200,44 @@ const Reservations = () => {
           className="pl-10"
         />
       </div>
-      
-      {sortedReservations.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sortedReservations.map((reservation: Reservation) => (
-            <ReservationCard
-              key={reservation.id}
-              reservation={reservation}
-              terrainName={getTerrainName(reservation.terrain_id)}
-              onStatusChange={handleStatusChange}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              isUpdating={isUpdating}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-20">
-          <Calendar className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-xl font-medium text-gray-900">
-            {searchTerm ? 'Aucune réservation trouvée' : 'Aucune réservation'}
-          </h3>
-          <p className="mt-1 text-gray-500">
-            {searchTerm 
-              ? `Aucune réservation ne correspond à "${searchTerm}"`
-              : "Il n'y a pas encore de réservations à afficher."
-            }
-          </p>
-        </div>
-      )}
+
+      {/* Tabs pour catégoriser les réservations */}
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="all" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Toutes ({totalReservations.length})
+          </TabsTrigger>
+          <TabsTrigger value="confirmed" className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4" />
+            Confirmées ({confirmedReservations.length})
+          </TabsTrigger>
+          <TabsTrigger value="pending" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            En attente ({pendingReservations.length})
+          </TabsTrigger>
+          <TabsTrigger value="cancelled" className="flex items-center gap-2">
+            <XCircle className="h-4 w-4" />
+            Annulées ({cancelledReservations.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all" className="mt-6">
+          {renderReservationGrid(totalReservations, 'Aucune réservation')}
+        </TabsContent>
+
+        <TabsContent value="confirmed" className="mt-6">
+          {renderReservationGrid(confirmedReservations, 'Aucune réservation confirmée')}
+        </TabsContent>
+
+        <TabsContent value="pending" className="mt-6">
+          {renderReservationGrid(pendingReservations, 'Aucune réservation en attente')}
+        </TabsContent>
+
+        <TabsContent value="cancelled" className="mt-6">
+          {renderReservationGrid(cancelledReservations, 'Aucune réservation annulée')}
+        </TabsContent>
+      </Tabs>
       
       {/* Edit Reservation Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -207,6 +256,20 @@ const Reservations = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Reservation Detail Modal */}
+      <ReservationDetailModal
+        reservation={selectedReservation}
+        terrainName={selectedReservation ? getTerrainName(selectedReservation.terrain_id) : ''}
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedReservation(null);
+        }}
+        onStatusChange={handleStatusChange}
+        onDelete={handleDelete}
+        isUpdating={isUpdating}
+      />
     </div>
   );
 };
