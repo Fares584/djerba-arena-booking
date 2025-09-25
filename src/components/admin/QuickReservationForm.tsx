@@ -42,7 +42,12 @@ const QuickReservationForm = ({
 
     // Validation des champs
     const nameError = validateName(formData.nom_client);
-    const phoneError = validateTunisianPhone(formData.tel);
+    let phoneError = null;
+    
+    // Valider le téléphone seulement s'il est fourni
+    if (formData.tel.trim()) {
+      phoneError = validateTunisianPhone(formData.tel);
+    }
 
     if (nameError || phoneError) {
       if (nameError) toast.error(`Nom: ${nameError}`);
@@ -50,8 +55,8 @@ const QuickReservationForm = ({
       return;
     }
 
-    if (!formData.nom_client || !formData.tel) {
-      toast.error("Veuillez remplir tous les champs.");
+    if (!formData.nom_client) {
+      toast.error("Veuillez remplir le nom du client.");
       return;
     }
 
@@ -113,16 +118,15 @@ const QuickReservationForm = ({
           </div>
 
           <div>
-            <Label htmlFor="tel">Téléphone *</Label>
+            <Label htmlFor="tel">Téléphone (optionnel)</Label>
             <Input
               id="tel"
               value={formData.tel}
               onChange={(e) => setFormData(prev => ({ ...prev, tel: e.target.value }))}
               placeholder="Ex: 12345678 ou +21612345678"
-              required
             />
             <p className="text-gray-500 text-xs mt-1">
-              Numéro tunisien (8 chiffres)
+              Numéro tunisien (8 chiffres) - optionnel
             </p>
           </div>
 

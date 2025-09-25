@@ -217,7 +217,12 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
 
     // Validation des champs
     const nameError = validateName(formData.nom_client);
-    const phoneError = validateTunisianPhone(formData.tel);
+    let phoneError = null;
+    
+    // Valider le téléphone seulement s'il est fourni
+    if (formData.tel.trim()) {
+      phoneError = validateTunisianPhone(formData.tel);
+    }
 
     if (nameError || phoneError) {
       if (nameError) toast.error(`Nom: ${nameError}`);
@@ -225,7 +230,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       return;
     }
     
-    if (!formData.terrain_id || !formData.date || !formData.heure || !formData.nom_client || !formData.tel) {
+    if (!formData.terrain_id || !formData.date || !formData.heure || !formData.nom_client) {
       toast.error("Veuillez remplir tous les champs obligatoires.");
       return;
     }
@@ -296,23 +301,22 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
           </div>
 
           <div>
-            <Label htmlFor="tel">Téléphone</Label>
+            <Label htmlFor="tel">Téléphone (optionnel)</Label>
             <Input
               id="tel"
               value={formData.tel}
               onChange={(e) => handleChange('tel', e.target.value)}
               placeholder="Ex: 12345678 ou +21612345678"
-              required
             />
             <p className="text-gray-500 text-xs mt-1">
-              Numéro tunisien (8 chiffres)
+              Numéro tunisien (8 chiffres) - optionnel
             </p>
           </div>
         </div>
       )}
 
       {/* Date et heure - affiché après informations client */}
-      {formData.nom_client && formData.tel && (
+      {formData.nom_client && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="date">Date</Label>

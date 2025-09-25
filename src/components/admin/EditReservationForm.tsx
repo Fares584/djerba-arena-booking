@@ -205,12 +205,11 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
         </div>
 
         <div>
-          <Label htmlFor="tel">Téléphone</Label>
+          <Label htmlFor="tel">Téléphone (optionnel)</Label>
           <Input
             id="tel"
             value={formData.tel}
             onChange={(e) => handleChange('tel', e.target.value)}
-            required
           />
         </div>
 
