@@ -4,7 +4,7 @@ import { useTerrains } from '@/hooks/useTerrains';
 import { format, addDays, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight, Loader2, Calendar, User, Phone, Mail, MapPin, Clock, Info, Crown, Plus, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Calendar, User, Phone, Mail, MapPin, Clock, Crown, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -407,14 +407,6 @@ const Planning = () => {
     }
   };
 
-  // Fonction pour vérifier si le jour sélectionné est un samedi et s'il y a des terrains Foot à 6
-  const shouldShowSaturdayAlert = () => {
-    const isSaturday = selectedDay.getDay() === 6;
-    const hasFoot6 = filteredTerrains?.some(terrain => 
-      terrain.type === 'foot' && terrain.nom && terrain.nom.includes('6')
-    );
-    return isSaturday && hasFoot6;
-  };
 
   if (authLoading || terrainsLoading || reservationsLoading) {
     return (
@@ -525,11 +517,6 @@ const Planning = () => {
               <span className="text-sm font-medium">
                 {format(selectedDay, 'EEEE dd/MM', { locale: fr })}
               </span>
-              {selectedDay.getDay() === 6 && (
-                <Badge variant="secondary" className="bg-orange-100 text-orange-800 text-xs">
-                  🕐 Samedi
-                </Badge>
-              )}
             </div>
             <Button variant="outline" size="sm" onClick={goToNextDay}>
               <ChevronRight className="h-4 w-4" />
@@ -537,17 +524,6 @@ const Planning = () => {
           </div>
         </div>
 
-        {/* Alerte spéciale pour les samedis avec terrains Foot à 6 (Mobile uniquement) */}
-        {shouldShowSaturdayAlert() && (
-          <div className="md:hidden mb-4">
-            <Alert className="border-orange-200 bg-orange-50">
-              <Info className="h-4 w-4 text-orange-600" />
-              <AlertDescription className="text-orange-800">
-                <strong>Horaires spéciaux samedi :</strong> Les terrains Foot à 6 ouvrent à 10h00 au lieu de 9h00
-              </AlertDescription>
-            </Alert>
-          </div>
-        )}
         
         {/* Desktop & Tablet Week Header */}
         <div className="hidden md:block text-center mb-4">
@@ -571,9 +547,6 @@ const Planning = () => {
               >
                 <div>{format(day, 'EEE', { locale: fr })}</div>
                 <div>{format(day, 'dd')}</div>
-                {day.getDay() === 6 && (
-                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full"></div>
-                )}
               </button>
             ))}
           </div>
@@ -582,22 +555,14 @@ const Planning = () => {
         {terrains && filteredTerrains && filteredTerrains.length > 0 ? (
           filteredTerrains.map(terrain => {
             const headerColor = getHeaderColorByType(terrain.type);
-            const isFoot6 = terrain.type === 'foot' && terrain.nom && terrain.nom.includes('6');
-            const isSaturday = selectedDay.getDay() === 6;
 
             return (
               <Card key={terrain.id} className="mb-8">
                 <CardHeader className={`${headerColor} text-white py-3`}>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base md:text-lg lg:text-xl">
-                      {terrain.nom} - {terrain.type === 'foot' ? 'Football' : terrain.type === 'tennis' ? 'Tennis' : 'Padel'}
-                    </CardTitle>
-                    {/* Badge horaires spéciaux pour mobile */}
-                    {isFoot6 && isSaturday && (
-                      <Badge className="md:hidden bg-orange-500 hover:bg-orange-600 text-xs">
-                        10h-23h30
-                      </Badge>
-                    )}
+                  <CardTitle className="text-base md:text-lg lg:text-xl">
+                    {terrain.nom} - {terrain.type === 'foot' ? 'Football' : terrain.type === 'tennis' ? 'Tennis' : 'Padel'}
+                  </CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -613,9 +578,6 @@ const Planning = () => {
                             <TableHead key={index} className="text-center font-medium border-r border-gray-200 min-w-[120px]">
                               <div>{format(day, 'EEE', { locale: fr })}</div>
                               <div className="text-xs">{format(day, 'dd/MM')}</div>
-                              {day.getDay() === 6 && isFoot6 && (
-                                <div className="text-orange-600 text-xs font-bold mt-1">Ouv. 10h</div>
-                              )}
                             </TableHead>
                           ))}
                         </TableRow>
@@ -710,7 +672,6 @@ const Planning = () => {
                   <div className="md:hidden p-4">
                     <div className="space-y-3">
                       {(() => {
-                        // Appliquer la même logique d'exception du samedi pour mobile en passant selectedDay
                         const timeSlots = getTimeSlotsForTerrain(terrain, selectedDay);
                         
                         return timeSlots.map((timeSlot) => {
@@ -721,16 +682,11 @@ const Planning = () => {
                           if (occupation.reservation && occupation.position !== 'start') {
                             return null;
                           }
-
-                          // Identifier si c'est un créneau spécial samedi (10h pour Foot à 6)
-                          const isSpecialSaturdaySlot = isFoot6 && isSaturday && timeSlot === '10:00';
                           
                           return (
                             <div 
                               key={timeSlot}
-                              className={`p-3 rounded-lg relative group transition-all duration-200 ${getCellClassName(occupation.reservation, true, occupation.position)} ${
-                                isSpecialSaturdaySlot ? 'ring-2 ring-orange-300 bg-gradient-to-r from-orange-50 to-white' : ''
-                              }`}
+                              className={`p-3 rounded-lg relative group transition-all duration-200 ${getCellClassName(occupation.reservation, true, occupation.position)}`}
                               onClick={() => occupation.reservation 
                                 ? handleReservationClick(occupation.reservation)
                                 : handleEmptyCellClick(terrain, selectedDay, timeSlot)
@@ -746,23 +702,9 @@ const Planning = () => {
                                 </div>
                               )}
                               
-                              {/* Indicateur spécial pour le premier créneau du samedi */}
-                              {isSpecialSaturdaySlot && !occupation.reservation?.abonnement_id && (
-                                <div className="absolute -top-2 -right-2 flex items-center">
-                                  <Badge className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full shadow-lg">
-                                    🌅 Ouverture
-                                  </Badge>
-                                </div>
-                              )}
-                              
                               <div className="flex justify-between items-center">
-                                <div className="font-medium text-sm flex items-center gap-2">
+                                <div className="font-medium text-sm">
                                   {timeSlot}
-                                  {isSpecialSaturdaySlot && (
-                                    <span className="text-orange-600 text-xs font-bold">
-                                      ✨ Spécial
-                                    </span>
-                                  )}
                                 </div>
                                 {occupation.reservation ? (
                                   <div className="text-right">
@@ -779,7 +721,7 @@ const Planning = () => {
                                   <div className="flex items-center gap-2">
                                     <Plus className="h-4 w-4 text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
                                     <span className="text-xs text-blue-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                      {isSpecialSaturdaySlot ? 'Réserver - Ouverture' : 'Réserver'}
+                                      Réserver
                                     </span>
                                   </div>
                                 )}
