@@ -824,7 +824,10 @@ const Planning = () => {
               <ReservationCard
                 reservation={selectedReservation}
                 terrainName={getTerrainName(selectedReservation.terrain_id)}
-                onView={() => {}} // Pas de vue dans la modale
+                onStatusChange={handleStatusChange}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                isUpdating={isUpdating}
               />
             </div>
           )}
