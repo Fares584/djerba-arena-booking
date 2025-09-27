@@ -99,6 +99,49 @@ function isTimeSlotOccupied(terrain: Terrain, day: Date, timeSlot: string, reser
   return null;
 }
 
+// Fonction pour vérifier si un créneau peut être réservé (logique client)
+function canTimeSlotBeReserved(
+  terrain: Terrain,
+  day: Date,
+  timeSlot: string,
+  reservations: Reservation[]
+): boolean {
+  if (!reservations) return true;
+  
+  const formattedDate = format(day, 'yyyy-MM-dd');
+  
+  // Durée par défaut selon le type de terrain
+  const defaultDuration = terrain.type === 'foot' ? 1.5 : 1;
+  
+  // Seules les réservations confirmées et en attente bloquent la disponibilité
+  const activeReservations = reservations.filter(
+    r => r.terrain_id === terrain.id && 
+         r.date === formattedDate && 
+         (r.statut === 'en_attente' || r.statut === 'confirmee')
+  );
+  
+  const [startHour, startMinute] = timeSlot.split(':').map(Number);
+  const startTimeInMinutes = startHour * 60 + startMinute;
+  const endTimeInMinutes = startTimeInMinutes + (defaultDuration * 60);
+  
+  for (const reservation of activeReservations) {
+    const [resHour, resMinute] = reservation.heure.split(':').map(Number);
+    const resStartTimeInMinutes = resHour * 60 + resMinute;
+    const resEndTimeInMinutes = resStartTimeInMinutes + (reservation.duree * 60);
+    
+    // Vérifier les chevauchements
+    if (
+      (startTimeInMinutes >= resStartTimeInMinutes && startTimeInMinutes < resEndTimeInMinutes) ||
+      (endTimeInMinutes > resStartTimeInMinutes && endTimeInMinutes <= resEndTimeInMinutes) ||
+      (startTimeInMinutes <= resStartTimeInMinutes && endTimeInMinutes >= resEndTimeInMinutes)
+    ) {
+      return false; // Créneau non disponible
+    }
+  }
+  
+  return true; // Créneau disponible
+}
+
 // Fonction simplifiée pour l'affichage des réservations (sans rowspan)
 function getReservationForTimeSlot(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): {
   reservation: Reservation | null;
@@ -620,14 +663,29 @@ const Planning = () => {
                                 }
                                 
                                 const reservationInfo = getReservationForTimeSlot(terrain, day, timeSlot, reservations || []);
+                                const canBeReserved = canTimeSlotBeReserved(terrain, day, timeSlot, reservations || []);
+                                
+                                // Si le créneau ne peut pas être réservé ET qu'il n'y a pas de réservation
+                                if (!canBeReserved && !reservationInfo.reservation) {
+                                  return (
+                                    <TableCell 
+                                      key={dayIndex}
+                                      className="text-center bg-gray-100 border-r border-gray-200 h-16 opacity-60 cursor-not-allowed"
+                                    >
+                                      <div className="flex items-center justify-center">
+                                        <X className="h-3 w-3 text-gray-400" />
+                                      </div>
+                                    </TableCell>
+                                  );
+                                }
                                 
                                 return (
                                   <TableCell 
                                     key={dayIndex}
-                                    className={`text-center border-r border-gray-200 h-16 p-1 ${getCellClassName(reservationInfo.reservation, isTimeSlotAvailable, reservationInfo.position)}`}
+                                    className={`text-center border-r border-gray-200 h-16 p-1 ${getCellClassName(reservationInfo.reservation, canBeReserved, reservationInfo.position)}`}
                                     onClick={() => reservationInfo.reservation 
                                       ? handleReservationClick(reservationInfo.reservation)
-                                      : handleEmptyCellClick(terrain, day, timeSlot)
+                                      : canBeReserved ? handleEmptyCellClick(terrain, day, timeSlot) : undefined
                                     }
                                   >
                                     {reservationInfo.reservation ? (
@@ -678,18 +736,41 @@ const Planning = () => {
                           // Utiliser la nouvelle fonction pour vérifier l'occupation
                           const occupation = getReservationForTimeSlot(terrain, selectedDay, timeSlot, reservations || []);
                           
+                          // Vérifier si le créneau peut être réservé (nouvelle logique)
+                          const canBeReserved = canTimeSlotBeReserved(terrain, selectedDay, timeSlot, reservations || []);
+                          
                           // Ne pas afficher les créneaux qui ne sont pas le début d'une réservation multi-heures
                           if (occupation.reservation && occupation.position !== 'start') {
                             return null;
                           }
                           
+                          // Si le créneau ne peut pas être réservé ET qu'il n'y a pas de réservation, l'afficher comme non disponible
+                          if (!canBeReserved && !occupation.reservation) {
+                            return (
+                              <div 
+                                key={timeSlot}
+                                className="p-3 rounded-lg bg-gray-100 border border-gray-200 opacity-60 cursor-not-allowed"
+                              >
+                                <div className="flex justify-between items-center">
+                                  <div className="font-medium text-sm text-gray-500">
+                                    {timeSlot}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <X className="h-4 w-4 text-gray-400" />
+                                    <span className="text-xs text-gray-400">Non disponible</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+                          
                           return (
                             <div 
                               key={timeSlot}
-                              className={`p-3 rounded-lg relative group transition-all duration-200 ${getCellClassName(occupation.reservation, true, occupation.position)}`}
+                              className={`p-3 rounded-lg relative group transition-all duration-200 ${getCellClassName(occupation.reservation, canBeReserved, occupation.position)}`}
                               onClick={() => occupation.reservation 
                                 ? handleReservationClick(occupation.reservation)
-                                : handleEmptyCellClick(terrain, selectedDay, timeSlot)
+                                : canBeReserved ? handleEmptyCellClick(terrain, selectedDay, timeSlot) : undefined
                               }
                             >
                               {/* Badge abonnement pour mobile */}
