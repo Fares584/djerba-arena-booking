@@ -66,6 +66,37 @@ function getHeaderColorByType(type: string): string {
   }
 }
 
+// Fonction pour vérifier si un créneau est en conflit avec une réservation de foot
+// Pour les terrains de foot, il faut bloquer 1h30 avant et pendant la réservation
+function isTimeSlotConflictingWithFootReservation(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): boolean {
+  if (!reservations || terrain.type !== 'foot') return false;
+  
+  const formattedDate = format(day, 'yyyy-MM-dd');
+  const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
+  const slotTimeInMinutes = slotHour * 60 + slotMinute;
+  
+  for (const reservation of reservations) {
+    if (reservation.terrain_id !== terrain.id || reservation.date !== formattedDate) {
+      continue;
+    }
+    
+    const [resHour, resMinute] = reservation.heure.split(':').map(Number);
+    const resStartTimeInMinutes = resHour * 60 + resMinute;
+    const durationInMinutes = reservation.duree * 60;
+    const resEndTimeInMinutes = resStartTimeInMinutes + durationInMinutes;
+    
+    // Pour les terrains de foot, bloquer 1h30 (90 minutes) avant le début de la réservation
+    const blockStartTimeInMinutes = resStartTimeInMinutes - 90;
+    
+    // Vérifier si le créneau actuel est dans la plage bloquée (1h30 avant jusqu'à la fin)
+    if (slotTimeInMinutes >= blockStartTimeInMinutes && slotTimeInMinutes < resEndTimeInMinutes) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
 // Fonction pour vérifier si un créneau est occupé par une réservation (en tenant compte de la durée)
 function isTimeSlotOccupied(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): Reservation | null {
   if (!reservations) return null;
@@ -608,7 +639,10 @@ const Planning = () => {
                                 const dayTimeSlots = getTimeSlotsForTerrain(terrain, day);
                                 const isTimeSlotAvailable = dayTimeSlots.includes(timeSlot);
                                 
-                                if (!isTimeSlotAvailable) {
+                                // Vérifier si le créneau est en conflit avec une réservation de foot (1h30 avant)
+                                const isConflicting = isTimeSlotConflictingWithFootReservation(terrain, day, timeSlot, reservations || []);
+                                
+                                if (!isTimeSlotAvailable || isConflicting) {
                                   return (
                                     <TableCell 
                                       key={dayIndex}
@@ -677,6 +711,14 @@ const Planning = () => {
                         const timeSlots = getTimeSlotsForTerrain(terrain, selectedDay);
                         
                         return timeSlots.map((timeSlot) => {
+                          // Vérifier si le créneau est en conflit avec une réservation de foot (1h30 avant)
+                          const isConflicting = isTimeSlotConflictingWithFootReservation(terrain, selectedDay, timeSlot, reservations || []);
+                          
+                          // Ne pas afficher les créneaux en conflit
+                          if (isConflicting) {
+                            return null;
+                          }
+                          
                           // Utiliser la nouvelle fonction pour vérifier l'occupation
                           const occupation = getReservationForTimeSlot(terrain, selectedDay, timeSlot, reservations || []);
                           
