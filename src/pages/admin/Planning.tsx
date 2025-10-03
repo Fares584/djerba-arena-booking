@@ -67,7 +67,7 @@ function getHeaderColorByType(type: string): string {
 }
 
 // Fonction pour vérifier si un créneau est en conflit avec une réservation de foot
-// Pour les terrains de foot, il faut bloquer 1h30 avant et pendant la réservation
+// Pour les terrains de foot, il faut bloquer 1h30 AVANT la réservation (pas la réservation elle-même)
 function isTimeSlotConflictingWithFootReservation(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): boolean {
   if (!reservations || terrain.type !== 'foot') return false;
   
@@ -82,14 +82,12 @@ function isTimeSlotConflictingWithFootReservation(terrain: Terrain, day: Date, t
     
     const [resHour, resMinute] = reservation.heure.split(':').map(Number);
     const resStartTimeInMinutes = resHour * 60 + resMinute;
-    const durationInMinutes = reservation.duree * 60;
-    const resEndTimeInMinutes = resStartTimeInMinutes + durationInMinutes;
     
     // Pour les terrains de foot, bloquer 1h30 (90 minutes) avant le début de la réservation
     const blockStartTimeInMinutes = resStartTimeInMinutes - 90;
     
-    // Vérifier si le créneau actuel est dans la plage bloquée (1h30 avant jusqu'à la fin)
-    if (slotTimeInMinutes >= blockStartTimeInMinutes && slotTimeInMinutes < resEndTimeInMinutes) {
+    // Vérifier si le créneau actuel est dans la plage bloquée (1h30 avant, mais PAS la réservation elle-même)
+    if (slotTimeInMinutes >= blockStartTimeInMinutes && slotTimeInMinutes < resStartTimeInMinutes) {
       return true;
     }
   }
