@@ -634,12 +634,12 @@ const Planning = () => {
                                   >
                                     {reservationInfo.reservation ? (
                                       <div className="text-xs relative h-full flex flex-col justify-center">
-                                        {reservationInfo.reservation.abonnement_id && reservationInfo.position === 'start' && (
+                                        {reservationInfo.reservation.abonnement_id && (reservationInfo.position === 'start' || reservationInfo.position === 'single') && (
                                           <div className="absolute -top-1 -right-1">
                                             <Crown className="h-3 w-3 text-purple-600" />
                                           </div>
                                         )}
-                                        {reservationInfo.position === 'start' ? (
+                                        {(reservationInfo.position === 'start' || reservationInfo.position === 'single') ? (
                                           <>
                                             <div className="font-medium truncate" title={reservationInfo.reservation.nom_client}>
                                               {reservationInfo.reservation.nom_client}
@@ -680,8 +680,8 @@ const Planning = () => {
                           // Utiliser la nouvelle fonction pour vérifier l'occupation
                           const occupation = getReservationForTimeSlot(terrain, selectedDay, timeSlot, reservations || []);
                           
-                          // Ne pas afficher les créneaux qui ne sont pas le début d'une réservation multi-heures
-                          if (occupation.reservation && occupation.position !== 'start') {
+                          // Ne pas afficher les créneaux du milieu ou de fin d'une réservation multi-heures
+                          if (occupation.reservation && (occupation.position === 'middle' || occupation.position === 'end')) {
                             return null;
                           }
                           
