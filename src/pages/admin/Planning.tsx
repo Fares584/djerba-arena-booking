@@ -183,7 +183,9 @@ const Planning = () => {
   const { data: terrains, isLoading: terrainsLoading } = useTerrains();
   // Récupérer toutes les réservations (y compris les abonnements)
   const { data: reservations, isLoading: reservationsLoading, refetch } = useReservations({
-    terrain_id: selectedTerrain || undefined
+    terrain_id: selectedTerrain || undefined,
+    showAllCurrent: true, // Afficher toutes les réservations d'aujourd'hui et futures
+    enableRealtime: true  // Activer les mises à jour en temps réel
   });
 
   // Generate array of dates for the week (today + 7 days)
