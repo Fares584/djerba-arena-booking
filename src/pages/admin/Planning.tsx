@@ -678,10 +678,57 @@ const Planning = () => {
                                   );
                                 }
                                 
+                                // Ne pas afficher les cellules du milieu ou de fin (car fusionnées avec rowSpan)
+                                if (reservationInfo.reservation && (reservationInfo.position === 'middle' || reservationInfo.position === 'end')) {
+                                  return null;
+                                }
+                                
+                                // Calculer le rowSpan pour les réservations multi-créneaux
+                                let rowSpan = 1;
+                                if (reservationInfo.reservation && reservationInfo.reservation.duree > 1) {
+                                  // Pour le foot: créneaux de 30min, donc durée * 2
+                                  // Pour les autres: créneaux de 1h, donc durée * 1
+                                  const slotsPerHour = terrain.type === 'foot' ? 2 : 1;
+                                  rowSpan = Math.floor(reservationInfo.reservation.duree * slotsPerHour);
+                                }
+                                
+                                // Classes sans les bordures personnalisées (car on fusionne maintenant)
+                                const cellClasses = reservationInfo.reservation
+                                  ? (() => {
+                                      const isSubscription = !!reservationInfo.reservation.abonnement_id;
+                                      const baseClasses = 'cursor-pointer border-2 relative ';
+                                      
+                                      if (isSubscription) {
+                                        switch (reservationInfo.reservation.statut) {
+                                          case 'confirmee':
+                                            return baseClasses + 'bg-gradient-to-br from-purple-100 to-purple-200 text-purple-900 border-purple-300 hover:from-purple-200 hover:to-purple-300 shadow-sm';
+                                          case 'en_attente':
+                                            return baseClasses + 'bg-gradient-to-br from-purple-50 to-yellow-100 text-purple-800 border-purple-200 hover:from-purple-100 hover:to-yellow-200';
+                                          case 'annulee':
+                                            return baseClasses + 'bg-gradient-to-br from-red-100 to-purple-100 text-red-800 border-red-300 hover:from-red-200 hover:to-purple-200';
+                                          default:
+                                            return baseClasses + 'bg-gradient-to-br from-purple-50 to-white text-purple-800 border-purple-200';
+                                        }
+                                      } else {
+                                        switch (reservationInfo.reservation.statut) {
+                                          case 'confirmee':
+                                            return baseClasses + 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200';
+                                          case 'en_attente':
+                                            return baseClasses + 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200';
+                                          case 'annulee':
+                                            return baseClasses + 'bg-red-100 text-red-800 border-red-300 hover:bg-red-200';
+                                          default:
+                                            return baseClasses + 'bg-white hover:bg-gray-50 border-gray-200';
+                                        }
+                                      }
+                                    })()
+                                  : 'bg-white hover:bg-blue-50 border border-gray-200 cursor-pointer group transition-all duration-200 hover:border-blue-300 hover:shadow-sm relative';
+                                
                                 return (
                                   <TableCell 
                                     key={dayIndex}
-                                    className={`text-center border-r border-gray-200 h-16 p-1 ${getCellClassName(reservationInfo.reservation, isTimeSlotAvailable, reservationInfo.position)}`}
+                                    rowSpan={rowSpan}
+                                    className={`text-center border-r border-gray-200 h-16 p-1 ${cellClasses}`}
                                     onClick={() => reservationInfo.reservation 
                                       ? handleReservationClick(reservationInfo.reservation)
                                       : handleEmptyCellClick(terrain, day, timeSlot)
@@ -689,26 +736,18 @@ const Planning = () => {
                                   >
                                     {reservationInfo.reservation ? (
                                       <div className="text-xs relative h-full flex flex-col justify-center">
-                                        {reservationInfo.reservation.abonnement_id && (reservationInfo.position === 'start' || reservationInfo.position === 'single') && (
+                                        {reservationInfo.reservation.abonnement_id && (
                                           <div className="absolute -top-1 -right-1">
                                             <Crown className="h-3 w-3 text-purple-600" />
                                           </div>
                                         )}
-                                        {(reservationInfo.position === 'start' || reservationInfo.position === 'single') ? (
-                                          <>
-                                            <div className="font-medium truncate" title={reservationInfo.reservation.nom_client}>
-                                              {reservationInfo.reservation.nom_client}
-                                            </div>
-                                            <div className="text-gray-600 truncate text-xs" title={reservationInfo.reservation.tel}>
-                                              {reservationInfo.reservation.tel}
-                                            </div>
-                                            <div className="text-xs opacity-75">{reservationInfo.reservation.duree}h</div>
-                                          </>
-                                        ) : (
-                                          <div className="text-xs opacity-60">
-                                            ⋮
-                                          </div>
-                                        )}
+                                        <div className="font-medium truncate" title={reservationInfo.reservation.nom_client}>
+                                          {reservationInfo.reservation.nom_client}
+                                        </div>
+                                        <div className="text-gray-600 truncate text-xs" title={reservationInfo.reservation.tel}>
+                                          {reservationInfo.reservation.tel}
+                                        </div>
+                                        <div className="text-xs opacity-75">{reservationInfo.reservation.duree}h</div>
                                       </div>
                                     ) : (
                                       <div className="h-full flex items-center justify-center group-hover:opacity-100 opacity-0 transition-opacity duration-200">
