@@ -66,6 +66,42 @@ function getHeaderColorByType(type: string): string {
   }
 }
 
+// Fonction pour vérifier si un créneau est disponible pour une réservation de foot
+function isFootTimeSlotAvailableForBooking(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): boolean {
+  if (terrain.type !== 'foot' || !reservations) return true;
+  
+  const formattedDate = format(day, 'yyyy-MM-dd');
+  const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
+  const slotTimeInMinutes = slotHour * 60 + slotMinute;
+  
+  // Durée d'une réservation de foot: 1.5h = 90 minutes
+  const footballDurationInMinutes = 90;
+  
+  // Si on réserve à ce créneau, on occuperait de slotTimeInMinutes à slotTimeInMinutes + 90
+  const proposedEndTime = slotTimeInMinutes + footballDurationInMinutes;
+  
+  // Vérifier s'il y a un conflit avec une réservation existante
+  for (const reservation of reservations) {
+    if (reservation.terrain_id !== terrain.id || reservation.date !== formattedDate) {
+      continue;
+    }
+    
+    const [resHour, resMinute] = reservation.heure.split(':').map(Number);
+    const resStartTimeInMinutes = resHour * 60 + resMinute;
+    const resDurationInMinutes = reservation.duree * 60;
+    const resEndTimeInMinutes = resStartTimeInMinutes + resDurationInMinutes;
+    
+    // Vérifier s'il y a chevauchement
+    // Il y a chevauchement si:
+    // - Notre début est avant leur fin ET notre fin est après leur début
+    if (slotTimeInMinutes < resEndTimeInMinutes && proposedEndTime > resStartTimeInMinutes) {
+      return false; // Conflit détecté
+    }
+  }
+  
+  return true; // Pas de conflit, disponible
+}
+
 // Fonction pour vérifier si un créneau est occupé par une réservation (en tenant compte de la durée)
 function isTimeSlotOccupied(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): Reservation | null {
   if (!reservations) return null;
@@ -623,6 +659,25 @@ const Planning = () => {
                                 
                                 const reservationInfo = getReservationForTimeSlot(terrain, day, timeSlot, reservations || []);
                                 
+                                // Pour le foot: vérifier si le créneau est disponible pour réservation
+                                const isAvailableForBooking = terrain.type === 'foot' 
+                                  ? isFootTimeSlotAvailableForBooking(terrain, day, timeSlot, reservations || [])
+                                  : true;
+                                
+                                // Si le créneau n'est pas disponible pour réservation ET n'a pas de réservation, afficher X
+                                if (!isAvailableForBooking && !reservationInfo.reservation) {
+                                  return (
+                                    <TableCell 
+                                      key={dayIndex}
+                                      className="text-center bg-gray-100 border-r border-gray-200 h-16 opacity-60"
+                                    >
+                                      <div className="flex items-center justify-center">
+                                        <X className="h-3 w-3 text-gray-400" />
+                                      </div>
+                                    </TableCell>
+                                  );
+                                }
+                                
                                 return (
                                   <TableCell 
                                     key={dayIndex}
@@ -682,6 +737,16 @@ const Planning = () => {
                           
                           // Ne pas afficher les créneaux du milieu ou de fin d'une réservation multi-heures
                           if (occupation.reservation && (occupation.position === 'middle' || occupation.position === 'end')) {
+                            return null;
+                          }
+                          
+                          // Pour le foot: vérifier si le créneau est disponible pour réservation
+                          const isAvailableForBooking = terrain.type === 'foot' 
+                            ? isFootTimeSlotAvailableForBooking(terrain, selectedDay, timeSlot, reservations || [])
+                            : true;
+                          
+                          // Si le créneau n'est pas disponible pour réservation ET n'a pas de réservation, ne pas l'afficher
+                          if (!isAvailableForBooking && !occupation.reservation) {
                             return null;
                           }
                           
