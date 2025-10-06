@@ -318,7 +318,7 @@ const Dashboard = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleClientClick(reservation.nom_client)}
+                      onClick={() => navigate('/admin/reservations')}
                       className="w-full mt-2"
                     >
                       <ExternalLink className="h-3 w-3 mr-2" />
