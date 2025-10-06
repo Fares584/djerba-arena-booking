@@ -6,7 +6,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { CalendarCheck, Users, ChartBar, ExternalLink } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
@@ -270,132 +270,64 @@ const Dashboard = () => {
           </DialogHeader>
           
           {selectedReservations.length > 0 ? (
-            <>
-              {/* Desktop Table View */}
-              <div className="hidden md:block overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Téléphone</TableHead>
-                      <TableHead>Terrain</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Heure</TableHead>
-                      <TableHead>Durée</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead>Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {selectedReservations.map((reservation) => (
-                      <TableRow key={reservation.id}>
-                        <TableCell className="font-medium">#{reservation.id}</TableCell>
-                        <TableCell>
-                          <button
-                            onClick={() => handleClientClick(reservation.nom_client)}
-                            className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-medium text-left"
-                            title={`Voir les réservations de ${reservation.nom_client}`}
-                          >
-                            {reservation.nom_client}
-                          </button>
-                        </TableCell>
-                        <TableCell>{reservation.email}</TableCell>
-                        <TableCell>{reservation.tel}</TableCell>
-                        <TableCell>{getTerrainName(reservation.terrain_id)}</TableCell>
-                        <TableCell>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {selectedReservations.map((reservation) => (
+                <Card key={reservation.id} className="border border-border hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <button
+                          onClick={() => handleClientClick(reservation.nom_client)}
+                          className="text-lg font-semibold hover:underline text-primary cursor-pointer text-left"
+                          title={`Voir les réservations de ${reservation.nom_client}`}
+                        >
+                          {reservation.nom_client}
+                        </button>
+                        <p className="text-xs text-muted-foreground mt-1">Réservation #{reservation.id}</p>
+                      </div>
+                      <Badge className={getStatusClass(reservation.statut)}>
+                        {getStatusLabel(reservation.statut)}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between py-1 border-b border-border/50">
+                        <span className="text-sm text-muted-foreground">Téléphone</span>
+                        <span className="text-sm font-medium">{reservation.tel}</span>
+                      </div>
+                      <div className="flex items-center justify-between py-1 border-b border-border/50">
+                        <span className="text-sm text-muted-foreground">Terrain</span>
+                        <span className="text-sm font-medium">{getTerrainName(reservation.terrain_id)}</span>
+                      </div>
+                      <div className="flex items-center justify-between py-1 border-b border-border/50">
+                        <span className="text-sm text-muted-foreground">Date</span>
+                        <span className="text-sm font-medium">
                           {format(new Date(reservation.date), 'dd/MM/yyyy', { locale: fr })}
-                        </TableCell>
-                        <TableCell>{reservation.heure}</TableCell>
-                        <TableCell>{reservation.duree}h</TableCell>
-                        <TableCell>
-                          <Badge className={getStatusClass(reservation.statut)}>
-                            {getStatusLabel(reservation.statut)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleClientClick(reservation.nom_client)}
-                            className="text-blue-600 border-blue-600 hover:bg-blue-50"
-                          >
-                            <ExternalLink className="h-3 w-3 mr-1" />
-                            Voir
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* Mobile Card View */}
-              <div className="md:hidden space-y-4">
-                {selectedReservations.map((reservation) => (
-                  <Card key={reservation.id} className="border border-gray-200">
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <button
-                            onClick={() => handleClientClick(reservation.nom_client)}
-                            className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-semibold text-lg text-left"
-                            title={`Voir les réservations de ${reservation.nom_client}`}
-                          >
-                            {reservation.nom_client}
-                          </button>
-                          <p className="text-sm text-gray-600">#{reservation.id}</p>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <Badge className={getStatusClass(reservation.statut)}>
-                            {getStatusLabel(reservation.statut)}
-                          </Badge>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleClientClick(reservation.nom_client)}
-                            className="text-blue-600 border-blue-600 hover:bg-blue-50"
-                          >
-                            <ExternalLink className="h-3 w-3 mr-1" />
-                            Voir
-                          </Button>
-                        </div>
+                        </span>
                       </div>
-                      
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Email:</span>
-                          <span className="font-medium">{reservation.email}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Téléphone:</span>
-                          <span className="font-medium">{reservation.tel}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Terrain:</span>
-                          <span className="font-medium">{getTerrainName(reservation.terrain_id)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Date:</span>
-                          <span className="font-medium">
-                            {format(new Date(reservation.date), 'dd/MM/yyyy', { locale: fr })}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Heure:</span>
-                          <span className="font-medium">{reservation.heure}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Durée:</span>
-                          <span className="font-medium">{reservation.duree}h</span>
-                        </div>
+                      <div className="flex items-center justify-between py-1 border-b border-border/50">
+                        <span className="text-sm text-muted-foreground">Heure</span>
+                        <span className="text-sm font-medium">{reservation.heure}</span>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </>
+                      <div className="flex items-center justify-between py-1">
+                        <span className="text-sm text-muted-foreground">Durée</span>
+                        <span className="text-sm font-medium">{reservation.duree}h</span>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleClientClick(reservation.nom_client)}
+                      className="w-full mt-2"
+                    >
+                      <ExternalLink className="h-3 w-3 mr-2" />
+                      Voir toutes les réservations
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500">Aucune réservation trouvée pour cette catégorie.</p>
