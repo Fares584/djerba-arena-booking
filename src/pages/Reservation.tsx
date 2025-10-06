@@ -248,6 +248,18 @@ const Reservation = () => {
     }
   }, [selectedDate, isFoot6]);
 
+  // Reset selected time when duration changes (for tennis/padel)
+  // Car la disponibilité des créneaux dépend de la durée sélectionnée
+  useEffect(() => {
+    if (selectedTerrain?.type !== 'foot' && selectedTime) {
+      // Re-vérifier si le créneau est toujours disponible avec la nouvelle durée
+      if (!isTimeSlotAvailable(selectedTime)) {
+        setSelectedTime('');
+        toast.warning("Le créneau sélectionné n'est plus disponible avec cette durée.");
+      }
+    }
+  }, [duration]);
+
   const today = new Date().toISOString().split('T')[0];
 
   // --- Modification de handleSubmit avec validation ---
