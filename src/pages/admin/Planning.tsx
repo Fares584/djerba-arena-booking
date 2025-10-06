@@ -687,9 +687,12 @@ const Planning = () => {
                                 let rowSpan = 1;
                                 if (reservationInfo.reservation && reservationInfo.reservation.duree > 1) {
                                   // Pour le foot: créneaux de 30min, donc durée * 2
-                                  // Pour les autres: créneaux de 1h, donc durée * 1
+                                  // Pour tennis/padel: créneaux de 1h, on arrondit vers le haut pour couvrir tous les créneaux partiellement occupés
+                                  // Ex: 1.5h couvre 2 créneaux (21:00 et 22:00), 2.5h couvre 3 créneaux
                                   const slotsPerHour = terrain.type === 'foot' ? 2 : 1;
-                                  rowSpan = Math.floor(reservationInfo.reservation.duree * slotsPerHour);
+                                  rowSpan = terrain.type === 'foot' 
+                                    ? Math.floor(reservationInfo.reservation.duree * slotsPerHour)
+                                    : Math.ceil(reservationInfo.reservation.duree * slotsPerHour);
                                 }
                                 
                                 // Classes sans les bordures personnalisées (car on fusionne maintenant)
