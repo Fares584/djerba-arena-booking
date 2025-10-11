@@ -70,6 +70,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const [selectedYear] = useState<number>(currentYear);
   const [selectedJourSemaine, setSelectedJourSemaine] = useState<number | null>(null);
   const [heure, setHeure] = useState('');
+  const [duration, setDuration] = useState('1.5');
   const [clientNom, setClientNom] = useState('');
   const [clientTel, setClientTel] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
@@ -229,6 +230,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
         annee_abonnement: selectedYear,
         jour_semaine: selectedJourSemaine,
         heure_fixe: heure,
+        duree: parseFloat(duration),
         client_nom: clientNom.trim(),
         client_tel: clientTel.trim() || null,
         statut: 'actif'
@@ -301,6 +303,26 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
             {weekDays.map(day => (
               <option key={day.value} value={day.value}>{day.label}</option>
             ))}
+          </select>
+        </div>
+      )}
+
+      {/* Durée pour tennis/padel */}
+      {selectedTerrainId && selectedTerrain?.type !== 'foot' && (
+        <div>
+          <Label htmlFor="duration">Durée de la séance *</Label>
+          <select
+            id="duration"
+            className="w-full border rounded-md p-2 h-9 mt-1"
+            value={duration}
+            onChange={e => setDuration(e.target.value)}
+            required
+          >
+            <option value="1">1 heure</option>
+            <option value="1.5">1h30</option>
+            <option value="2">2 heures</option>
+            <option value="2.5">2h30</option>
+            <option value="3">3 heures</option>
           </select>
         </div>
       )}

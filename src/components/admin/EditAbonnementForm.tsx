@@ -70,6 +70,7 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
   const [selectedYear] = useState<number>(abonnement.annee_abonnement);
   const [selectedJourSemaine, setSelectedJourSemaine] = useState<number | null>(abonnement.jour_semaine || null);
   const [heure, setHeure] = useState(abonnement.heure_fixe || '');
+  const [duration, setDuration] = useState(String(abonnement.duree || 1.5));
   const [clientNom, setClientNom] = useState(abonnement.client_nom);
   const [clientTel, setClientTel] = useState(abonnement.client_tel || '');
   const [statut, setStatut] = useState<Abonnement['statut']>(abonnement.statut);
@@ -162,7 +163,7 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
     // Convertir l'heure en minutes pour une comparaison plus précise
     const [startHour, startMinute] = time.split(':').map(Number);
     const startTimeInMinutes = startHour * 60 + startMinute;
-    const durationInMinutes = 90; // 1.5 heures = 90 minutes
+    const durationInMinutes = parseFloat(duration) * 60; // Utiliser la durée sélectionnée
     const endTimeInMinutes = startTimeInMinutes + durationInMinutes;
 
     for (const reservation of otherReservations) {
@@ -214,6 +215,7 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
           annee_abonnement: selectedYear,
           jour_semaine: selectedJourSemaine,
           heure_fixe: heure,
+          duree: parseFloat(duration),
           client_nom: clientNom.trim(),
           client_tel: clientTel.trim() || null,
           statut: statut
@@ -286,6 +288,26 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
           ))}
         </select>
       </div>
+
+      {/* Durée pour tennis/padel */}
+      {selectedTerrainId && selectedTerrain?.type !== 'foot' && (
+        <div>
+          <Label htmlFor="duration">Durée de la séance *</Label>
+          <select
+            id="duration"
+            className="w-full border rounded-md p-2 h-9 mt-1"
+            value={duration}
+            onChange={e => setDuration(e.target.value)}
+            required
+          >
+            <option value="1">1 heure</option>
+            <option value="1.5">1h30</option>
+            <option value="2">2 heures</option>
+            <option value="2.5">2h30</option>
+            <option value="3">3 heures</option>
+          </select>
+        </div>
+      )}
 
       {/* Heure */}
       {selectedTerrainId && (

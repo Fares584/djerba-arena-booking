@@ -20,6 +20,7 @@ export type Database = {
           client_nom: string
           client_tel: string | null
           created_at: string | null
+          duree: number
           heure_fixe: string | null
           id: number
           jour_semaine: number | null
@@ -33,6 +34,7 @@ export type Database = {
           client_nom: string
           client_tel?: string | null
           created_at?: string | null
+          duree?: number
           heure_fixe?: string | null
           id?: number
           jour_semaine?: number | null
@@ -46,6 +48,7 @@ export type Database = {
           client_nom?: string
           client_tel?: string | null
           created_at?: string | null
+          duree?: number
           heure_fixe?: string | null
           id?: number
           jour_semaine?: number | null
@@ -393,16 +396,28 @@ export type Database = {
         Returns: undefined
       }
       generer_reservations_mensuelles: {
-        Args: {
-          p_abonnement_id: number
-          p_annee: number
-          p_client_nom: string
-          p_client_tel: string
-          p_heure: string
-          p_jour_semaine: number
-          p_mois: number
-          p_terrain_id: number
-        }
+        Args:
+          | {
+              p_abonnement_id: number
+              p_annee: number
+              p_client_nom: string
+              p_client_tel: string
+              p_duree?: number
+              p_heure: string
+              p_jour_semaine: number
+              p_mois: number
+              p_terrain_id: number
+            }
+          | {
+              p_abonnement_id: number
+              p_annee: number
+              p_client_nom: string
+              p_client_tel: string
+              p_heure: string
+              p_jour_semaine: number
+              p_mois: number
+              p_terrain_id: number
+            }
         Returns: undefined
       }
       has_role: {

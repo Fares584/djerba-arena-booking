@@ -54,6 +54,7 @@ export type Abonnement = {
   terrain_id?: number | null;
   jour_semaine?: number | null; // 0=Dimanche, 1=Lundi, etc.
   heure_fixe?: string | null; // Format HH:MM
+  duree?: number; // Durée en heures
 };
 
 export type AdminUser = {

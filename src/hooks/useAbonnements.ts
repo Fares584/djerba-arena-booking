@@ -81,7 +81,8 @@ export function useCreateAbonnement() {
             p_jour_semaine: abonnement.jour_semaine,
             p_heure: abonnement.heure_fixe,
             p_client_nom: abonnement.client_nom,
-            p_client_tel: abonnement.client_tel || ''
+            p_client_tel: abonnement.client_tel || '',
+            p_duree: abonnement.duree || 1.5
           });
 
           if (functionError) {
@@ -159,7 +160,8 @@ export function useUpdateAbonnement() {
             p_jour_semaine: updatedAbonnement.jour_semaine,
             p_heure: updatedAbonnement.heure_fixe,
             p_client_nom: updatedAbonnement.client_nom,
-            p_client_tel: updatedAbonnement.client_tel || ''
+            p_client_tel: updatedAbonnement.client_tel || '',
+            p_duree: updatedAbonnement.duree || 1.5
           });
 
           if (functionError) {
