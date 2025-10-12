@@ -241,6 +241,10 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
 
         if (error) {
           console.error("❌ Error creating reservation:", error);
+          // Vérifier si c'est une erreur de créneau déjà réservé
+          if (error.code === '23505' || error.message?.includes('déjà réservé')) {
+            throw new Error('Ce créneau horaire est déjà réservé. Veuillez choisir un autre créneau.');
+          }
           throw error;
         }
         
@@ -282,7 +286,12 @@ export function useCreateReservation(options?: { onSuccess?: () => void; isAdmin
     },
     onError: (error) => {
       console.error("❌ Reservation creation error:", error);
-      toast.error(error.message || "Erreur lors de la création de la réservation");
+      // Message spécifique pour les créneaux déjà réservés
+      if (error.message?.includes('déjà réservé')) {
+        toast.error("⚠️ Ce créneau est déjà réservé par un autre client. Veuillez choisir un autre horaire.");
+      } else {
+        toast.error(error.message || "Erreur lors de la création de la réservation");
+      }
     },
   });
 }
