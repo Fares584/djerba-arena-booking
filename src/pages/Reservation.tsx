@@ -120,7 +120,7 @@ const Reservation = () => {
     enabled: !!(selectedTerrainId && selectedDate)
   });
 
-  // Check if selected time slot is available
+  // Check if selected time slot is available with anti-fragmentation logic
   const isTimeSlotAvailable = (time: string): boolean => {
     if (!availability || !selectedTerrainId) return true;
     
@@ -130,7 +130,8 @@ const Reservation = () => {
     const startTime = timeHour + timeMinutes / 60;
     const endTime = startTime + effectiveDuration;
     
-    return !availability.some(reservation => {
+    // 1. Vérifier si le créneau est directement occupé
+    const isDirectlyOccupied = availability.some(reservation => {
       const resHour = parseInt(reservation.heure.split(':')[0]);
       const resMinutes = parseInt(reservation.heure.split(':')[1]);
       const resStart = resHour + resMinutes / 60;
@@ -138,6 +139,41 @@ const Reservation = () => {
       
       return !(endTime <= resStart || startTime >= resEnd);
     });
+    
+    if (isDirectlyOccupied) return false;
+    
+    // 2. Anti-fragmentation: vérifier si ce créneau créerait un trou inutilisable
+    // Trouver la prochaine réservation après ce créneau
+    const nextReservation = availability
+      .filter(reservation => {
+        const resHour = parseInt(reservation.heure.split(':')[0]);
+        const resMinutes = parseInt(reservation.heure.split(':')[1]);
+        const resStart = resHour + resMinutes / 60;
+        return resStart >= endTime;
+      })
+      .sort((a, b) => {
+        const aStart = parseInt(a.heure.split(':')[0]) + parseInt(a.heure.split(':')[1]) / 60;
+        const bStart = parseInt(b.heure.split(':')[0]) + parseInt(b.heure.split(':')[1]) / 60;
+        return aStart - bStart;
+      })[0];
+    
+    if (nextReservation) {
+      const nextResHour = parseInt(nextReservation.heure.split(':')[0]);
+      const nextResMinutes = parseInt(nextReservation.heure.split(':')[1]);
+      const nextResStart = nextResHour + nextResMinutes / 60;
+      
+      // Calculer le gap entre la fin de ce créneau et le début de la prochaine réservation
+      const gap = nextResStart - endTime;
+      
+      // Si le gap est inférieur à la durée minimale requise (effectiveDuration)
+      // ET que le gap n'est pas exactement 0 (pas de collision directe)
+      // alors ce créneau créerait un trou inutilisable
+      if (gap > 0 && gap < effectiveDuration) {
+        return false; // Masquer ce créneau pour éviter la fragmentation
+      }
+    }
+    
+    return true;
   };
 
   // Calcul du prix total avec gestion correcte pour les terrains de foot
