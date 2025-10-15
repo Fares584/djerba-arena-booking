@@ -67,6 +67,7 @@ function getHeaderColorByType(type: string): string {
 }
 
 // Fonction pour vérifier si un créneau est disponible pour une réservation de foot
+// AVEC logique anti-fragmentation pour éviter les trous de 30 minutes
 function isFootTimeSlotAvailableForBooking(terrain: Terrain, day: Date, timeSlot: string, reservations: Reservation[]): boolean {
   if (terrain.type !== 'foot' || !reservations) return true;
   
@@ -86,16 +87,32 @@ function isFootTimeSlotAvailableForBooking(terrain: Terrain, day: Date, timeSlot
       continue;
     }
     
+    if (reservation.statut === 'annulee') continue;
+    
     const [resHour, resMinute] = reservation.heure.split(':').map(Number);
     const resStartTimeInMinutes = resHour * 60 + resMinute;
     const resDurationInMinutes = reservation.duree * 60;
     const resEndTimeInMinutes = resStartTimeInMinutes + resDurationInMinutes;
     
-    // Vérifier s'il y a chevauchement
-    // Il y a chevauchement si:
-    // - Notre début est avant leur fin ET notre fin est après leur début
+    // Vérifier s'il y a chevauchement direct
     if (slotTimeInMinutes < resEndTimeInMinutes && proposedEndTime > resStartTimeInMinutes) {
       return false; // Conflit détecté
+    }
+    
+    // LOGIQUE ANTI-FRAGMENTATION: Vérifier si ce créneau créerait un trou de 30 minutes
+    // Cas 1: Si une réservation existe et qu'elle se termine 30 minutes AVANT notre début proposé
+    // Exemple: Réservation 20:30-22:00, si on veut réserver à 18:30, ça laisse 19:00-20:00 libre (OK, 1h)
+    // Mais si on veut réserver à 19:00, ça laisse 20:00-20:30 libre (PAS OK, seulement 30min)
+    const gapBefore = slotTimeInMinutes - resEndTimeInMinutes;
+    if (gapBefore === 30) {
+      return false; // Trou de 30 minutes avant la réservation
+    }
+    
+    // Cas 2: Si une réservation existe et qu'elle commence 30 minutes APRÈS notre fin proposée
+    // Exemple: Réservation à 20:30, si on réserve à 18:30 (fin 20:00), ça laisse 20:00-20:30 libre (PAS OK)
+    const gapAfter = resStartTimeInMinutes - proposedEndTime;
+    if (gapAfter === 30) {
+      return false; // Trou de 30 minutes après notre réservation
     }
   }
   
