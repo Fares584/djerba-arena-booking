@@ -30,6 +30,8 @@ const QuickReservationForm = ({
   duration,
   onSuccess
 }: QuickReservationFormProps) => {
+  // Note: Ce formulaire ne nécessite pas la logique anti-fragmentation car il utilise 
+  // un créneau pré-sélectionné depuis le planning, qui a déjà été validé
   const [formData, setFormData] = useState({
     nom_client: '',
     tel: ''

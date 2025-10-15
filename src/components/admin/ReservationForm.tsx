@@ -94,7 +94,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     return nightTimeSetting?.setting_value || '19:00';
   };
 
-  // Vérifier si un créneau horaire est disponible avec logique de chevauchement
+  // Vérifier si un créneau horaire est disponible avec logique de chevauchement et anti-fragmentation
   const isTimeSlotAvailable = (time: string) => {
     if (!formData.terrain_id || !time || !formData.date) return false;
 
@@ -108,7 +108,7 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     const duration = selectedTerrain?.type === 'foot' ? 1.5 : parseFloat(formData.duree || '1');
     const endHour = startHour + duration;
 
-    // Vérifier les conflits avec les réservations existantes
+    // 1. Vérifier les conflits directs avec les réservations existantes
     const reservationConflict = reservations.some((res) => {
       if (res.terrain_id !== formData.terrain_id || res.date !== formData.date || res.statut === 'annulee') {
         return false;
@@ -121,7 +121,9 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       return startHour < resEndHour && resStartHour < endHour;
     });
 
-    // Vérifier les conflits d'abonnements avec logique de chevauchement
+    if (reservationConflict) return false;
+
+    // 2. Vérifier les conflits d'abonnements avec logique de chevauchement
     const selectedDate = new Date(formData.date);
     const selectedDayOfWeek = selectedDate.getDay();
     const selectedMonth = selectedDate.getMonth() + 1;
@@ -140,14 +142,57 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       }
       
       const aboStartHour = timeToDecimal(abo.heure_fixe);
-      const aboDuration = 1.5; // Les abonnements sont toujours pour 1h30 (foot)
+      const aboDuration = abo.duree || 1.5;
       const aboEndHour = aboStartHour + aboDuration;
       
       // Vérifier le chevauchement : deux créneaux se chevauchent si startA < endB && startB < endA
       return startHour < aboEndHour && aboStartHour < endHour;
     });
 
-    return !reservationConflict && !abonnementConflict;
+    if (abonnementConflict) return false;
+
+    // 3. Anti-fragmentation: vérifier si ce créneau créerait un trou inutilisable
+    // Combiner toutes les réservations et abonnements pour cette date et ce terrain
+    const allOccupiedSlots = [
+      ...reservations
+        .filter(res => 
+          res.terrain_id === formData.terrain_id && 
+          res.date === formData.date && 
+          res.statut !== 'annulee'
+        )
+        .map(res => ({
+          start: timeToDecimal(res.heure),
+          end: timeToDecimal(res.heure) + res.duree
+        })),
+      ...abonnements
+        .filter(abo => 
+          abo.terrain_id === formData.terrain_id &&
+          abo.statut === 'actif' &&
+          abo.jour_semaine === selectedDayOfWeek &&
+          abo.mois_abonnement === selectedMonth &&
+          abo.annee_abonnement === selectedYear &&
+          abo.heure_fixe
+        )
+        .map(abo => ({
+          start: timeToDecimal(abo.heure_fixe!),
+          end: timeToDecimal(abo.heure_fixe!) + (abo.duree || 1.5)
+        }))
+    ].sort((a, b) => a.start - b.start);
+
+    // Trouver la prochaine réservation après ce créneau
+    const nextReservation = allOccupiedSlots.find(slot => slot.start >= endHour);
+    
+    if (nextReservation) {
+      const gap = nextReservation.start - endHour;
+      
+      // Si le gap est inférieur à la durée minimale requise ET que le gap n'est pas exactement 0
+      // alors ce créneau créerait un trou inutilisable
+      if (gap > 0 && gap < duration) {
+        return false; // Masquer ce créneau pour éviter la fragmentation
+      }
+    }
+
+    return true;
   };
 
   // Obtenir la durée effective

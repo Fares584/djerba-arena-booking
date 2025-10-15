@@ -175,32 +175,114 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
   const isTimeSlotAvailable = (time: string) => {
     if (!selectedTerrainId || !time || selectedJourSemaine === null) return false;
 
-    // Vérifier les conflits avec les réservations existantes pour ce mois
+    // Anti-fragmentation seulement pour les terrains de foot
+    const applyAntiFrag = selectedTerrain?.type === 'foot';
+
+    // Convertir l'heure en nombre décimal (19:30 -> 19.5)
+    const timeToDecimal = (timeStr: string) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours + minutes / 60;
+    };
+
+    const startHour = timeToDecimal(time);
+    const effectiveDuration = parseFloat(duration);
+    const endHour = startHour + effectiveDuration;
+
+    // 1. Vérifier les conflits directs avec les réservations existantes pour ce mois
     const reservationConflict = reservations.some(res => {
       const resDate = new Date(res.date);
       const resMonth = resDate.getMonth() + 1;
       const resYear = resDate.getFullYear();
       const resDay = resDate.getDay();
       
-      return res.terrain_id === selectedTerrainId &&
-        res.heure === time &&
-        resMonth === selectedMonth &&
-        resYear === selectedYear &&
-        resDay === selectedJourSemaine &&
-        res.statut !== 'annulee';
+      if (res.terrain_id !== selectedTerrainId ||
+          resMonth !== selectedMonth ||
+          resYear !== selectedYear ||
+          resDay !== selectedJourSemaine ||
+          res.statut === 'annulee') {
+        return false;
+      }
+
+      const resStartHour = timeToDecimal(res.heure);
+      const resEndHour = resStartHour + res.duree;
+      
+      // Vérifier le chevauchement
+      return startHour < resEndHour && resStartHour < endHour;
     });
 
-    // Vérifier les conflits avec les abonnements existants
-    const abonnementConflict = abonnements.some(abo => 
-      abo.terrain_id === selectedTerrainId &&
-      abo.heure_fixe === time &&
-      abo.mois_abonnement === selectedMonth &&
-      abo.annee_abonnement === selectedYear &&
-      abo.jour_semaine === selectedJourSemaine &&
-      abo.statut === 'actif'
-    );
+    if (reservationConflict) return false;
 
-    return !reservationConflict && !abonnementConflict;
+    // 2. Vérifier les conflits avec les abonnements existants
+    const abonnementConflict = abonnements.some(abo => {
+      if (abo.terrain_id !== selectedTerrainId ||
+          abo.mois_abonnement !== selectedMonth ||
+          abo.annee_abonnement !== selectedYear ||
+          abo.jour_semaine !== selectedJourSemaine ||
+          abo.statut !== 'actif' ||
+          !abo.heure_fixe) {
+        return false;
+      }
+
+      const aboStartHour = timeToDecimal(abo.heure_fixe);
+      const aboDuration = abo.duree || 1.5;
+      const aboEndHour = aboStartHour + aboDuration;
+      
+      // Vérifier le chevauchement
+      return startHour < aboEndHour && aboStartHour < endHour;
+    });
+
+    if (abonnementConflict) return false;
+
+    // 3. Anti-fragmentation (seulement pour les terrains de foot)
+    if (applyAntiFrag) {
+      // Combiner toutes les réservations et abonnements pour ce jour
+      const allOccupiedSlots = [
+        ...reservations
+          .filter(res => {
+            const resDate = new Date(res.date);
+            const resMonth = resDate.getMonth() + 1;
+            const resYear = resDate.getFullYear();
+            const resDay = resDate.getDay();
+            return res.terrain_id === selectedTerrainId &&
+              resMonth === selectedMonth &&
+              resYear === selectedYear &&
+              resDay === selectedJourSemaine &&
+              res.statut !== 'annulee';
+          })
+          .map(res => ({
+            start: timeToDecimal(res.heure),
+            end: timeToDecimal(res.heure) + res.duree
+          })),
+        ...abonnements
+          .filter(abo => 
+            abo.terrain_id === selectedTerrainId &&
+            abo.mois_abonnement === selectedMonth &&
+            abo.annee_abonnement === selectedYear &&
+            abo.jour_semaine === selectedJourSemaine &&
+            abo.statut === 'actif' &&
+            abo.heure_fixe
+          )
+          .map(abo => ({
+            start: timeToDecimal(abo.heure_fixe!),
+            end: timeToDecimal(abo.heure_fixe!) + (abo.duree || 1.5)
+          }))
+      ].sort((a, b) => a.start - b.start);
+
+      // Trouver la prochaine réservation après ce créneau
+      const nextReservation = allOccupiedSlots.find(slot => slot.start >= endHour);
+      
+      if (nextReservation) {
+        const gap = nextReservation.start - endHour;
+        
+        // Si le gap est inférieur à la durée minimale requise ET que le gap n'est pas exactement 0
+        // alors ce créneau créerait un trou inutilisable
+        if (gap > 0 && gap < effectiveDuration) {
+          return false; // Masquer ce créneau pour éviter la fragmentation
+        }
+      }
+    }
+
+    return true;
   };
 
   const isValid = 
