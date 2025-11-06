@@ -142,43 +142,34 @@ const Reservation = () => {
     
     if (isDirectlyOccupied) return false;
     
-    // 2. Anti-fragmentation: vérifier si ce créneau créerait un gap de 30 minutes
-    // Trouver le prochain créneau DISPONIBLE dans la liste des créneaux possibles
-    const nextAvailableSlot = timeSlotsForSelectedTerrain.find(slot => {
-      const slotHour = parseInt(slot.split(':')[0]);
-      const slotMinutes = parseInt(slot.split(':')[1]);
-      const slotTime = slotHour + slotMinutes / 60;
-      
-      // Le créneau doit être après la fin de notre réservation
-      if (slotTime <= endTime) return false;
-      
-      // Vérifier si ce créneau est libre (pas de réservation qui le bloque)
-      const isSlotFree = !availability.some(reservation => {
+    // 2. Anti-fragmentation: vérifier si ce créneau créerait un trou inutilisable
+    // Trouver la prochaine réservation après ce créneau
+    const nextReservation = availability
+      .filter(reservation => {
         const resHour = parseInt(reservation.heure.split(':')[0]);
         const resMinutes = parseInt(reservation.heure.split(':')[1]);
         const resStart = resHour + resMinutes / 60;
-        const resEnd = resStart + reservation.duree;
-        
-        // Le créneau est bloqué si une réservation commence avant ou pendant ce créneau
-        // et se termine après le début du créneau
-        return resStart < slotTime + effectiveDuration && resEnd > slotTime;
-      });
-      
-      return isSlotFree;
-    });
+        return resStart >= endTime;
+      })
+      .sort((a, b) => {
+        const aStart = parseInt(a.heure.split(':')[0]) + parseInt(a.heure.split(':')[1]) / 60;
+        const bStart = parseInt(b.heure.split(':')[0]) + parseInt(b.heure.split(':')[1]) / 60;
+        return aStart - bStart;
+      })[0];
     
-    // Si on trouve un prochain créneau disponible
-    if (nextAvailableSlot) {
-      const nextSlotHour = parseInt(nextAvailableSlot.split(':')[0]);
-      const nextSlotMinutes = parseInt(nextAvailableSlot.split(':')[1]);
-      const nextSlotTime = nextSlotHour + nextSlotMinutes / 60;
+    if (nextReservation) {
+      const nextResHour = parseInt(nextReservation.heure.split(':')[0]);
+      const nextResMinutes = parseInt(nextReservation.heure.split(':')[1]);
+      const nextResStart = nextResHour + nextResMinutes / 60;
       
-      // Calculer le gap entre la fin de notre réservation et le prochain créneau disponible
-      const gap = nextSlotTime - endTime;
+      // Calculer le gap entre la fin de ce créneau et le début de la prochaine réservation
+      const gap = nextResStart - endTime;
       
-      // Si le gap est exactement de 30 minutes (0.5 heures), bloquer ce créneau
-      if (gap === 0.5) {
-        return false;
+      // Si le gap est inférieur à la durée minimale requise (effectiveDuration)
+      // ET que le gap n'est pas exactement 0 (pas de collision directe)
+      // alors ce créneau créerait un trou inutilisable
+      if (gap > 0 && gap < effectiveDuration) {
+        return false; // Masquer ce créneau pour éviter la fragmentation
       }
     }
     

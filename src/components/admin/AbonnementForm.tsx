@@ -268,29 +268,16 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
           }))
       ].sort((a, b) => a.start - b.start);
 
-      // Anti-fragmentation améliorée: trouver le prochain créneau DISPONIBLE dans la liste
-      const nextAvailableSlot = timeSlotsForSelectedTerrain.find(slot => {
-        const slotTime = timeToDecimal(slot);
-        
-        // Le créneau doit être après la fin de notre réservation
-        if (slotTime <= endHour) return false;
-        
-        // Vérifier si ce créneau est libre (pas occupé par une réservation/abonnement)
-        const isSlotFree = !allOccupiedSlots.some(occupied => {
-          return occupied.start < slotTime + effectiveDuration && occupied.end > slotTime;
-        });
-        
-        return isSlotFree;
-      });
+      // Trouver la prochaine réservation après ce créneau
+      const nextReservation = allOccupiedSlots.find(slot => slot.start >= endHour);
       
-      // Si on trouve un prochain créneau disponible
-      if (nextAvailableSlot) {
-        const nextSlotTime = timeToDecimal(nextAvailableSlot);
-        const gap = nextSlotTime - endHour;
+      if (nextReservation) {
+        const gap = nextReservation.start - endHour;
         
-        // Si le gap est exactement de 30 minutes (0.5 heures), bloquer ce créneau
-        if (gap === 0.5) {
-          return false;
+        // Si le gap est inférieur à la durée minimale requise ET que le gap n'est pas exactement 0
+        // alors ce créneau créerait un trou inutilisable
+        if (gap > 0 && gap < effectiveDuration) {
+          return false; // Masquer ce créneau pour éviter la fragmentation
         }
       }
     }
