@@ -280,25 +280,6 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
           return false; // Masquer ce créneau pour éviter la fragmentation
         }
       }
-
-      // 4. Anti-fragmentation avec les créneaux horaires disponibles
-      // Vérifier si ce créneau créerait un gap de 30 min avant le prochain créneau disponible
-      const nextAvailableSlot = timeSlotsForSelectedTerrain.find(slot => {
-        const slotStart = timeToDecimal(slot);
-        return slotStart > endHour;
-      });
-      
-      if (nextAvailableSlot) {
-        const nextSlotStart = timeToDecimal(nextAvailableSlot);
-        
-        // Calculer le gap entre la fin de ce créneau et le prochain créneau disponible
-        const gapToNextSlot = nextSlotStart - endHour;
-        
-        // Si le gap est exactement 0.5h (30 minutes), masquer ce créneau
-        if (gapToNextSlot === 0.5) {
-          return false;
-        }
-      }
     }
 
     return true;
