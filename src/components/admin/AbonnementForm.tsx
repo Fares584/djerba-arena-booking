@@ -266,18 +266,37 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
             start: timeToDecimal(abo.heure_fixe!),
             end: timeToDecimal(abo.heure_fixe!) + (abo.duree || 1.5)
           }))
-      ].sort((a, b) => a.start - b.start);
+      ];
 
-      // Trouver la prochaine réservation après ce créneau
-      const nextReservation = allOccupiedSlots.find(slot => slot.start >= endHour);
+      // Fonction pour vérifier si un créneau donné est occupé
+      const isSlotOccupied = (slotStart: number) => {
+        return allOccupiedSlots.some(occupied => 
+          slotStart < occupied.end && slotStart >= occupied.start
+        );
+      };
       
-      if (nextReservation) {
-        const gap = nextReservation.start - endHour;
+      // Chercher le prochain créneau disponible après la fin de notre réservation proposée
+      let nextAvailableSlot: number | null = null;
+      for (const slot of timeSlotsForSelectedTerrain) {
+        const slotStart = timeToDecimal(slot);
         
-        // Si le gap est inférieur à la durée minimale requise ET que le gap n'est pas exactement 0
-        // alors ce créneau créerait un trou inutilisable
-        if (gap > 0 && gap < effectiveDuration) {
-          return false; // Masquer ce créneau pour éviter la fragmentation
+        // Si ce créneau commence après ou à la fin de notre réservation proposée
+        if (slotStart >= endHour) {
+          // Vérifier s'il est disponible (pas occupé)
+          if (!isSlotOccupied(slotStart)) {
+            nextAvailableSlot = slotStart;
+            break; // On a trouvé le premier créneau disponible
+          }
+        }
+      }
+      
+      // Si on a trouvé un prochain créneau disponible, vérifier le gap
+      if (nextAvailableSlot !== null) {
+        const gap = nextAvailableSlot - endHour;
+        
+        // Si le gap est exactement 0.5h (30 minutes), bloquer ce créneau
+        if (gap === 0.5) {
+          return false;
         }
       }
     }
