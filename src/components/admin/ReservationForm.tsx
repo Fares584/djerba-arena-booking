@@ -152,43 +152,55 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     if (abonnementConflict) return false;
 
     // 3. Anti-fragmentation: vérifier si ce créneau créerait un trou inutilisable
-    // Combiner toutes les réservations et abonnements pour cette date et ce terrain
-    const allOccupiedSlots = [
-      ...reservations
-        .filter(res => 
-          res.terrain_id === formData.terrain_id && 
-          res.date === formData.date && 
-          res.statut !== 'annulee'
-        )
-        .map(res => ({
-          start: timeToDecimal(res.heure),
-          end: timeToDecimal(res.heure) + res.duree
-        })),
-      ...abonnements
-        .filter(abo => 
-          abo.terrain_id === formData.terrain_id &&
-          abo.statut === 'actif' &&
-          abo.jour_semaine === selectedDayOfWeek &&
-          abo.mois_abonnement === selectedMonth &&
-          abo.annee_abonnement === selectedYear &&
-          abo.heure_fixe
-        )
-        .map(abo => ({
-          start: timeToDecimal(abo.heure_fixe!),
-          end: timeToDecimal(abo.heure_fixe!) + (abo.duree || 1.5)
-        }))
-    ].sort((a, b) => a.start - b.start);
+    // Appliquer seulement pour les terrains de foot
+    if (selectedTerrain?.type === 'foot') {
+      // Combiner toutes les réservations et abonnements pour cette date et ce terrain
+      const allOccupiedSlots = [
+        ...reservations
+          .filter(res => 
+            res.terrain_id === formData.terrain_id && 
+            res.date === formData.date && 
+            res.statut !== 'annulee'
+          )
+          .map(res => ({
+            start: timeToDecimal(res.heure),
+            end: timeToDecimal(res.heure) + res.duree
+          })),
+        ...abonnements
+          .filter(abo => 
+            abo.terrain_id === formData.terrain_id &&
+            abo.statut === 'actif' &&
+            abo.jour_semaine === selectedDayOfWeek &&
+            abo.mois_abonnement === selectedMonth &&
+            abo.annee_abonnement === selectedYear &&
+            abo.heure_fixe
+          )
+          .map(abo => ({
+            start: timeToDecimal(abo.heure_fixe!),
+            end: timeToDecimal(abo.heure_fixe!) + (abo.duree || 1.5)
+          }))
+      ].sort((a, b) => a.start - b.start);
 
-    // Trouver la prochaine réservation après ce créneau
-    const nextReservation = allOccupiedSlots.find(slot => slot.start >= endHour);
-    
-    if (nextReservation) {
-      const gap = nextReservation.start - endHour;
-      
-      // Si le gap est inférieur à la durée minimale requise ET que le gap n'est pas exactement 0
-      // alors ce créneau créerait un trou inutilisable
-      if (gap > 0 && gap < duration) {
-        return false; // Masquer ce créneau pour éviter la fragmentation
+      // Fonction pour vérifier si un créneau est occupé
+      const isSlotOccupied = (slotTime: number) => {
+        return allOccupiedSlots.some(slot => 
+          slotTime >= slot.start && slotTime < slot.end
+        );
+      };
+
+      // Trouver le prochain créneau DISPONIBLE après ma fin de réservation
+      const allTimeSlots = timeSlotsForSelectedTerrain.map(t => timeToDecimal(t));
+      const nextAvailableSlot = allTimeSlots.find(slotTime => 
+        slotTime >= endHour && !isSlotOccupied(slotTime)
+      );
+
+      if (nextAvailableSlot !== undefined) {
+        const gapToNextAvailable = nextAvailableSlot - endHour;
+        
+        // Si le gap est exactement 0.5h (30 minutes), bloquer ce créneau
+        if (gapToNextAvailable === 0.5) {
+          return false; // Masquer ce créneau pour éviter un gap de 30 min
+        }
       }
     }
 

@@ -143,33 +143,50 @@ const Reservation = () => {
     if (isDirectlyOccupied) return false;
     
     // 2. Anti-fragmentation: vérifier si ce créneau créerait un trou inutilisable
-    // Trouver la prochaine réservation après ce créneau
-    const nextReservation = availability
-      .filter(reservation => {
+    // Appliquer seulement pour les terrains de foot
+    if (selectedTerrain?.type === 'foot') {
+      // Créer une liste de tous les créneaux occupés
+      const allOccupiedSlots = availability.map(reservation => {
         const resHour = parseInt(reservation.heure.split(':')[0]);
         const resMinutes = parseInt(reservation.heure.split(':')[1]);
-        const resStart = resHour + resMinutes / 60;
-        return resStart >= endTime;
-      })
-      .sort((a, b) => {
-        const aStart = parseInt(a.heure.split(':')[0]) + parseInt(a.heure.split(':')[1]) / 60;
-        const bStart = parseInt(b.heure.split(':')[0]) + parseInt(b.heure.split(':')[1]) / 60;
-        return aStart - bStart;
-      })[0];
-    
-    if (nextReservation) {
-      const nextResHour = parseInt(nextReservation.heure.split(':')[0]);
-      const nextResMinutes = parseInt(nextReservation.heure.split(':')[1]);
-      const nextResStart = nextResHour + nextResMinutes / 60;
+        return {
+          start: resHour + resMinutes / 60,
+          end: resHour + resMinutes / 60 + reservation.duree
+        };
+      }).sort((a, b) => a.start - b.start);
+
+      // Fonction pour vérifier si un créneau est occupé
+      const isSlotOccupied = (slotTime: number) => {
+        return allOccupiedSlots.some(slot => 
+          slotTime >= slot.start && slotTime < slot.end
+        );
+      };
+
+      // Générer tous les créneaux horaires possibles pour le foot
+      const generateAllFootSlots = () => {
+        const slots: number[] = [];
+        let currentTime = 17; // Début à 17:00
+        while (currentTime <= 23.5) { // Jusqu'à 23:30
+          slots.push(currentTime);
+          currentTime += 0.5; // Incrément de 30 minutes
+        }
+        return slots;
+      };
+
+      const allTimeSlots = generateAllFootSlots();
       
-      // Calculer le gap entre la fin de ce créneau et le début de la prochaine réservation
-      const gap = nextResStart - endTime;
-      
-      // Si le gap est inférieur à la durée minimale requise (effectiveDuration)
-      // ET que le gap n'est pas exactement 0 (pas de collision directe)
-      // alors ce créneau créerait un trou inutilisable
-      if (gap > 0 && gap < effectiveDuration) {
-        return false; // Masquer ce créneau pour éviter la fragmentation
+      // Trouver le prochain créneau DISPONIBLE après ma fin de réservation
+      const nextAvailableSlot = allTimeSlots.find(slotTime => 
+        slotTime >= endTime && !isSlotOccupied(slotTime)
+      );
+
+      if (nextAvailableSlot !== undefined) {
+        const gapToNextAvailable = nextAvailableSlot - endTime;
+        
+        // Si le gap est exactement 0.5h (30 minutes), bloquer ce créneau
+        if (gapToNextAvailable === 0.5) {
+          return false; // Masquer ce créneau pour éviter un gap de 30 min
+        }
       }
     }
     
