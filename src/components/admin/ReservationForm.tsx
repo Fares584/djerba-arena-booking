@@ -151,62 +151,43 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
 
     if (abonnementConflict) return false;
 
-    // 3. Anti-fragmentation: vérifier si ce créneau créerait un gap de 30 minutes avec le prochain créneau DISPONIBLE
+    // 3. Anti-fragmentation: vérifier si ce créneau créerait un trou inutilisable
+    // Combiner toutes les réservations et abonnements pour cette date et ce terrain
+    const allOccupiedSlots = [
+      ...reservations
+        .filter(res => 
+          res.terrain_id === formData.terrain_id && 
+          res.date === formData.date && 
+          res.statut !== 'annulee'
+        )
+        .map(res => ({
+          start: timeToDecimal(res.heure),
+          end: timeToDecimal(res.heure) + res.duree
+        })),
+      ...abonnements
+        .filter(abo => 
+          abo.terrain_id === formData.terrain_id &&
+          abo.statut === 'actif' &&
+          abo.jour_semaine === selectedDayOfWeek &&
+          abo.mois_abonnement === selectedMonth &&
+          abo.annee_abonnement === selectedYear &&
+          abo.heure_fixe
+        )
+        .map(abo => ({
+          start: timeToDecimal(abo.heure_fixe!),
+          end: timeToDecimal(abo.heure_fixe!) + (abo.duree || 1.5)
+        }))
+    ].sort((a, b) => a.start - b.start);
+
+    // Trouver la prochaine réservation après ce créneau
+    const nextReservation = allOccupiedSlots.find(slot => slot.start >= endHour);
     
-    // Fonction helper pour vérifier si un créneau horaire spécifique est libre
-    const isSlotFree = (slotTime: string): boolean => {
-      const slotStart = timeToDecimal(slotTime);
-      const slotEnd = slotStart + duration;
+    if (nextReservation) {
+      const gap = nextReservation.start - endHour;
       
-      // Vérifier conflits avec réservations
-      const hasReservationConflict = reservations.some((res) => {
-        if (res.terrain_id !== formData.terrain_id || res.date !== formData.date || res.statut === 'annulee') {
-          return false;
-        }
-        const resStart = timeToDecimal(res.heure);
-        const resEnd = resStart + res.duree;
-        return slotStart < resEnd && resStart < slotEnd;
-      });
-      
-      if (hasReservationConflict) return false;
-      
-      // Vérifier conflits avec abonnements
-      const hasAbonnementConflict = abonnements.some((abo) => {
-        if (
-          abo.terrain_id !== formData.terrain_id ||
-          abo.statut !== 'actif' ||
-          abo.jour_semaine !== selectedDayOfWeek ||
-          abo.mois_abonnement !== selectedMonth ||
-          abo.annee_abonnement !== selectedYear ||
-          !abo.heure_fixe
-        ) {
-          return false;
-        }
-        const aboStart = timeToDecimal(abo.heure_fixe);
-        const aboEnd = aboStart + (abo.duree || 1.5);
-        return slotStart < aboEnd && aboStart < slotEnd;
-      });
-      
-      return !hasAbonnementConflict;
-    };
-    
-    // Trouver le prochain créneau DISPONIBLE après ce créneau
-    const nextAvailableSlot = timeSlotsForSelectedTerrain.find(slot => {
-      const slotStart = timeToDecimal(slot);
-      
-      // Le créneau doit être après la fin du créneau actuel
-      if (slotStart < endHour) return false;
-      
-      // Le créneau doit être libre
-      return isSlotFree(slot);
-    });
-    
-    if (nextAvailableSlot) {
-      const nextSlotStart = timeToDecimal(nextAvailableSlot);
-      const gap = nextSlotStart - endHour;
-      
-      // Si le gap est exactement 0.5h (30 minutes), bloquer ce créneau
-      if (gap === 0.5) {
+      // Si le gap est inférieur à la durée minimale requise ET que le gap n'est pas exactement 0
+      // alors ce créneau créerait un trou inutilisable
+      if (gap > 0 && gap < duration) {
         return false; // Masquer ce créneau pour éviter la fragmentation
       }
     }
