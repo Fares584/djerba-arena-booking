@@ -235,48 +235,68 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
 
     // 3. Anti-fragmentation (seulement pour les terrains de foot)
     if (applyAntiFrag) {
-      // Combiner toutes les réservations et abonnements pour ce jour
-      const allOccupiedSlots = [
-        ...reservations
-          .filter(res => {
-            const resDate = new Date(res.date);
-            const resMonth = resDate.getMonth() + 1;
-            const resYear = resDate.getFullYear();
-            const resDay = resDate.getDay();
-            return res.terrain_id === selectedTerrainId &&
-              resMonth === selectedMonth &&
-              resYear === selectedYear &&
-              resDay === selectedJourSemaine &&
-              res.statut !== 'annulee';
-          })
-          .map(res => ({
-            start: timeToDecimal(res.heure),
-            end: timeToDecimal(res.heure) + res.duree
-          })),
-        ...abonnements
-          .filter(abo => 
-            abo.terrain_id === selectedTerrainId &&
-            abo.mois_abonnement === selectedMonth &&
-            abo.annee_abonnement === selectedYear &&
-            abo.jour_semaine === selectedJourSemaine &&
-            abo.statut === 'actif' &&
-            abo.heure_fixe
-          )
-          .map(abo => ({
-            start: timeToDecimal(abo.heure_fixe!),
-            end: timeToDecimal(abo.heure_fixe!) + (abo.duree || 1.5)
-          }))
-      ].sort((a, b) => a.start - b.start);
-
-      // Trouver la prochaine réservation après ce créneau
-      const nextReservation = allOccupiedSlots.find(slot => slot.start >= endHour);
-      
-      if (nextReservation) {
-        const gap = nextReservation.start - endHour;
+      // Fonction helper pour vérifier si un créneau horaire spécifique est libre
+      const isSlotFree = (slotTime: string): boolean => {
+        const slotStart = timeToDecimal(slotTime);
+        const slotEnd = slotStart + effectiveDuration;
         
-        // Si le gap est inférieur à la durée minimale requise ET que le gap n'est pas exactement 0
-        // alors ce créneau créerait un trou inutilisable
-        if (gap > 0 && gap < effectiveDuration) {
+        // Vérifier conflits avec réservations
+        const hasReservationConflict = reservations.some(res => {
+          const resDate = new Date(res.date);
+          const resMonth = resDate.getMonth() + 1;
+          const resYear = resDate.getFullYear();
+          const resDay = resDate.getDay();
+          
+          if (res.terrain_id !== selectedTerrainId ||
+              resMonth !== selectedMonth ||
+              resYear !== selectedYear ||
+              resDay !== selectedJourSemaine ||
+              res.statut === 'annulee') {
+            return false;
+          }
+          
+          const resStart = timeToDecimal(res.heure);
+          const resEnd = resStart + res.duree;
+          return slotStart < resEnd && resStart < slotEnd;
+        });
+        
+        if (hasReservationConflict) return false;
+        
+        // Vérifier conflits avec abonnements
+        const hasAbonnementConflict = abonnements.some(abo => {
+          if (abo.terrain_id !== selectedTerrainId ||
+              abo.mois_abonnement !== selectedMonth ||
+              abo.annee_abonnement !== selectedYear ||
+              abo.jour_semaine !== selectedJourSemaine ||
+              abo.statut !== 'actif' ||
+              !abo.heure_fixe) {
+            return false;
+          }
+          const aboStart = timeToDecimal(abo.heure_fixe);
+          const aboEnd = aboStart + (abo.duree || 1.5);
+          return slotStart < aboEnd && aboStart < slotEnd;
+        });
+        
+        return !hasAbonnementConflict;
+      };
+      
+      // Trouver le prochain créneau DISPONIBLE après ce créneau
+      const nextAvailableSlot = timeSlotsForSelectedTerrain.find(slot => {
+        const slotStart = timeToDecimal(slot);
+        
+        // Le créneau doit être après la fin du créneau actuel
+        if (slotStart < endHour) return false;
+        
+        // Le créneau doit être libre
+        return isSlotFree(slot);
+      });
+      
+      if (nextAvailableSlot) {
+        const nextSlotStart = timeToDecimal(nextAvailableSlot);
+        const gap = nextSlotStart - endHour;
+        
+        // Si le gap est exactement 0.5h (30 minutes), bloquer ce créneau
+        if (gap === 0.5) {
           return false; // Masquer ce créneau pour éviter la fragmentation
         }
       }

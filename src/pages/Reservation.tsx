@@ -142,33 +142,49 @@ const Reservation = () => {
     
     if (isDirectlyOccupied) return false;
     
-    // 2. Anti-fragmentation: vérifier si ce créneau créerait un trou inutilisable
-    // Trouver la prochaine réservation après ce créneau
-    const nextReservation = availability
-      .filter(reservation => {
+    // 2. Anti-fragmentation: vérifier si ce créneau créerait un gap de 30 minutes
+    // avec le prochain créneau DISPONIBLE (pas seulement la prochaine réservation)
+    
+    // Fonction helper pour vérifier si un créneau horaire est libre
+    const isSlotFree = (slotTime: string): boolean => {
+      const slotHour = parseInt(slotTime.split(':')[0]);
+      const slotMinutes = parseInt(slotTime.split(':')[1]);
+      const slotStart = slotHour + slotMinutes / 60;
+      const slotEnd = slotStart + effectiveDuration;
+      
+      return !availability.some(reservation => {
         const resHour = parseInt(reservation.heure.split(':')[0]);
         const resMinutes = parseInt(reservation.heure.split(':')[1]);
         const resStart = resHour + resMinutes / 60;
-        return resStart >= endTime;
-      })
-      .sort((a, b) => {
-        const aStart = parseInt(a.heure.split(':')[0]) + parseInt(a.heure.split(':')[1]) / 60;
-        const bStart = parseInt(b.heure.split(':')[0]) + parseInt(b.heure.split(':')[1]) / 60;
-        return aStart - bStart;
-      })[0];
+        const resEnd = resStart + reservation.duree;
+        
+        return !(slotEnd <= resStart || slotStart >= resEnd);
+      });
+    };
     
-    if (nextReservation) {
-      const nextResHour = parseInt(nextReservation.heure.split(':')[0]);
-      const nextResMinutes = parseInt(nextReservation.heure.split(':')[1]);
-      const nextResStart = nextResHour + nextResMinutes / 60;
+    // Trouver le prochain créneau DISPONIBLE après ce créneau
+    const nextAvailableSlot = timeSlotsForSelectedTerrain.find(slot => {
+      const slotHour = parseInt(slot.split(':')[0]);
+      const slotMinutes = parseInt(slot.split(':')[1]);
+      const slotStart = slotHour + slotMinutes / 60;
       
-      // Calculer le gap entre la fin de ce créneau et le début de la prochaine réservation
-      const gap = nextResStart - endTime;
+      // Le créneau doit être après la fin du créneau actuel
+      if (slotStart < endTime) return false;
       
-      // Si le gap est inférieur à la durée minimale requise (effectiveDuration)
-      // ET que le gap n'est pas exactement 0 (pas de collision directe)
-      // alors ce créneau créerait un trou inutilisable
-      if (gap > 0 && gap < effectiveDuration) {
+      // Le créneau doit être libre
+      return isSlotFree(slot);
+    });
+    
+    if (nextAvailableSlot) {
+      const nextSlotHour = parseInt(nextAvailableSlot.split(':')[0]);
+      const nextSlotMinutes = parseInt(nextAvailableSlot.split(':')[1]);
+      const nextSlotStart = nextSlotHour + nextSlotMinutes / 60;
+      
+      // Calculer le gap entre la fin de ce créneau et le début du prochain créneau disponible
+      const gap = nextSlotStart - endTime;
+      
+      // Si le gap est exactement 0.5h (30 minutes), bloquer ce créneau
+      if (gap === 0.5) {
         return false; // Masquer ce créneau pour éviter la fragmentation
       }
     }
