@@ -179,16 +179,30 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
         }))
     ].sort((a, b) => a.start - b.start);
 
-    // Trouver la prochaine réservation après ce créneau
-    const nextReservation = allOccupiedSlots.find(slot => slot.start >= endHour);
+    // Trouver le prochain créneau dans la liste des timeSlots après la fin de ce créneau
+    const nextTimeSlot = timeSlotsForSelectedTerrain.find(slot => {
+      const slotStart = timeToDecimal(slot);
+      return slotStart >= endHour;
+    });
     
-    if (nextReservation) {
-      const gap = nextReservation.start - endHour;
+    if (nextTimeSlot) {
+      const nextSlotStart = timeToDecimal(nextTimeSlot);
       
-      // Si le gap est inférieur à la durée minimale requise ET que le gap n'est pas exactement 0
-      // alors ce créneau créerait un trou inutilisable
-      if (gap > 0 && gap < duration) {
-        return false; // Masquer ce créneau pour éviter la fragmentation
+      // Vérifier si ce prochain créneau serait disponible (pas de collision avec les réservations)
+      const nextSlotEnd = nextSlotStart + duration;
+      const isNextSlotAvailable = !allOccupiedSlots.some(slot => {
+        return nextSlotStart < slot.end && slot.start < nextSlotEnd;
+      });
+      
+      // Si le prochain créneau est disponible, vérifier le gap entre notre fin et ce créneau
+      if (isNextSlotAvailable) {
+        const gap = nextSlotStart - endHour;
+        
+        // Si le gap est inférieur à la durée minimale requise ET que le gap n'est pas exactement 0
+        // alors ce créneau créerait un trou inutilisable
+        if (gap > 0 && gap < duration) {
+          return false; // Masquer ce créneau pour éviter la fragmentation
+        }
       }
     }
 
