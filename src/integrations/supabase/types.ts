@@ -395,9 +395,9 @@ export type Database = {
         }
         Returns: undefined
       }
-      generer_reservations_mensuelles: {
-        Args:
-          | {
+      generer_reservations_mensuelles:
+        | {
+            Args: {
               p_abonnement_id: number
               p_annee: number
               p_client_nom: string
@@ -408,7 +408,10 @@ export type Database = {
               p_mois: number
               p_terrain_id: number
             }
-          | {
+            Returns: undefined
+          }
+        | {
+            Args: {
               p_abonnement_id: number
               p_annee: number
               p_client_nom: string
@@ -418,8 +421,8 @@ export type Database = {
               p_mois: number
               p_terrain_id: number
             }
-        Returns: undefined
-      }
+            Returns: undefined
+          }
       has_role: {
         Args: { role_name: string; user_uuid: string }
         Returns: boolean
