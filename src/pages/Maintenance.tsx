@@ -54,11 +54,11 @@ const Maintenance = () => {
             </a>
             
             <a 
-              href="mailto:contact@planetsport.tn" 
+              href="mailto:planetsports25@gmail.com" 
               className="flex flex-col items-center gap-3 p-4 rounded-xl bg-white/5 hover:bg-sport-green/20 transition-colors group"
             >
               <Mail className="w-6 h-6 text-sport-green group-hover:scale-110 transition-transform" />
-              <span className="text-gray-300 text-sm">contact@planetsport.tn</span>
+              <span className="text-gray-300 text-sm">planetsports25@gmail.com</span>
             </a>
             
             <div className="flex flex-col items-center gap-3 p-4 rounded-xl bg-white/5">
