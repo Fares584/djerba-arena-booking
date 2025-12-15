@@ -46,11 +46,11 @@ const Maintenance = () => {
           
           <div className="grid md:grid-cols-3 gap-6">
             <a 
-              href="tel:+21620123456" 
+              href="tel:+21629612809" 
               className="flex flex-col items-center gap-3 p-4 rounded-xl bg-white/5 hover:bg-sport-green/20 transition-colors group"
             >
               <Phone className="w-6 h-6 text-sport-green group-hover:scale-110 transition-transform" />
-              <span className="text-gray-300 text-sm">+216 20 123 456</span>
+              <span className="text-gray-300 text-sm">+216 29 612 809</span>
             </a>
             
             <a 
