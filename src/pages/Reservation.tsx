@@ -26,6 +26,7 @@ import ReservationDateTimeSelector from '@/components/reservation/ReservationDat
 import ReservationDurationSelector from '@/components/reservation/ReservationDurationSelector';
 import ReservationCustomerInfo from '@/components/reservation/ReservationCustomerInfo';
 import { validateName, validateTunisianPhone, validateEmail } from '@/lib/validation';
+import { getDominantStartModulo, timeToMinutes } from '@/lib/antiFragmentation';
 
 // Créneaux horaires par défaut (pour terrains autres que foot à 7 ou 8)
 const defaultTimeSlots = [
@@ -123,56 +124,36 @@ const Reservation = () => {
   // Check if selected time slot is available with anti-fragmentation logic
   const isTimeSlotAvailable = (time: string): boolean => {
     if (!availability || !selectedTerrainId) return true;
-    
-    const effectiveDuration = parseFloat(getEffectiveDuration());
-    const timeHour = parseInt(time.split(':')[0]);
-    const timeMinutes = parseInt(time.split(':')[1]);
-    const startTime = timeHour + timeMinutes / 60;
-    const endTime = startTime + effectiveDuration;
-    
+
+    const effectiveDurationHours = parseFloat(getEffectiveDuration());
+    const durationMinutes = Math.round(effectiveDurationHours * 60);
+
+    const startMinutes = timeToMinutes(time);
+    const endMinutes = startMinutes + durationMinutes;
+
     // 1. Vérifier si le créneau est directement occupé
-    const isDirectlyOccupied = availability.some(reservation => {
-      const resHour = parseInt(reservation.heure.split(':')[0]);
-      const resMinutes = parseInt(reservation.heure.split(':')[1]);
-      const resStart = resHour + resMinutes / 60;
-      const resEnd = resStart + reservation.duree;
-      
-      return !(endTime <= resStart || startTime >= resEnd);
+    const isDirectlyOccupied = availability.some((reservation) => {
+      const resStartMinutes = timeToMinutes(reservation.heure);
+      const resEndMinutes = resStartMinutes + Math.round(reservation.duree * 60);
+      return !(endMinutes <= resStartMinutes || startMinutes >= resEndMinutes);
     });
-    
+
     if (isDirectlyOccupied) return false;
-    
-    // 2. Anti-fragmentation: vérifier si ce créneau créerait un trou inutilisable
-    // Trouver la prochaine réservation après ce créneau
-    const nextReservation = availability
-      .filter(reservation => {
-        const resHour = parseInt(reservation.heure.split(':')[0]);
-        const resMinutes = parseInt(reservation.heure.split(':')[1]);
-        const resStart = resHour + resMinutes / 60;
-        return resStart >= endTime;
-      })
-      .sort((a, b) => {
-        const aStart = parseInt(a.heure.split(':')[0]) + parseInt(a.heure.split(':')[1]) / 60;
-        const bStart = parseInt(b.heure.split(':')[0]) + parseInt(b.heure.split(':')[1]) / 60;
-        return aStart - bStart;
-      })[0];
-    
-    if (nextReservation) {
-      const nextResHour = parseInt(nextReservation.heure.split(':')[0]);
-      const nextResMinutes = parseInt(nextReservation.heure.split(':')[1]);
-      const nextResStart = nextResHour + nextResMinutes / 60;
-      
-      // Calculer le gap entre la fin de ce créneau et le début de la prochaine réservation
-      const gap = nextResStart - endTime;
-      
-      // Si le gap est inférieur à la durée minimale requise (effectiveDuration)
-      // ET que le gap n'est pas exactement 0 (pas de collision directe)
-      // alors ce créneau créerait un trou inutilisable
-      if (gap > 0 && gap < effectiveDuration) {
-        return false; // Masquer ce créneau pour éviter la fragmentation
+
+    // 2. Anti-fragmentation FOOT (pas de 30min):
+    // si une réservation existe déjà, on garde uniquement la "famille" de créneaux
+    // alignée (même modulo que les réservations existantes) afin d'éviter un trou EXACT de 30 minutes.
+    if (selectedTerrain?.type === 'foot') {
+      const anchor = getDominantStartModulo(
+        availability.map((r) => r.heure),
+        durationMinutes
+      );
+
+      if (anchor !== null && startMinutes % durationMinutes !== anchor) {
+        return false;
       }
     }
-    
+
     return true;
   };
 
