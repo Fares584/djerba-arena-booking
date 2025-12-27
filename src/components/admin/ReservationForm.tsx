@@ -80,8 +80,8 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   // Générer les créneaux horaires selon le type de terrain
   const timeSlotsForSelectedTerrain = useMemo(() => {
     if (selectedTerrain?.type === 'foot') {
-      // Tous les terrains de foot : de 17:00 à 23:30 avec pas de 30 minutes
-      return generateTimeSlotsForFoot(17, 0, 23, 30);
+      // Tous les terrains de foot : de 16:00 à 23:30 avec pas de 30 minutes
+      return generateTimeSlotsForFoot(16, 0, 23, 30);
     }
     // Autres terrains : créneaux classiques
     return [

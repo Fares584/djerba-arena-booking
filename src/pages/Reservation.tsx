@@ -244,8 +244,8 @@ const Reservation = () => {
     if (!selectedTerrain) return [];
     
     if (selectedTerrain.type === 'foot') {
-      // Tous les terrains de foot : de 17:00 à 23:30 avec pas de 30 minutes
-      return generateTimeSlotsForFoot(17, 0, 23, 30);
+      // Tous les terrains de foot : de 16:00 à 23:30 avec pas de 30 minutes
+      return generateTimeSlotsForFoot(16, 0, 23, 30);
     }
     // Pour les autres terrains, on retourne les créneaux standards
     return defaultTimeSlots;

@@ -156,9 +156,9 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     if (!selectedTerrain) return [];
     
     if (selectedTerrain.type === 'foot') {
-      // Tous les terrains de foot : de 17:00 à 23:30 avec pas de 30 minutes
-      console.log('Créneaux foot - 17h00-23h30');
-      return generateTimeSlotsForFoot(17, 0, 23, 30);
+      // Tous les terrains de foot : de 16:00 à 23:30 avec pas de 30 minutes
+      console.log('Créneaux foot - 16h00-23h30');
+      return generateTimeSlotsForFoot(16, 0, 23, 30);
     }
     
     console.log('Créneaux par défaut');
