@@ -45,28 +45,35 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
   isTimeSlotAvailable,
   onTimeSelect,
   loading = false,
-}) => (
-  <div>
-    <div className="grid grid-cols-3 gap-2">
-      {timeSlots.map((time) => {
-        const available = isTimeSlotAvailable(time);
-        return (
+}) => {
+  // Filtrer pour ne garder que les créneaux disponibles
+  const availableSlots = timeSlots.filter((time) => isTimeSlotAvailable(time));
+
+  return (
+    <div>
+      <div className="grid grid-cols-3 gap-2">
+        {availableSlots.map((time) => (
           <TimeSlotButton
             key={time}
             time={time}
             selected={selectedTime === time}
-            disabled={!available}
+            disabled={false}
             onClick={onTimeSelect}
           />
-        );
-      })}
+        ))}
+      </div>
+      {availableSlots.length === 0 && !loading && (
+        <p className="text-sm text-muted-foreground mt-2">
+          Aucun créneau disponible pour cette date.
+        </p>
+      )}
+      {loading && (
+        <p className="text-sm text-muted-foreground mt-1">
+          Vérification de la disponibilité...
+        </p>
+      )}
     </div>
-    {loading && (
-      <p className="text-sm text-gray-500 mt-1">
-        Vérification de la disponibilité...
-      </p>
-    )}
-  </div>
-);
+  );
+};
 
 export default TimeSlotSelector;
