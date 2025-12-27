@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react';
 import ReservationTypeSelector from '@/components/reservation/ReservationTypeSelector';
 import TerrainSelector from '@/components/TerrainSelector';
 import TimeSlotSelector from '@/components/TimeSlotSelector';
+import { getDominantStartModulo, timeToMinutes } from '@/lib/antiFragmentation';
 import { useAbonnements } from '@/hooks/useAbonnements';
 
 const defaultTimeSlots = [
@@ -234,65 +235,46 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
     if (abonnementConflict) return false;
 
     // 3. Anti-fragmentation (seulement pour les terrains de foot)
+    // Objectif: éviter un trou EXACT de 30min.
+    // S'il existe déjà des réservations/abonnements, on garde uniquement la "famille" de créneaux
+    // alignée (même modulo que les créneaux occupés) sur une durée fixe de 90min.
     if (applyAntiFrag) {
-      // Combiner toutes les réservations et abonnements pour ce jour
-      const allOccupiedSlots = [
+      const durationMinutes = Math.round(effectiveDuration * 60);
+
+      const occupiedStarts = [
         ...reservations
-          .filter(res => {
+          .filter((res) => {
             const resDate = new Date(res.date);
             const resMonth = resDate.getMonth() + 1;
             const resYear = resDate.getFullYear();
             const resDay = resDate.getDay();
-            return res.terrain_id === selectedTerrainId &&
+            return (
+              res.terrain_id === selectedTerrainId &&
               resMonth === selectedMonth &&
               resYear === selectedYear &&
               resDay === selectedJourSemaine &&
-              res.statut !== 'annulee';
+              res.statut !== 'annulee'
+            );
           })
-          .map(res => ({
-            start: timeToDecimal(res.heure),
-            end: timeToDecimal(res.heure) + res.duree
-          })),
+          .map((res) => res.heure),
         ...abonnements
-          .filter(abo => {
-            return abo.terrain_id === selectedTerrainId &&
+          .filter((abo) => {
+            return (
+              abo.terrain_id === selectedTerrainId &&
               abo.mois_abonnement === selectedMonth &&
               abo.annee_abonnement === selectedYear &&
               abo.jour_semaine === selectedJourSemaine &&
               abo.statut === 'actif' &&
-              abo.heure_fixe;
+              !!abo.heure_fixe
+            );
           })
-          .map(abo => ({
-            start: timeToDecimal(abo.heure_fixe!),
-            end: timeToDecimal(abo.heure_fixe!) + (abo.duree || 1.5)
-          }))
-      ].sort((a, b) => a.start - b.start);
+          .map((abo) => abo.heure_fixe!),
+      ];
 
-      // Trouver le prochain créneau dans la liste des timeSlots après la fin de ce créneau
-      const nextTimeSlot = timeSlotsForSelectedTerrain.find(slot => {
-        const slotStart = timeToDecimal(slot);
-        return slotStart >= endHour;
-      });
-      
-      if (nextTimeSlot) {
-        const nextSlotStart = timeToDecimal(nextTimeSlot);
-        
-        // Vérifier si ce prochain créneau serait disponible (pas de collision avec les réservations)
-        const nextSlotEnd = nextSlotStart + effectiveDuration;
-        const isNextSlotAvailable = !allOccupiedSlots.some(slot => {
-          return nextSlotStart < slot.end && slot.start < nextSlotEnd;
-        });
-        
-        // Si le prochain créneau est disponible, vérifier le gap entre notre fin et ce créneau
-        if (isNextSlotAvailable) {
-          const gap = nextSlotStart - endHour;
-          
-          // Si le gap est inférieur à la durée minimale requise ET que le gap n'est pas exactement 0
-          // alors ce créneau créerait un trou inutilisable
-          if (gap > 0 && gap < effectiveDuration) {
-            return false; // Masquer ce créneau pour éviter la fragmentation
-          }
-        }
+      const anchor = getDominantStartModulo(occupiedStarts, durationMinutes);
+      if (anchor !== null) {
+        const startMinutes = timeToMinutes(time);
+        if (startMinutes % durationMinutes !== anchor) return false;
       }
     }
 

@@ -402,7 +402,6 @@ export type Database = {
               p_annee: number
               p_client_nom: string
               p_client_tel: string
-              p_duree?: number
               p_heure: string
               p_jour_semaine: number
               p_mois: number
@@ -416,6 +415,7 @@ export type Database = {
               p_annee: number
               p_client_nom: string
               p_client_tel: string
+              p_duree?: number
               p_heure: string
               p_jour_semaine: number
               p_mois: number
