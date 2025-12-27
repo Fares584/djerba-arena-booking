@@ -395,22 +395,9 @@ export type Database = {
         }
         Returns: undefined
       }
-      generer_reservations_mensuelles:
-        | {
-            Args: {
-              p_abonnement_id: number
-              p_annee: number
-              p_client_nom: string
-              p_client_tel: string
-              p_heure: string
-              p_jour_semaine: number
-              p_mois: number
-              p_terrain_id: number
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
+      generer_reservations_mensuelles: {
+        Args:
+          | {
               p_abonnement_id: number
               p_annee: number
               p_client_nom: string
@@ -421,8 +408,18 @@ export type Database = {
               p_mois: number
               p_terrain_id: number
             }
-            Returns: undefined
-          }
+          | {
+              p_abonnement_id: number
+              p_annee: number
+              p_client_nom: string
+              p_client_tel: string
+              p_heure: string
+              p_jour_semaine: number
+              p_mois: number
+              p_terrain_id: number
+            }
+        Returns: undefined
+      }
       has_role: {
         Args: { role_name: string; user_uuid: string }
         Returns: boolean

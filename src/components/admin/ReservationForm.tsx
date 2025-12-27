@@ -179,19 +179,18 @@ const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
         }))
     ].sort((a, b) => a.start - b.start);
 
-    // Trouver la prochaine réservation existante qui commence après la fin de ce créneau
-    const nextOccupiedSlot = allOccupiedSlots.find(slot => slot.start >= endHour);
+    // Trouver la prochaine réservation après ce créneau
+    const nextReservation = allOccupiedSlots.find(slot => slot.start >= endHour);
     
-    if (nextOccupiedSlot) {
-      const gap = nextOccupiedSlot.start - endHour;
+    if (nextReservation) {
+      const gap = nextReservation.start - endHour;
       
       // Si le gap est inférieur à la durée minimale requise ET que le gap n'est pas exactement 0
-      // alors ce créneau créerait un trou inutilisable avant la prochaine réservation
+      // alors ce créneau créerait un trou inutilisable
       if (gap > 0 && gap < duration) {
         return false; // Masquer ce créneau pour éviter la fragmentation
       }
     }
-
 
     return true;
   };
