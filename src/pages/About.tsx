@@ -25,13 +25,13 @@ const About = () => {
             <div>
               <h2 className="text-3xl font-bold mb-6">Notre Histoire</h2>
               <p className="text-lg mb-6 text-gray-700">
-                Fondé en 2019, Planet Sports Djerba est né de la passion pour le sport et de la volonté de créer un espace où les amateurs comme les professionnels peuvent pratiquer leurs activités favorites dans les meilleures conditions.
+                Fondé en 2015, Planet Sports Djerba est né de la passion pour le sport et de la volonté de créer un espace où les amateurs comme les professionnels peuvent pratiquer leurs activités favorites dans les meilleures conditions.
               </p>
               <p className="text-lg mb-6 text-gray-700">
-                Situé au cœur de Djerba, notre complexe sportif a été conçu pour offrir une expérience exceptionnelle à tous nos visiteurs, avec des installations modernes et un service client de première qualité.
+                Pionniers sur l'île, nous avons été les premiers à introduire le padel à Djerba, offrant ainsi aux sportifs locaux et aux visiteurs la possibilité de découvrir ce sport en pleine expansion.
               </p>
               <p className="text-lg text-gray-700">
-                Aujourd'hui, Planet Sports Djerba est fier d'être devenu le lieu de référence pour la pratique du football, du tennis et du padel sur l'île, accueillant des milliers de sportifs chaque année.
+                Aujourd'hui, Planet Sports Djerba est fier d'être devenu le lieu de référence pour la pratique du football, du tennis et du padel sur l'île, accueillant des milliers de sportifs chaque année dans nos installations modernes.
               </p>
             </div>
             
