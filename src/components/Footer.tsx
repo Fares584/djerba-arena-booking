@@ -44,7 +44,7 @@ const Footer = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 </svg>
-                <span className="text-gray-300">Route de Midoun, Djerba, Tunisie</span>
+                <span className="text-gray-300">Houmet Larbah Erriadh, Djerba</span>
               </li>
               <li className="flex items-center">
                 <svg className="w-5 h-5 mr-2 text-sport-green" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -66,16 +66,8 @@ const Footer = () => {
             <h3 className="text-lg font-bold mb-4">Horaires</h3>
             <ul className="space-y-2">
               <li className="flex justify-between">
-                <span className="text-gray-300">Lundi - Vendredi</span>
-                <span className="text-sport-green">09:00 - 22:00</span>
-              </li>
-              <li className="flex justify-between">
-                <span className="text-gray-300">Samedi</span>
-                <span className="text-sport-green">09:00 - 23:00</span>
-              </li>
-              <li className="flex justify-between">
-                <span className="text-gray-300">Dimanche</span>
-                <span className="text-sport-green">10:00 - 22:00</span>
+                <span className="text-gray-300">Tous les jours</span>
+                <span className="text-sport-green">15:00 - 00:00</span>
               </li>
             </ul>
           </div>

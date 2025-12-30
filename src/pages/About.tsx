@@ -90,12 +90,12 @@ const About = () => {
                 <h3 className="text-2xl font-bold text-sport-dark">Courts de Tennis</h3>
               </div>
               <p className="text-gray-700 mb-6 leading-relaxed">
-                2 courts de tennis en dur entretenus quotidiennement, avec possibilité de location de matériel et de prendre des cours avec nos entraîneurs certifiés.
+                3 courts de tennis dont 2 en surface Green Set et 1 en gazon synthétique, entretenus quotidiennement avec possibilité de location de matériel.
               </p>
               <ul className="text-gray-700 space-y-3">
                 <li className="flex items-start">
                   <span className="text-sport-green mr-3 font-bold">•</span>
-                  Surface en dur de qualité
+                  2 courts Green Set + 1 court pelouse
                 </li>
                 <li className="flex items-start">
                   <span className="text-sport-green mr-3 font-bold">•</span>
@@ -103,7 +103,7 @@ const About = () => {
                 </li>
                 <li className="flex items-start">
                   <span className="text-sport-green mr-3 font-bold">•</span>
-                  Cours disponibles avec nos pros
+                  Éclairage pour matchs nocturnes
                 </li>
               </ul>
             </div>
@@ -118,12 +118,12 @@ const About = () => {
                 <h3 className="text-2xl font-bold text-sport-dark">Courts de Padel</h3>
               </div>
               <p className="text-gray-700 mb-6 leading-relaxed">
-                2 courts de padel couverts pour jouer toute l'année, quelles que soient les conditions météorologiques. Matériel disponible à la location.
+                2 courts de padel en plein air avec parois vitrées panoramiques. Matériel disponible à la location sur place.
               </p>
               <ul className="text-gray-700 space-y-3">
                 <li className="flex items-start">
                   <span className="text-sport-green mr-3 font-bold">•</span>
-                  Courts couverts panoramiques
+                  Courts extérieurs avec parois vitrées
                 </li>
                 <li className="flex items-start">
                   <span className="text-sport-green mr-3 font-bold">•</span>
@@ -219,7 +219,34 @@ const About = () => {
           </div>
 
           {/* Additional Services */}
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Salle de Prière */}
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+              <div className="mb-6 flex items-center">
+                <div className="w-16 h-16 rounded-full bg-sport-green/20 flex items-center justify-center mr-6 text-sport-green font-bold text-3xl">
+                  🕌
+                </div>
+                <h3 className="text-2xl font-bold text-sport-dark">Salle de Prière</h3>
+              </div>
+              <p className="text-gray-700 mb-6 leading-relaxed">
+                Un espace calme et propre dédié à la prière, accessible à tous nos visiteurs durant les heures d'ouverture.
+              </p>
+              <ul className="text-gray-700 space-y-3">
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Espace propre et climatisé
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Tapis de prière disponibles
+                </li>
+                <li className="flex items-start">
+                  <span className="text-sport-green mr-3 font-bold">•</span>
+                  Accessible à tout moment
+                </li>
+              </ul>
+            </div>
+
             {/* Parking sécurisé */}
             <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
               <div className="mb-6 flex items-center">
