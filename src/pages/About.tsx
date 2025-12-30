@@ -3,6 +3,7 @@ import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { ParkingMeter } from 'lucide-react';
+import footballFieldImage from '@/assets/football-field-history.jpg';
 
 const About = () => {
   return (
@@ -37,8 +38,8 @@ const About = () => {
             
             <div>
               <img 
-                src="https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&q=80" 
-                alt="Planet Sports Djerba" 
+                src={footballFieldImage} 
+                alt="Terrain de football Planet Sports Djerba" 
                 className="rounded-lg shadow-md w-full h-auto object-cover"
               />
             </div>
