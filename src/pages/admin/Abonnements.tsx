@@ -237,27 +237,6 @@ const Abonnements = () => {
         </Dialog>
       </div>
 
-      {/* Résumé par stade */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {terrainStats.map(({ terrain, total, actifs }) => (
-          <div 
-            key={terrain.id} 
-            className={`p-4 rounded-lg border-2 ${getTerrainBgColor(terrain.type)} cursor-pointer transition-all hover:shadow-md ${selectedTerrainId === terrain.id.toString() ? 'ring-2 ring-sport-green' : ''}`}
-            onClick={() => setSelectedTerrainId(selectedTerrainId === terrain.id.toString() ? 'all' : terrain.id.toString())}
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{getTerrainIcon(terrain.type)}</span>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-900 truncate">{terrain.nom}</h3>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-gray-600">{total} total</span>
-                  <span className="text-green-600 font-medium">{actifs} actif{actifs > 1 ? 's' : ''}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
 
       {/* Filtres */}
       <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
