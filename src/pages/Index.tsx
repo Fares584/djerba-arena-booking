@@ -143,7 +143,16 @@ const Index = () => {
                       <div className="flex justify-between items-center mb-4">
                         <div>
                           <p className="text-sm text-gray-600">Capacité: {terrain.capacite} personnes</p>
-                          <p className="text-lg font-bold text-sport-green">{terrain.prix} DT/heure</p>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            <span className="text-sm font-bold text-sport-green">
+                              ☀️ {terrain.prix} DT
+                            </span>
+                            {terrain.prix_nuit && (
+                              <span className="text-sm font-bold text-indigo-600">
+                                🌙 {terrain.prix_nuit} DT
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <Link 
