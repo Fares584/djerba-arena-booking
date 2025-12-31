@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Plus, Calendar, Search } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, Plus, Calendar, Search, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Reservation } from '@/lib/supabase';
 import ReservationForm from '@/components/admin/ReservationForm';
@@ -28,6 +29,8 @@ const Reservations = () => {
   const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTerrainId, setSelectedTerrainId] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   
   // Récupérer le paramètre de recherche depuis l'URL
   useEffect(() => {
@@ -107,10 +110,13 @@ const Reservations = () => {
     refetch();
   };
 
-  // Filter reservations based on search term
-  const filteredReservations = reservations?.filter(reservation =>
-    reservation.nom_client.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  // Filter reservations based on search term, terrain and status
+  const filteredReservations = reservations?.filter(reservation => {
+    const matchesSearch = reservation.nom_client.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTerrain = selectedTerrainId === 'all' || reservation.terrain_id.toString() === selectedTerrainId;
+    const matchesStatus = selectedStatus === 'all' || reservation.statut === selectedStatus;
+    return matchesSearch && matchesTerrain && matchesStatus;
+  }) || [];
 
   // Sort reservations by creation date (most recent first)
   const sortedReservations = filteredReservations.sort((a, b) => {
@@ -150,15 +156,51 @@ const Reservations = () => {
         </Dialog>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          placeholder="Rechercher par nom du client..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
+      {/* Filtres */}
+      <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
+        <div className="flex items-center gap-2 mb-3">
+          <Filter className="h-5 w-5 text-sport-green" />
+          <h2 className="font-semibold text-gray-700">Filtres</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Recherche par nom */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Rechercher par nom du client..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Filtre par stade */}
+          <Select value={selectedTerrainId} onValueChange={setSelectedTerrainId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filtrer par stade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les stades</SelectItem>
+              {terrains?.map((terrain) => (
+                <SelectItem key={terrain.id} value={terrain.id.toString()}>
+                  {terrain.nom}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Filtre par statut */}
+          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filtrer par statut" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les statuts</SelectItem>
+              <SelectItem value="en_attente">En attente</SelectItem>
+              <SelectItem value="confirmee">Confirmée</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       
       {sortedReservations.length > 0 ? (
