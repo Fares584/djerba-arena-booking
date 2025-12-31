@@ -348,10 +348,10 @@ const Reservation = () => {
         </div>
       </div>
 
-      <section className="section-padding bg-sport-gray">
+      <section className="py-8 bg-sport-gray">
         <div className="container-custom max-w-4xl">
           {/* Alert Message */}
-          <Alert className="mb-8 border-orange-200 bg-orange-50">
+          <Alert className="mb-6 border-orange-200 bg-orange-50">
             <AlertTriangle className="h-4 w-4 text-orange-600" />
             <AlertDescription className="text-orange-800">
               <strong>Annulation :</strong> En cas d'annulation, veuillez nous contacter <strong>au moins 48h à l'avance</strong> au : 
