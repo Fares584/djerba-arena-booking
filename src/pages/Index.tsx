@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useTerrains } from '@/hooks/useTerrains';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sun, Moon } from 'lucide-react';
 
 const Index = () => {
   const { data: terrains, isLoading } = useTerrains({ actif: true });
@@ -140,19 +140,19 @@ const Index = () => {
                         </span>
                       </div>
                       <h3 className="font-bold text-xl mb-2">{terrain.nom}</h3>
-                      <div className="flex justify-between items-center mb-4">
-                        <div>
-                          <p className="text-sm text-gray-600">Capacité: {terrain.capacite} personnes</p>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            <span className="text-sm font-bold text-sport-green">
-                              ☀️ {terrain.prix} DT
-                            </span>
-                            {terrain.prix_nuit && (
-                              <span className="text-sm font-bold text-indigo-600">
-                                🌙 {terrain.prix_nuit} DT
-                              </span>
-                            )}
+                      <div className="mb-4">
+                        <p className="text-sm text-gray-600 mb-3">Capacité: {terrain.capacite} personnes</p>
+                        <div className="bg-green-50 p-3 rounded-lg">
+                          <div className="flex items-center gap-1 mb-1">
+                            <Sun className="h-3 w-3 text-yellow-500" />
+                            <p className="text-lg font-bold text-sport-green">{terrain.prix} DT/h</p>
                           </div>
+                          {terrain.prix_nuit && (
+                            <div className="flex items-center gap-1">
+                              <Moon className="h-3 w-3 text-blue-500" />
+                              <span className="text-sm text-gray-600">{terrain.prix_nuit} DT/h</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <Link 
