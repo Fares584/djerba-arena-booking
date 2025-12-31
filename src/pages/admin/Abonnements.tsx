@@ -5,7 +5,7 @@ import { useAbonnementExpiration } from '@/hooks/useAbonnementExpiration';
 import { useTerrains } from '@/hooks/useTerrains';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Plus, Users } from 'lucide-react';
+import { Loader2, Plus, Users, MapPin } from 'lucide-react';
 import { Abonnement } from '@/lib/supabase';
 import AbonnementForm from '@/components/admin/AbonnementForm';
 import EditAbonnementForm from '@/components/admin/EditAbonnementForm';
@@ -25,6 +25,30 @@ const Abonnements = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAbonnement, setEditingAbonnement] = useState<Abonnement | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  // Grouper les abonnements par terrain
+  const abonnementsByTerrain = useMemo(() => {
+    if (!abonnements || !terrains) return {};
+    
+    const grouped: Record<number, { terrain: typeof terrains[0], abonnements: Abonnement[] }> = {};
+    
+    // Initialiser avec tous les terrains
+    terrains.forEach(terrain => {
+      grouped[terrain.id] = { terrain, abonnements: [] };
+    });
+    
+    // Ajouter les abonnements à leurs terrains respectifs
+    abonnements.forEach(abonnement => {
+      if (abonnement.terrain_id && grouped[abonnement.terrain_id]) {
+        grouped[abonnement.terrain_id].abonnements.push(abonnement);
+      }
+    });
+    
+    // Filtrer pour ne garder que les terrains avec des abonnements
+    return Object.fromEntries(
+      Object.entries(grouped).filter(([_, data]) => data.abonnements.length > 0)
+    );
+  }, [abonnements, terrains]);
   
   const handleFormSuccess = () => {
     setIsDialogOpen(false);
@@ -103,6 +127,32 @@ const Abonnements = () => {
     return terrain?.type ? terrain.type : '';
   };
 
+  const getTerrainColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'football':
+        return 'bg-green-100 border-green-500 text-green-800';
+      case 'tennis':
+        return 'bg-orange-100 border-orange-500 text-orange-800';
+      case 'padel':
+        return 'bg-blue-100 border-blue-500 text-blue-800';
+      default:
+        return 'bg-gray-100 border-gray-500 text-gray-800';
+    }
+  };
+
+  const getTerrainIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'football':
+        return '⚽';
+      case 'tennis':
+        return '🎾';
+      case 'padel':
+        return '🏸';
+      default:
+        return '🏟️';
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -158,20 +208,45 @@ const Abonnements = () => {
         </div>
       </div>
 
-      {/* Liste des abonnements */}
+      {/* Liste des abonnements groupés par terrain */}
       {abonnements && abonnements.length > 0 ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-          {abonnements.map((abonnement: Abonnement) => (
-            <AbonnementCard
-              key={abonnement.id}
-              abonnement={abonnement}
-              terrainLabel={getTerrainLabel(abonnement.terrain_id)}
-              typeLabel={getTypeLabel(abonnement.terrain_id)}
-              onStatusChange={handleStatusChange}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onRenew={handleRenew}
-            />
+        <div className="space-y-8">
+          {Object.entries(abonnementsByTerrain).map(([terrainId, { terrain, abonnements: terrainAbonnements }]) => (
+            <div key={terrainId} className="space-y-4">
+              {/* En-tête du terrain */}
+              <div className={`flex items-center gap-3 p-4 rounded-lg border-l-4 ${getTerrainColor(terrain.type)}`}>
+                <span className="text-2xl">{getTerrainIcon(terrain.type)}</span>
+                <div className="flex-1">
+                  <h2 className="text-lg font-bold">{terrain.nom}</h2>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="capitalize">{terrain.type}</span>
+                    <span className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      {terrainAbonnements.length} abonnement{terrainAbonnements.length > 1 ? 's' : ''}
+                    </span>
+                    <span className="text-green-600 font-medium">
+                      {terrainAbonnements.filter(a => a.statut === 'actif').length} actif{terrainAbonnements.filter(a => a.statut === 'actif').length > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Cartes d'abonnements du terrain */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 pl-4 border-l-2 border-gray-200 ml-2">
+                {terrainAbonnements.map((abonnement: Abonnement) => (
+                  <AbonnementCard
+                    key={abonnement.id}
+                    abonnement={abonnement}
+                    terrainLabel={getTerrainLabel(abonnement.terrain_id)}
+                    typeLabel={getTypeLabel(abonnement.terrain_id)}
+                    onStatusChange={handleStatusChange}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onRenew={handleRenew}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       ) : (
