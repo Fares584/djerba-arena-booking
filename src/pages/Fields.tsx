@@ -83,9 +83,11 @@ const Fields = () => {
                   field={{
                     id: field.id,
                     name: field.nom,
+                    nom: field.nom,
                     type: field.type,
                     capacity: field.capacite,
                     price: field.prix,
+                    priceNight: field.prix_nuit || undefined,
                     imageUrl: field.image_url || '',
                     status: field.actif ? 'available' : 'reserved'
                   }} 
