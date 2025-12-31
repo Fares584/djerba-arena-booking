@@ -13,6 +13,7 @@ export interface Field {
   type: FieldType;
   capacity: number;
   price: number;
+  priceNight?: number;
   imageUrl: string;
   status: FieldStatus;
   nom?: string; // Add this for compatibility with Terrain type
@@ -177,7 +178,16 @@ const FieldCard: React.FC<FieldCardProps> = ({ field }) => {
             </div>
           ) : (
             <div className="bg-green-50 p-3 rounded-lg">
-              <p className="text-lg font-bold text-sport-green">{field.price} DT/heure</p>
+              <div className="flex items-center gap-1 mb-1">
+                <Sun className="h-3 w-3 text-yellow-500" />
+                <p className="text-lg font-bold text-sport-green">{field.price} DT/h</p>
+              </div>
+              {field.priceNight && (
+                <div className="flex items-center gap-1">
+                  <Moon className="h-3 w-3 text-blue-500" />
+                  <span className="text-sm text-gray-600">{field.priceNight} DT/h</span>
+                </div>
+              )}
             </div>
           )}
         </div>
