@@ -40,7 +40,7 @@ const ReservationSuccessDialog: React.FC<ReservationSuccessDialogProps> = ({
             <Phone className="text-blue-600 w-5 h-5 mt-0.5 flex-shrink-0" />
             <div className="text-left">
               <p className="text-sm text-blue-700">
-                Merci de rester joignable pour un appel de confirmation si c'est votre première réservation chez nous.
+                Si c'est votre première réservation chez nous, nous vous prions de bien vouloir rester joignable afin de recevoir notre appel de confirmation.
               </p>
             </div>
           </div>
