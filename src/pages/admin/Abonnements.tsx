@@ -5,7 +5,9 @@ import { useAbonnementExpiration } from '@/hooks/useAbonnementExpiration';
 import { useTerrains } from '@/hooks/useTerrains';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Plus, Users, MapPin } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, Plus, Users, Search, Filter } from 'lucide-react';
 import { Abonnement } from '@/lib/supabase';
 import AbonnementForm from '@/components/admin/AbonnementForm';
 import EditAbonnementForm from '@/components/admin/EditAbonnementForm';
@@ -25,10 +27,49 @@ const Abonnements = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAbonnement, setEditingAbonnement] = useState<Abonnement | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTerrainId, setSelectedTerrainId] = useState<string>('all');
 
-  // Grouper les abonnements par terrain
+  // Statistiques par terrain
+  const terrainStats = useMemo(() => {
+    if (!abonnements || !terrains) return [];
+    
+    return terrains.map(terrain => {
+      const terrainAbonnements = abonnements.filter(a => a.terrain_id === terrain.id);
+      return {
+        terrain,
+        total: terrainAbonnements.length,
+        actifs: terrainAbonnements.filter(a => a.statut === 'actif').length
+      };
+    }).filter(stat => stat.total > 0);
+  }, [abonnements, terrains]);
+
+  // Filtrer les abonnements
+  const filteredAbonnements = useMemo(() => {
+    if (!abonnements) return [];
+    
+    let filtered = abonnements;
+    
+    // Filtrer par terrain
+    if (selectedTerrainId !== 'all') {
+      filtered = filtered.filter(a => a.terrain_id === parseInt(selectedTerrainId));
+    }
+    
+    // Filtrer par recherche de nom
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(a => 
+        a.client_nom.toLowerCase().includes(query) ||
+        (a.client_tel && a.client_tel.includes(query))
+      );
+    }
+    
+    return filtered;
+  }, [abonnements, selectedTerrainId, searchQuery]);
+
+  // Grouper les abonnements filtrés par terrain
   const abonnementsByTerrain = useMemo(() => {
-    if (!abonnements || !terrains) return {};
+    if (!filteredAbonnements || !terrains) return {};
     
     const grouped: Record<number, { terrain: typeof terrains[0], abonnements: Abonnement[] }> = {};
     
@@ -38,7 +79,7 @@ const Abonnements = () => {
     });
     
     // Ajouter les abonnements à leurs terrains respectifs
-    abonnements.forEach(abonnement => {
+    filteredAbonnements.forEach(abonnement => {
       if (abonnement.terrain_id && grouped[abonnement.terrain_id]) {
         grouped[abonnement.terrain_id].abonnements.push(abonnement);
       }
@@ -48,7 +89,7 @@ const Abonnements = () => {
     return Object.fromEntries(
       Object.entries(grouped).filter(([_, data]) => data.abonnements.length > 0)
     );
-  }, [abonnements, terrains]);
+  }, [filteredAbonnements, terrains]);
   
   const handleFormSuccess = () => {
     setIsDialogOpen(false);
@@ -153,6 +194,19 @@ const Abonnements = () => {
     }
   };
 
+  const getTerrainBgColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'football':
+        return 'bg-green-50 border-green-200';
+      case 'tennis':
+        return 'bg-orange-50 border-orange-200';
+      case 'padel':
+        return 'bg-blue-50 border-blue-200';
+      default:
+        return 'bg-gray-50 border-gray-200';
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -183,33 +237,82 @@ const Abonnements = () => {
         </Dialog>
       </div>
 
-      {/* Cartes de statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow border border-gray-200">
-          <div className="flex items-center">
-            <Users className="h-6 w-6 sm:h-8 sm:w-8 text-sport-green mr-3 flex-shrink-0" />
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-600">Total Abonnements</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900">{abonnements?.length || 0}</p>
+      {/* Résumé par stade */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {terrainStats.map(({ terrain, total, actifs }) => (
+          <div 
+            key={terrain.id} 
+            className={`p-4 rounded-lg border-2 ${getTerrainBgColor(terrain.type)} cursor-pointer transition-all hover:shadow-md ${selectedTerrainId === terrain.id.toString() ? 'ring-2 ring-sport-green' : ''}`}
+            onClick={() => setSelectedTerrainId(selectedTerrainId === terrain.id.toString() ? 'all' : terrain.id.toString())}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{getTerrainIcon(terrain.type)}</span>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-gray-900 truncate">{terrain.nom}</h3>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-600">{total} total</span>
+                  <span className="text-green-600 font-medium">{actifs} actif{actifs > 1 ? 's' : ''}</span>
+                </div>
+              </div>
             </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filtres */}
+      <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Recherche par nom */}
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Rechercher par nom ou téléphone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          {/* Filtre par terrain */}
+          <div className="w-full sm:w-64">
+            <Select value={selectedTerrainId} onValueChange={setSelectedTerrainId}>
+              <SelectTrigger>
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Filtrer par terrain" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les terrains</SelectItem>
+                {terrains?.map(terrain => (
+                  <SelectItem key={terrain.id} value={terrain.id.toString()}>
+                    {getTerrainIcon(terrain.type)} {terrain.nom}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow border border-gray-200">
-          <div className="flex items-center">
-            <Users className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 mr-3 flex-shrink-0" />
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-600">Abonnements Actifs</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                {abonnements?.filter(a => a.statut === 'actif').length || 0}
-              </p>
-            </div>
+        {/* Indicateur de résultats */}
+        {(searchQuery || selectedTerrainId !== 'all') && (
+          <div className="mt-3 flex items-center justify-between">
+            <p className="text-sm text-gray-600">
+              {filteredAbonnements.length} résultat{filteredAbonnements.length > 1 ? 's' : ''} trouvé{filteredAbonnements.length > 1 ? 's' : ''}
+            </p>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => { setSearchQuery(''); setSelectedTerrainId('all'); }}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              Réinitialiser les filtres
+            </Button>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Liste des abonnements groupés par terrain */}
-      {abonnements && abonnements.length > 0 ? (
+      {filteredAbonnements && filteredAbonnements.length > 0 ? (
         <div className="space-y-8">
           {Object.entries(abonnementsByTerrain).map(([terrainId, { terrain, abonnements: terrainAbonnements }]) => (
             <div key={terrainId} className="space-y-4">
@@ -252,22 +355,37 @@ const Abonnements = () => {
       ) : (
         <div className="text-center py-12 sm:py-20 bg-white rounded-lg border border-gray-200">
           <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-2">Aucun abonnement</h3>
-          <p className="text-sm sm:text-base text-gray-500 mb-6">Il n'y a pas encore d'abonnements à afficher.</p>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-sport-green hover:bg-sport-dark text-white">
-                <Plus className="mr-2 h-4 w-4" />
-                Créer le premier abonnement
+          {searchQuery || selectedTerrainId !== 'all' ? (
+            <>
+              <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-2">Aucun résultat</h3>
+              <p className="text-sm sm:text-base text-gray-500 mb-6">Aucun abonnement ne correspond à vos critères de recherche.</p>
+              <Button 
+                variant="outline" 
+                onClick={() => { setSearchQuery(''); setSelectedTerrainId('all'); }}
+              >
+                Réinitialiser les filtres
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Ajouter un Abonnement</DialogTitle>
-              </DialogHeader>
-              <AbonnementForm onSuccess={handleFormSuccess} />
-            </DialogContent>
-          </Dialog>
+            </>
+          ) : (
+            <>
+              <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-2">Aucun abonnement</h3>
+              <p className="text-sm sm:text-base text-gray-500 mb-6">Il n'y a pas encore d'abonnements à afficher.</p>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-sport-green hover:bg-sport-dark text-white">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Créer le premier abonnement
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Ajouter un Abonnement</DialogTitle>
+                  </DialogHeader>
+                  <AbonnementForm onSuccess={handleFormSuccess} />
+                </DialogContent>
+              </Dialog>
+            </>
+          )}
         </div>
       )}
 
