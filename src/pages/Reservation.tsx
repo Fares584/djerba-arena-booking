@@ -416,8 +416,6 @@ const Reservation = () => {
               setCustomerName={setCustomerName}
               customerPhone={customerPhone}
               setCustomerPhone={setCustomerPhone}
-              customerEmail={customerEmail}
-              setCustomerEmail={setCustomerEmail}
             />
             {/* Price Summary */}
             {selectedTerrain && selectedTime && (
