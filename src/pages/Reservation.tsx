@@ -286,12 +286,10 @@ const Reservation = () => {
     // Validation des champs
     const nameError = validateName(customerName);
     const phoneError = validateTunisianPhone(customerPhone);
-    const emailError = validateEmail(customerEmail);
 
-    if (nameError || phoneError || emailError) {
+    if (nameError || phoneError) {
       if (nameError) toast.error(`Nom: ${nameError}`);
       if (phoneError) toast.error(`Téléphone: ${phoneError}`);
-      if (emailError) toast.error(`Email: ${emailError}`);
       return;
     }
 
@@ -301,8 +299,7 @@ const Reservation = () => {
       !selectedDate ||
       !selectedTime ||
       !customerName ||
-      !customerPhone ||
-      !customerEmail
+      !customerPhone
     ) {
       toast.error("Veuillez remplir tous les champs obligatoires.");
       return;
