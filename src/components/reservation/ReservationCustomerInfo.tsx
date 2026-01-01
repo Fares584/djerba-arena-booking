@@ -2,16 +2,14 @@
 import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { User, Phone, Mail } from "lucide-react";
-import { validateName, validateTunisianPhone, validateEmail } from "@/lib/validation";
+import { User, Phone } from "lucide-react";
+import { validateName, validateTunisianPhone } from "@/lib/validation";
 
 interface Props {
   customerName: string;
   setCustomerName: (v: string) => void;
   customerPhone: string;
   setCustomerPhone: (v: string) => void;
-  customerEmail: string;
-  setCustomerEmail: (v: string) => void;
 }
 
 const ReservationCustomerInfo: React.FC<Props> = ({
@@ -19,12 +17,9 @@ const ReservationCustomerInfo: React.FC<Props> = ({
   setCustomerName,
   customerPhone,
   setCustomerPhone,
-  customerEmail,
-  setCustomerEmail,
 }) => {
   const [nameError, setNameError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
-  const [emailError, setEmailError] = useState<string | null>(null);
 
   const handleNameChange = (value: string) => {
     setCustomerName(value);
@@ -38,19 +33,13 @@ const ReservationCustomerInfo: React.FC<Props> = ({
     setPhoneError(error);
   };
 
-  const handleEmailChange = (value: string) => {
-    setCustomerEmail(value);
-    const error = validateEmail(value);
-    setEmailError(error);
-  };
-
   return (
     <div className="border-t pt-8" data-section="customer-info">
       <h3 className="text-xl font-semibold mb-6 flex items-center">
         <User className="mr-2 h-6 w-6" />
         Informations personnelles
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <Label htmlFor="name" className="text-base font-medium mb-2 block">
             Nom complet *
@@ -93,24 +82,6 @@ const ReservationCustomerInfo: React.FC<Props> = ({
             Numéro tunisien (8 chiffres)
           </p>
         </div>
-      </div>
-      <div className="mb-6">
-        <Label htmlFor="email" className="text-base font-medium mb-2 flex items-center">
-          <Mail className="mr-2 h-4 w-4" />
-          Adresse email *
-        </Label>
-        <Input
-          id="email"
-          type="email"
-          value={customerEmail}
-          onChange={(e) => handleEmailChange(e.target.value)}
-          placeholder="votre@email.com"
-          className={emailError ? "border-red-500" : ""}
-          required
-        />
-        {emailError && (
-          <p className="text-red-500 text-sm mt-1">{emailError}</p>
-        )}
       </div>
     </div>
   );
