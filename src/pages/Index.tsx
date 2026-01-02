@@ -120,7 +120,7 @@ const Index = () => {
                 <div className="col-span-3 text-center text-gray-500">Aucun terrain populaire trouvé.</div>
               ) : (
                 featuredTerrains.map((terrain) => (
-                  <div key={terrain.id} className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+                  <div key={terrain.id} className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow flex flex-col">
                     <div className="relative h-48">
                       <img 
                         src={terrain.image_url || '/placeholder.svg'} 
@@ -131,7 +131,7 @@ const Index = () => {
                         Disponible
                       </div>
                     </div>
-                    <div className="p-5">
+                    <div className="p-5 flex flex-col flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="text-sport-green">
                           {getTypeIcon(terrain.type)}
@@ -195,7 +195,7 @@ const Index = () => {
                       </div>
                       <Link 
                         to={`/reservation?fieldId=${terrain.id}`} 
-                        className="w-full btn-primary block text-center"
+                        className="w-full btn-primary block text-center mt-auto"
                       >
                         Réserver
                       </Link>
