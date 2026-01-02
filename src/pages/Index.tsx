@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useTerrains } from '@/hooks/useTerrains';
-import { Loader2, Sun, Moon } from 'lucide-react';
+import { Loader2, Sun, Moon, Users } from 'lucide-react';
+import { getTennisPricing } from '@/lib/supabase';
 
 const Index = () => {
   const { data: terrains, isLoading } = useTerrains({ actif: true });
@@ -140,20 +141,57 @@ const Index = () => {
                         </span>
                       </div>
                       <h3 className="font-bold text-xl mb-2">{terrain.nom}</h3>
-                      <div className="mb-4">
+                        <div className="mb-4">
                         <p className="text-sm text-gray-600 mb-3">Capacité: {terrain.capacite} personnes</p>
-                        <div className="bg-green-50 p-3 rounded-lg">
-                          <div className="flex items-center gap-1 mb-1">
-                            <Sun className="h-3 w-3 text-yellow-500" />
-                            <p className="text-lg font-bold text-sport-green">{terrain.prix} DT/h</p>
-                          </div>
-                          {terrain.prix_nuit && (
-                            <div className="flex items-center gap-1">
-                              <Moon className="h-3 w-3 text-blue-500" />
-                              <span className="text-sm text-gray-600">{terrain.prix_nuit} DT/h</span>
+                        {terrain.type === 'tennis' && getTennisPricing(terrain) ? (
+                          <div className="space-y-2">
+                            <div className="bg-green-50 p-2 rounded-lg border-l-4 border-sport-green">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Users className="h-3 w-3 text-sport-green" />
+                                <span className="text-xs font-medium text-gray-700">Simple (2 pers.)</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <div className="flex items-center gap-1">
+                                  <Sun className="h-3 w-3 text-yellow-500" />
+                                  <span className="font-semibold text-sport-green">{getTennisPricing(terrain)!.simple.jour} DT</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Moon className="h-3 w-3 text-blue-500" />
+                                  <span className="font-semibold text-sport-green">{getTennisPricing(terrain)!.simple.nuit} DT</span>
+                                </div>
+                              </div>
                             </div>
-                          )}
-                        </div>
+                            <div className="bg-blue-50 p-2 rounded-lg border-l-4 border-blue-500">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Users className="h-3 w-3 text-blue-500" />
+                                <span className="text-xs font-medium text-gray-700">Double (4 pers.)</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <div className="flex items-center gap-1">
+                                  <Sun className="h-3 w-3 text-yellow-500" />
+                                  <span className="font-semibold text-sport-green">{getTennisPricing(terrain)!.double.jour} DT</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Moon className="h-3 w-3 text-blue-500" />
+                                  <span className="font-semibold text-sport-green">{getTennisPricing(terrain)!.double.nuit} DT</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-green-50 p-3 rounded-lg">
+                            <div className="flex items-center gap-1 mb-1">
+                              <Sun className="h-3 w-3 text-yellow-500" />
+                              <p className="text-lg font-bold text-sport-green">{terrain.prix} DT/h</p>
+                            </div>
+                            {terrain.prix_nuit && (
+                              <div className="flex items-center gap-1">
+                                <Moon className="h-3 w-3 text-blue-500" />
+                                <span className="text-sm text-gray-600">{terrain.prix_nuit} DT/h</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <Link 
                         to={`/reservation?fieldId=${terrain.id}`} 
