@@ -8,7 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Phone } from "lucide-react";
+import { CheckCircle2, Phone, Clock } from "lucide-react";
 
 interface ReservationSuccessDialogProps {
   open: boolean;
@@ -31,28 +31,37 @@ const ReservationSuccessDialog: React.FC<ReservationSuccessDialogProps> = ({
         </DialogTitle>
       </DialogHeader>
       <div className="text-center space-y-4 text-gray-800">
-        <p className="text-lg font-semibold text-sport-green">
-          Merci pour votre confiance !
+        <p className="text-base font-medium text-gray-700">
+          Votre demande de réservation a bien été reçue et est en cours de traitement.
         </p>
-        
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start space-x-2">
-            <Phone className="text-blue-600 w-5 h-5 mt-0.5 flex-shrink-0" />
+
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <Phone className="text-amber-600 w-5 h-5 mt-0.5 flex-shrink-0" />
             <div className="text-left">
-              <p className="text-sm text-blue-700">
-                Merci de rester joignable pour un appel de confirmation si c'est votre première réservation chez nous.
+              <p className="text-sm font-semibold text-amber-800 mb-1">
+                Confirmation par téléphone requise
+              </p>
+              <p className="text-sm text-amber-700 leading-relaxed">
+                Afin de finaliser votre réservation, notre équipe vous contactera dans les plus brefs délais. 
+                Veuillez vous assurer d'être joignable sur le numéro fourni.
               </p>
             </div>
           </div>
         </div>
+
+        <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+          <Clock className="w-3.5 h-3.5" />
+          <span>Réservation confirmée uniquement après validation téléphonique</span>
+        </div>
       </div>
       <DialogFooter>
         <Button 
-          className="mx-auto min-w-[120px] bg-sport-green hover:bg-sport-dark" 
+          className="mx-auto min-w-[140px] bg-sport-green hover:bg-sport-dark" 
           onClick={onOk} 
           autoFocus
         >
-          Parfait !
+          Compris, merci !
         </Button>
       </DialogFooter>
     </DialogContent>
