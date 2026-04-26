@@ -383,7 +383,7 @@ const Reservation = () => {
             {/* Type Selection */}
             <ReservationTypeSelector
               selectedType={selectedType}
-              setSelectedType={setSelectedType}
+              setSelectedType={safeSetSelectedType}
             />
             {/* Terrain Selection */}
             {selectedType && (
