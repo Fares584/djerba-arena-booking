@@ -83,11 +83,26 @@ const Reservation = () => {
   useEffect(() => {
     if (!allTerrains || !urlFieldId) return;
     const t = allTerrains.find(tr => tr.id === urlFieldId);
+    // 🔒 Bloquer toute pré-sélection d'un terrain de football via l'URL
+    if (t && t.type === 'foot') {
+      toast.info("Les réservations de football ne sont pas encore disponibles.");
+      setUrlFieldId(null);
+      return;
+    }
     if (t && selectedType !== t.type) {
       setSelectedType(t.type);
       // On attend que le type soit bien assigné avant de continuer
     }
   }, [allTerrains, urlFieldId]);
+
+  // 🔒 Garde-fou : empêcher la sélection du type "foot" même si forcé
+  const safeSetSelectedType = (type: string) => {
+    if (type === 'foot') {
+      toast.info("Les réservations de football ne sont pas encore disponibles.");
+      return;
+    }
+    setSelectedType(type);
+  };
 
   // Dès que le type est défini, synchronise la sélection du terrain une seule fois
   useEffect(() => {
