@@ -309,6 +309,12 @@ const Reservation = () => {
       return;
     }
 
+    // 🔒 Blocage strict côté client : aucune réservation de football n'est autorisée
+    if (selectedType === 'foot' || selectedTerrain?.type === 'foot') {
+      toast.error("Les réservations de football ne sont pas encore disponibles.");
+      return;
+    }
+
     // Ensure required fields are filled
     if (
       !selectedTerrainId ||
