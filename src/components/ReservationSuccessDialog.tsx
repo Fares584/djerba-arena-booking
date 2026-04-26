@@ -40,11 +40,11 @@ const ReservationSuccessDialog: React.FC<ReservationSuccessDialogProps> = ({
             <Phone className="text-amber-600 w-5 h-5 mt-0.5 flex-shrink-0" />
             <div className="text-left">
               <p className="text-sm font-semibold text-amber-800 mb-1">
-                Confirmation par téléphone requise
+                Merci de rester joignable
               </p>
               <p className="text-sm text-amber-700 leading-relaxed">
-                Afin de finaliser votre réservation, notre équipe vous contactera dans les plus brefs délais. 
-                Veuillez vous assurer d'être joignable sur le numéro fourni.
+                Notre équipe pourra vous contacter par téléphone si une vérification 
+                ou une information complémentaire concernant votre réservation s'avère nécessaire.
               </p>
             </div>
           </div>
@@ -52,7 +52,7 @@ const ReservationSuccessDialog: React.FC<ReservationSuccessDialogProps> = ({
 
         <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
           <Clock className="w-3.5 h-3.5" />
-          <span>Réservation confirmée uniquement après validation téléphonique</span>
+          <span>Veuillez garder votre téléphone à portée de main</span>
         </div>
       </div>
       <DialogFooter>
