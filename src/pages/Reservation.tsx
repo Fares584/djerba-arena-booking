@@ -219,8 +219,9 @@ const Reservation = () => {
   };
 
   // Memoized/computed values related to terrain selection and slot calculation
+  // 🔒 On exclut systématiquement les terrains de football côté client
   const filteredTerrains = allTerrains?.filter(terrain => 
-    selectedType === '' || terrain.type === selectedType
+    terrain.type !== 'foot' && (selectedType === '' || terrain.type === selectedType)
   ) || [];
 
   const selectedTerrain = allTerrains?.find(t => t.id === selectedTerrainId);
