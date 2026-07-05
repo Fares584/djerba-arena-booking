@@ -62,6 +62,7 @@ const ReservationDateTimeSelector: React.FC<Props> = ({
           isTimeSlotAvailable={isTimeSlotAvailable}
           onTimeSelect={setSelectedTime}
           loading={availabilityLoading && !!selectedDate}
+          useSelect={useSelectForTime}
         />
       </div>
     </div>
