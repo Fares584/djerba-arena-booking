@@ -254,6 +254,7 @@ const EditReservationForm = ({ reservation, onSuccess, onCancel }: EditReservati
             isTimeSlotAvailable={isTimeSlotAvailable}
             onTimeSelect={(time) => handleChange('heure', time)}
             loading={false}
+            useSelect={selectedTerrain?.type !== 'foot'}
           />
         </div>
 
