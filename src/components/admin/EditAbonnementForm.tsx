@@ -325,6 +325,7 @@ const EditAbonnementForm = ({ abonnement, onSuccess, onCancel }: EditAbonnementF
             isTimeSlotAvailable={isTimeSlotAvailable}
             onTimeSelect={setHeure}
             loading={false}
+            useSelect={!isFoot}
           />
         </div>
       )}
