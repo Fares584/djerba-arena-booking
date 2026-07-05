@@ -25,7 +25,8 @@ const ReservationDateTimeSelector: React.FC<Props> = ({
   timeSlots,
   isTimeSlotAvailable,
   availabilityLoading,
-  selectedTerrainId
+  selectedTerrainId,
+  useSelectForTime = false
 }) => {
   // Auto-scroll to customer info section when both date and time are selected
   useEffect(() => {
