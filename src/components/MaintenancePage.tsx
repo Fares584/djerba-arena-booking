@@ -35,7 +35,7 @@ const MaintenancePage = () => {
               </p>
               <a
                 href="tel:29612809"
-                className="inline-flex items-center gap-2 text-sport-green hover:text-white transition-colors font-bold text-2xl md:text-3xl"
+                className="inline-flex items-center gap-3 bg-sport-green hover:bg-sport-green/90 text-white font-bold text-xl md:text-2xl px-6 py-3 rounded-xl transition-all active:scale-95 shadow-lg shadow-sport-green/20"
               >
                 <Phone className="w-6 h-6" />
                 29 612 809
