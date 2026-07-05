@@ -421,6 +421,7 @@ const AbonnementForm = ({ onSuccess }: AbonnementFormProps) => {
             isTimeSlotAvailable={isTimeSlotAvailable}
             onTimeSelect={setHeure}
             loading={false}
+            useSelect={!isFoot}
           />
         </div>
       )}
