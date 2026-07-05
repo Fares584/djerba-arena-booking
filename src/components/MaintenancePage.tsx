@@ -50,6 +50,16 @@ const MaintenancePage = () => {
           </div>
         </div>
 
+        <a
+          href="https://www.instagram.com/planet_sport_djerba/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:opacity-90 text-white font-semibold px-6 py-3 rounded-xl transition-all active:scale-95 shadow-lg"
+        >
+          <InstagramIcon />
+          Suivez-nous sur Instagram
+        </a>
+
         <div className="flex items-center justify-center gap-2 text-white/40 text-sm">
           <Clock className="w-4 h-4" />
           <span>Planet Sports Djerba</span>
