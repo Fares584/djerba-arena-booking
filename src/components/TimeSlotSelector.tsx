@@ -1,5 +1,5 @@
-
 import React from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface TimeSlotButtonProps {
   time: string;
@@ -37,6 +37,7 @@ interface TimeSlotSelectorProps {
   isTimeSlotAvailable: (time: string) => boolean;
   onTimeSelect: (time: string) => void;
   loading?: boolean;
+  useSelect?: boolean;
 }
 
 const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
@@ -45,9 +46,39 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
   isTimeSlotAvailable,
   onTimeSelect,
   loading = false,
+  useSelect = false,
 }) => {
   // Filtrer pour ne garder que les créneaux disponibles
   const availableSlots = timeSlots.filter((time) => isTimeSlotAvailable(time));
+
+  if (useSelect) {
+    return (
+      <div>
+        <Select value={selectedTime} onValueChange={onTimeSelect}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Sélectionnez un créneau horaire" />
+          </SelectTrigger>
+          <SelectContent className="max-h-64">
+            {availableSlots.map((time) => (
+              <SelectItem key={time} value={time}>
+                {time}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {availableSlots.length === 0 && !loading && (
+          <p className="text-sm text-muted-foreground mt-2">
+            Aucun créneau disponible pour cette date.
+          </p>
+        )}
+        {loading && (
+          <p className="text-sm text-muted-foreground mt-1">
+            Vérification de la disponibilité...
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div>
