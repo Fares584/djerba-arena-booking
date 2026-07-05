@@ -6,12 +6,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import Index from "./pages/Index";
-import Fields from "./pages/Fields";
-import Reservation from "./pages/Reservation";
-import About from "./pages/About";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import Maintenance from "./pages/Maintenance";
 
 // Admin pages
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -53,10 +50,10 @@ function App() {
         <BrowserRouter>
           <ScrollToTop />
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/fields" element={<Fields />} />
-            <Route path="/reservation" element={<Reservation />} />
-            <Route path="/about" element={<About />} />
+            <Route path="/" element={<Maintenance />} />
+            <Route path="/fields" element={<Maintenance />} />
+            <Route path="/reservation" element={<Maintenance />} />
+            <Route path="/about" element={<Maintenance />} />
             <Route path="/secure-access-portal-2k24-auth-gateway-xyz789" element={<Login />} />
             
             {/* Admin routes */}
@@ -70,7 +67,7 @@ function App() {
               <Route path="abonnements" element={<Abonnements />} />
             </Route>
             
-            <Route path="*" element={<NotFound />} />
+            <Route path="*" element={<Maintenance />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
