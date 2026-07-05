@@ -408,7 +408,9 @@ const Reservation = () => {
                 isTimeSlotAvailable={isTimeSlotAvailable}
                 availabilityLoading={availabilityLoading}
                 selectedTerrainId={selectedTerrainId}
+                useSelectForTime={selectedTerrain?.type !== 'foot'}
               />
+
             )}
             {/* Duration Selection - Only for non-football terrains */}
             {selectedTerrain && selectedTerrain.type !== 'foot' && (
