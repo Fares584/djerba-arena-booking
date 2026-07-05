@@ -140,7 +140,17 @@ const Reservation = () => {
 
   // Check if selected time slot is available with anti-fragmentation logic
   const isTimeSlotAvailable = (time: string): boolean => {
-    if (!availability || !selectedTerrainId) return true;
+    if (!selectedTerrainId) return true;
+
+    // Bloquer les créneaux passés si la date sélectionnée est aujourd'hui
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (selectedDate === todayStr) {
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      if (timeToMinutes(time) <= nowMinutes) return false;
+    }
+
+    if (!availability) return true;
 
     const effectiveDurationHours = parseFloat(getEffectiveDuration());
     const durationMinutes = Math.round(effectiveDurationHours * 60);
