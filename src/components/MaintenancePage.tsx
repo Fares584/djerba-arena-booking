@@ -36,7 +36,7 @@ const MaintenancePage = () => {
               <p className="text-white font-semibold text-lg mb-1">
                 Pour réserver, appelez-nous directement
               </p>
-              <p className="text-white/60 text-sm mb-3">
+              <p className="text-white/60 text-sm mb-4">
                 Notre équipe est disponible pour prendre vos réservations par téléphone.
               </p>
               <a
