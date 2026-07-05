@@ -67,7 +67,7 @@ function App() {
               <Route path="abonnements" element={<Abonnements />} />
             </Route>
             
-            <Route path="*" element={<NotFound />} />
+            <Route path="*" element={<Maintenance />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
