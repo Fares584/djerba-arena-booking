@@ -30,8 +30,10 @@ import { getDominantStartModulo, timeToMinutes } from '@/lib/antiFragmentation';
 
 // Créneaux horaires par défaut (pour terrains autres que foot à 7 ou 8)
 const defaultTimeSlots = [
-  '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', 
-  '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'
+  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
+  '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
+  '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30',
+  '21:00', '21:30', '22:00', '22:30', '23:00'
 ];
 
 // Options de durée étendues pour tennis et padel
@@ -406,7 +408,9 @@ const Reservation = () => {
                 isTimeSlotAvailable={isTimeSlotAvailable}
                 availabilityLoading={availabilityLoading}
                 selectedTerrainId={selectedTerrainId}
+                useSelectForTime={selectedTerrain?.type !== 'foot'}
               />
+
             )}
             {/* Duration Selection - Only for non-football terrains */}
             {selectedTerrain && selectedTerrain.type !== 'foot' && (

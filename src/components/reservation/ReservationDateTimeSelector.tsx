@@ -14,6 +14,7 @@ interface Props {
   isTimeSlotAvailable: (time: string) => boolean;
   availabilityLoading: boolean;
   selectedTerrainId: number | null;
+  useSelectForTime?: boolean;
 }
 
 const ReservationDateTimeSelector: React.FC<Props> = ({
@@ -24,7 +25,8 @@ const ReservationDateTimeSelector: React.FC<Props> = ({
   timeSlots,
   isTimeSlotAvailable,
   availabilityLoading,
-  selectedTerrainId
+  selectedTerrainId,
+  useSelectForTime = false
 }) => {
   // Auto-scroll to customer info section when both date and time are selected
   useEffect(() => {
@@ -60,6 +62,7 @@ const ReservationDateTimeSelector: React.FC<Props> = ({
           isTimeSlotAvailable={isTimeSlotAvailable}
           onTimeSelect={setSelectedTime}
           loading={availabilityLoading && !!selectedDate}
+          useSelect={useSelectForTime}
         />
       </div>
     </div>
