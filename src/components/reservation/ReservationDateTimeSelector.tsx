@@ -14,6 +14,7 @@ interface Props {
   isTimeSlotAvailable: (time: string) => boolean;
   availabilityLoading: boolean;
   selectedTerrainId: number | null;
+  useSelectForTime?: boolean;
 }
 
 const ReservationDateTimeSelector: React.FC<Props> = ({
